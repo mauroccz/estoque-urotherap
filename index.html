@@ -208,6 +208,12 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{outline:2px soli
 .dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .dl div{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .dl small{display:block;color:var(--muted);font-size:11.5px}.dl b{font-size:13.5px;word-break:break-word}
+.nfls{display:flex;flex-direction:column;gap:10px}
+.nfl{border:1px solid var(--line);border-radius:12px;background:#fff}
+.nfl.off{opacity:.55;background:var(--surface-2)}
+.nfl-h{display:flex;gap:10px;align-items:center;padding:10px 12px;flex-wrap:wrap}
+.nfl-h b{display:block;font-size:13.5px}.nfl-h small{color:var(--muted);font-size:12px}
+.nfl-b{display:flex;flex-direction:column;gap:10px;padding:2px 12px 12px;border-top:1px dashed var(--line);padding-top:10px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-6px}
 .chipbtn{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer;color:#4A5470}
 .chipbtn:hover{border-color:var(--gold);background:var(--gold-soft)}
@@ -588,7 +594,7 @@ function vHoje(){
   const maxCat = Math.max(1, ...porCat.map(x => x.v));
   return `${banners()}
   <div class="head"><div><h1>${saudacao()}, ${esc(S.sessao.nome.split(" ")[0])}</h1><p>${its.length} itens ativos · ${D.alertas.length} ${D.alertas.length === 1 ? "alerta" : "alertas"} · atualizado às ${fHora(S.carregadoEm || Date.now())}</p></div><div class="sp"></div>
-    <button class="btn" data-act="novaMov" data-tipo="entrada" ${S.offline ? "disabled" : ""}>${ic("down",16)}Dar entrada</button></div>
+    ${isAdmin() ? `<button class="btn" data-act="importNF" ${S.offline ? "disabled" : ""}>${ic("up",16)}Importar nota fiscal</button>` : ""}<button class="btn" data-act="novaMov" data-tipo="entrada" ${S.offline ? "disabled" : ""}>${ic("down",16)}Dar entrada</button></div>
   <div class="kpis">
     ${k("box","accent","Itens ativos", its.length, `${lotesAtivos} lotes com saldo`, "itens")}
     ${k("cart","warn","Abaixo do mínimo", baixo, semMin ? `${semMin} sem mínimo definido` : "mínimos definidos", "compras")}
@@ -634,7 +640,7 @@ function rowTL(m){
 function vItens(){
   const f = S.f;
   return `${banners()}<div class="head"><div><h1>Itens</h1><p>Saldo somado de todos os lotes. Clique em um item para ver lotes e histórico.</p></div><div class="sp"></div>
-    <button class="btn" data-act="exportItens">${ic("down",16)}Exportar planilha</button>${isAdmin() ? `<button class="btn pri" data-act="editItem" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Novo item</button>` : ""}</div>
+    <button class="btn" data-act="exportItens">${ic("down",16)}Exportar planilha</button>${isAdmin() ? `<button class="btn" data-act="importNF" ${S.offline ? "disabled" : ""}>${ic("up",16)}Importar nota fiscal</button>` : ""}${isAdmin() ? `<button class="btn pri" data-act="editItem" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Novo item</button>` : ""}</div>
   <div class="card"><div class="toolbar">
     <div class="search">${ic("search",16)}<input data-f="q" value="${esc(f.q || "")}" placeholder="Nome, descrição, código ou fornecedor" aria-label="Filtrar itens"></div>
     <select class="field" data-f="cat" aria-label="Categoria"><option value="">Todas as categorias</option>${D.cats.map(c => `<option ${f.cat === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>
@@ -647,10 +653,20 @@ function itensFiltrados(){
   return D.itens.filter(i => (!f.cat || i.categoria === f.cat) && (!f.local || i.local === f.local) && (!f.st || i.st === f.st) &&
     (!q || norm([i.nome, i.descricao, i.codigo, i.cod_fornecedor, i.fornecedor, ...i.lotes.map(l => l.lote)].join(" ")).includes(q)));
 }
+const GRAV = { vencido: 4, zerado: 3, baixo: 2, vencendo: 1, ok: 0 };
+const COL_ITENS = [
+  ["item","Item","", i => i.nome],
+  ["cat","Categoria","hide-m", i => i.categoria],
+  ["local","Local","hide-m", i => i.local],
+  ["saldo","Saldo","r", i => Number(i.saldo)],
+  ["min","Mínimo","r hide-m", i => i.min ? Number(i.min) : null],
+  ["val","Próx. validade","", i => i.prox],
+  ["st","Situação","", i => GRAV[i.st] ?? 0]
+];
 function listaItens(){
-  const its = itensFiltrados();
+  const its = ordenarPor(itensFiltrados(), COL_ITENS);
   if(!its.length) return `<div class="empty">Nenhum item encontrado com esses filtros.</div>`;
-  return `<table><thead><tr><th>Item</th><th class="hide-m">Categoria</th><th class="hide-m">Local</th><th class="r">Saldo</th><th class="r hide-m">Mínimo</th><th>Próx. validade</th><th>Situação</th></tr></thead><tbody>
+  return `<table><thead><tr>${COL_ITENS.map(thOrd).join("")}</tr></thead><tbody>
   ${its.map(i => { const ref = i.min > 0 ? i.saldo / (i.estoque_ideal > 0 ? i.estoque_ideal : i.min * 2) : null; const cls = i.min > 0 && i.saldo < i.min ? "low" : ref != null && ref < .75 ? "mid" : "";
     return `<tr class="click" data-item="${i.id}"><td><b>${esc(i.nome)}</b>${i.controlado ? ' <span class="pill p-violet">Controlado</span>' : ""}<span class="sub">${esc(i.descricao || "")}</span></td>
     <td class="hide-m">${esc(i.categoria)}</td><td class="hide-m">${esc(i.local || "—")}</td>
@@ -690,9 +706,9 @@ const COL_MOV = [
   ["quem","Quem","", m => m.usuario_nome]
 ];
 const coll = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
-function movsOrdenadas(lista){
+function ordenarPor(lista, cols){
   const o = S.f.ord; if(!o || !o.dir) return lista;
-  const c = COL_MOV.find(x => x[0] === o.col); if(!c) return lista;
+  const c = cols.find(x => x[0] === o.col); if(!c || !c[3]) return lista;
   const vazio = v => v == null || v === "";
   return lista.slice().sort((a, b) => {
     const va = c[3](a), vb = c[3](b);
@@ -701,12 +717,16 @@ function movsOrdenadas(lista){
     return o.dir === "desc" ? -r : r;
   });
 }
+const movsOrdenadas = lista => ordenarPor(lista, COL_MOV);
+function thOrd([k, t, cls, fn]){
+  if(!fn) return `<th class="${cls || ""}">${t}</th>`;
+  const o = S.f.ord || {}; const on = o.col === k && o.dir;
+  return `<th class="${cls} sortable ${on ? "on" : ""}" data-act="ordenar" data-col="${k}" title="Clique para ordenar: maior → menor, menor → maior, sem ordem" aria-sort="${on ? (o.dir === "desc" ? "descending" : "ascending") : "none"}">${t}<span class="arr">${on ? (o.dir === "desc" ? "▼" : "▲") : "↕"}</span></th>`;
+}
 function listaMovs(){
   const ms = movsOrdenadas(movsFiltradas());
   if(!ms.length) return `<div class="empty">Nenhuma movimentação nesse período.</div>`;
-  const o = S.f.ord || {};
-  const th = ([k, t, cls]) => { const on = o.col === k && o.dir; return `<th class="${cls} sortable ${on ? "on" : ""}" data-act="ordenar" data-col="${k}" title="Clique para ordenar: maior → menor, menor → maior, sem ordem" aria-sort="${on ? (o.dir === "desc" ? "descending" : "ascending") : "none"}">${t}<span class="arr">${on ? (o.dir === "desc" ? "▼" : "▲") : "↕"}</span></th>`; };
-  return `<table><thead><tr>${COL_MOV.map(th).join("")}</tr></thead><tbody>
+  return `<table><thead><tr>${COL_MOV.map(thOrd).join("")}</tr></thead><tbody>
   ${ms.slice(0, 500).map(m => { const it = D.idx[m.item_id] || { nome: "—" }; const l = D.lotesIdx[m.lote_id] || {};
     return `<tr class="click" data-item="${m.item_id}"><td class="num" style="white-space:nowrap">${fDH(m.criado_em)}</td><td><span class="pill ${TIPO[m.tipo][1]}">${TIPO[m.tipo][0]}</span></td><td><b>${esc(it.nome)}</b></td><td class="hide-m">${esc(l.lote || "—")}</td>
     <td class="r num qty ${m.quantidade >= 0 ? "q-pos" : "q-neg"}">${m.quantidade > 0 ? "+" : ""}${fNum(m.quantidade)}</td><td class="r num hide-m">${fNum(m.saldo_lote)}</td><td class="hide-m">${esc(pacDe(m) || "—")}</td><td class="hide-m">${esc(m.motivo || "—")}${m.origem === "contingencia" ? ' <span class="pill p-warn">contingência</span>' : ""}</td>
@@ -715,12 +735,21 @@ function listaMovs(){
 }
 
 /* ---- Validades ---- */
+const COL_VAL = [
+  ["item","Item","", x => x.i.nome],
+  ["lote","Lote","", x => x.l.lote],
+  ["fab","Fabricação","hide-m", x => x.l.fabricacao],
+  ["val","Validade","", x => x.l.validade],
+  ["qtd","Qtd.","r", x => Number(x.l.quantidade)],
+  ["local","Local","hide-m", x => x.i.local],
+  ["acao","","r"]
+];
 function vValidades(){
   const lots = []; D.itens.forEach(i => i.comSaldo.forEach(l => lots.push({ i, l, d: diasAte(l.validade) })));
   const g = [["Vencidos", x => x.d != null && x.d < 0, "crit"], ["Vencem em até 30 dias", x => x.d != null && x.d >= 0 && x.d <= 30, "crit"], ["Vencem em 31 a 90 dias", x => x.d > 30 && x.d <= 90, "warn"], ["Vencem em 91 a 180 dias", x => x.d > 90 && x.d <= 180, "acc"], ["Mais de 180 dias", x => x.d > 180, "ok"], ["Sem validade cadastrada", x => x.d == null, "mute"]];
-  return `${banners()}<div class="head"><div><h1>Validades</h1><p>Lotes com saldo, do que vence primeiro ao último. A saída sugere sempre o lote que vence primeiro.</p></div><div class="sp"></div><button class="btn" data-act="exportVal">${ic("down",16)}Exportar planilha</button></div>
-  <div class="groups">${g.map(([t, fn, cor]) => { const xs = lots.filter(fn).sort((a,b) => (a.d ?? 1e9) - (b.d ?? 1e9)); if(!xs.length) return "";
-    return `<div class="card"><div class="card-h"><h2>${t}</h2><span class="pill p-${cor}">${xs.length} ${xs.length === 1 ? "lote" : "lotes"}</span></div><div class="tbl-wrap"><table><thead><tr><th>Item</th><th>Lote</th><th class="hide-m">Fabricação</th><th>Validade</th><th class="r">Qtd.</th><th class="hide-m">Local</th><th></th></tr></thead><tbody>
+  return `${banners()}<div class="head"><div><h1>Validades</h1><p>Lotes com saldo, do que vence primeiro ao último. Clique no título de uma coluna para ordenar. A saída sugere sempre o lote que vence primeiro.</p></div><div class="sp"></div><button class="btn" data-act="exportVal">${ic("down",16)}Exportar planilha</button></div>
+  <div class="groups">${g.map(([t, fn, cor]) => { const xs = ordenarPor(lots.filter(fn).sort((a,b) => (a.d ?? 1e9) - (b.d ?? 1e9)), COL_VAL); if(!xs.length) return "";
+    return `<div class="card"><div class="card-h"><h2>${t}</h2><span class="pill p-${cor}">${xs.length} ${xs.length === 1 ? "lote" : "lotes"}</span></div><div class="tbl-wrap"><table><thead><tr>${COL_VAL.map(thOrd).join("")}</tr></thead><tbody>
     ${xs.map(({i,l}) => `<tr class="click" data-item="${i.id}"><td><b>${esc(i.nome)}</b><span class="sub">${esc(i.categoria)}</span></td><td>${esc(l.lote || "—")}</td><td class="hide-m num">${fData(l.fabricacao)}</td><td>${pillValidade(l.validade)}${l.fabricacao && l.validade && l.validade < l.fabricacao ? ' <span class="pill p-warn" title="A validade é anterior à fabricação: confira a digitação">confira datas</span>' : ""}</td><td class="r num"><b>${fNum(l.quantidade)}</b></td><td class="hide-m">${esc(i.local || "—")}</td>
     <td class="r">${cor === "crit" && !S.offline ? `<button class="btn sm danger" data-act="novaMov" data-tipo="descarte" data-it="${i.id}" data-lote="${l.id}">Descartar</button>` : ""}</td></tr>`).join("")}</tbody></table></div></div>`; }).join("")}</div>`;
 }
@@ -1066,6 +1095,207 @@ async function impConfirmar(btn){
 }
 
 /* =====================================================================
+   Importar nota fiscal (NF-e em XML ou DANFE em PDF)
+   ===================================================================== */
+let NF = null;
+const UNID_NF = { UN: "UNIDADE", UND: "UNIDADE", UNID: "UNIDADE", CX: "CAIXA", CXA: "CAIXA", PC: "PACOTE", PCT: "PACOTE", PT: "PACOTE", FR: "FRASCO", FRS: "FRASCO", FRA: "FRASCO", AMP: "AMPOLA", AM: "AMPOLA", BG: "BISNAGA", BIS: "BISNAGA", KIT: "KIT", RL: "ROLO", GL: "GALÃO", PAR: "PAR", CJ: "CONJUNTO", FD: "FARDO", SC: "SACO", ENV: "ENVELOPE", BL: "BLISTER", TB: "TUBO", LT: "LITRO", ML: "ML" };
+const numBR = v => { if(v == null || v === "") return null; let t = String(v).trim(); if(/,\d+$/.test(t)) t = t.replace(/\./g, "").replace(",", "."); const n = Number(t); return isNaN(n) ? null : n; };
+function dataNF(v, fimDoMes){
+  if(!v) return "";
+  let m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = String(v).match(/^(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})$/); if(m){ const y = m[3].length === 2 ? "20" + m[3] : m[3]; return `${y}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`; }
+  m = String(v).match(/^(\d{1,2})[\/.\-](\d{4})$/); if(m){ const mm = m[1].padStart(2,"0"); const d = fimDoMes ? new Date(Number(m[2]), Number(mm), 0).getDate() : 1; return `${m[2]}-${mm}-${String(d).padStart(2,"0")}`; }
+  return "";
+}
+const DT_RE = "(\\d{1,2}[\\/.\\-]\\d{1,2}[\\/.\\-]\\d{2,4}|\\d{1,2}[\\/.\\-]\\d{4})";
+function loteDoTexto(txt){
+  const t = String(txt || "");
+  const lote = (t.match(/\b(?:LOTE|LT)\s*(?:N[º°o.]*)?\s*[:.\-#]?\s*([A-Z0-9][A-Z0-9\/\-.]*[A-Z0-9])/i) || [])[1] || "";
+  const val = (t.match(new RegExp("\\b(?:VAL(?:IDADE)?|VENC(?:IMENTO)?|VCTO|VCT|DV|EXP)\\s*[:.\\-]?\\s*" + DT_RE, "i")) || [])[1] || "";
+  const fab = (t.match(new RegExp("\\b(?:FAB(?:RICA[ÇC][AÃ]O)?|DF|MFG)\\s*[:.\\-]?\\s*" + DT_RE, "i")) || [])[1] || "";
+  return { lote, val: dataNF(val, true), fab: dataNF(fab, false) };
+}
+
+/* ---- leitura do XML (NF-e) ---- */
+function lerNFeXML(texto){
+  const doc = new DOMParser().parseFromString(texto, "application/xml");
+  if(doc.getElementsByTagName("parsererror").length) throw new Error("O arquivo XML está corrompido ou incompleto.");
+  const inf = doc.getElementsByTagName("infNFe")[0];
+  if(!inf) throw new Error("Este XML não é de uma NF-e (nota fiscal eletrônica de produtos).");
+  const g = (el, tag) => { const x = el && el.getElementsByTagName(tag)[0]; return x ? x.textContent.trim() : ""; };
+  const ide = inf.getElementsByTagName("ide")[0], emit = inf.getElementsByTagName("emit")[0];
+  const linhas = [];
+  [...inf.getElementsByTagName("det")].forEach(det => {
+    const p = det.getElementsByTagName("prod")[0]; if(!p) return;
+    const base = { cod: g(p, "cProd"), ean: /^\d{8,14}$/.test(g(p, "cEAN")) ? g(p, "cEAN") : "", desc: g(p, "xProd"), ncm: g(p, "NCM"),
+      un: g(p, "uCom"), qtdNF: Number(g(p, "qCom")) || 0, custoNF: Number(g(p, "vUnCom")) || null, med: p.getElementsByTagName("med").length > 0 };
+    const rastros = [...p.getElementsByTagName("rastro")];
+    if(rastros.length) rastros.forEach(r => linhas.push({ ...base, lote: g(r, "nLote"), qtd: Number(g(r, "qLote")) || base.qtdNF, fab: dataNF(g(r, "dFab")), val: dataNF(g(r, "dVal"), true) }));
+    else { const x = loteDoTexto(g(det, "infAdProd") + " " + base.desc); linhas.push({ ...base, lote: x.lote, qtd: base.qtdNF, fab: x.fab, val: x.val }); }
+  });
+  if(!linhas.length) throw new Error("Não encontrei produtos neste XML.");
+  return { origem: "XML", chave: (inf.getAttribute("Id") || "").replace(/^NFe/, ""), numero: g(ide, "nNF"), serie: g(ide, "serie"),
+    emissao: dataNF(g(ide, "dhEmi") || g(ide, "dEmi")), fornecedor: g(emit, "xFant") || g(emit, "xNome"), cnpj: g(emit, "CNPJ"), linhas };
+}
+
+/* ---- leitura do PDF (DANFE), por melhor esforço ---- */
+async function lerDanfePDF(buf){
+  let pdfjs;
+  try { pdfjs = await import(new URL("vendor/pdfjs/pdf.min.mjs", location.href).href); }
+  catch(e){ throw new Error("Não consegui carregar o leitor de PDF. Verifique a internet ou use o XML da nota."); }
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL("vendor/pdfjs/pdf.worker.min.mjs", location.href).href;
+  const pdf = await pdfjs.getDocument({ data: buf }).promise;
+  const linhasTxt = [];
+  for(let n = 1; n <= pdf.numPages; n++){
+    const tc = await (await pdf.getPage(n)).getTextContent();
+    const grupos = [];
+    tc.items.filter(it => it.str && it.str.trim()).forEach(it => {
+      const y = it.transform[5], x = it.transform[4];
+      let gr = grupos.find(gg => Math.abs(gg.y - y) < 2.5); if(!gr){ gr = { y, itens: [] }; grupos.push(gr); }
+      gr.itens.push({ x, s: it.str.trim() });
+    });
+    grupos.sort((a, b) => b.y - a.y).forEach(gr => linhasTxt.push(gr.itens.sort((a, b) => a.x - b.x).map(i => i.s).join(" ").replace(/\s+/g, " ")));
+  }
+  const texto = linhasTxt.join("\n");
+  const chave = ((texto.match(/(?:\d{4}\s?){10}\d{4}/) || [])[0] || "").replace(/\s/g, "");
+  const numero = ((texto.match(/N[º°o]\.?\s*:?\s*(\d{1,3}(?:\.\d{3})+|\d{1,9})/i) || [])[1] || "").replace(/\./g, "").replace(/^0+(?=\d)/, "");
+  const serie = (texto.match(/S[ÉE]RIE\s*:?\s*(\d{1,3})/i) || [])[1] || "";
+  const fornecedor = ((texto.match(/RECEBEMOS DE\s+(.+?)\s+OS PRODUTOS/i) || [])[1] || "").trim();
+  const emissao = dataNF((texto.match(/EMISS[ÃA]O[^\d]{0,20}(\d{2}\/\d{2}\/\d{4})/i) || [])[1] || "");
+  const RE = /^(\S+)\s+(.+?)\s+(\d{8})\s+(\d{3,4})\s+(\d{4})\s+([A-Za-zÀ-ú]{1,6}\.?)\s+(\d[\d.]*,\d+)\s+(\d[\d.]*,\d+)\s+(\d[\d.]*,\d+)/;
+  const prods = []; let atual = null;
+  linhasTxt.forEach(l => {
+    const m = l.match(RE);
+    if(m){ atual = { cod: m[1], desc: m[2], ncm: m[3], un: m[6].replace(".", ""), qtdNF: numBR(m[7]) || 0, custoNF: numBR(m[8]), extra: "" }; prods.push(atual); return; }
+    if(atual && !/^(DADOS|C[ÁA]LCULO|TRANSPORTADOR|INFORMA[ÇC][ÕO]ES|RESERVADO|VALOR TOTAL|BASE DE C)/i.test(l) && l.length < 160) atual.extra += " " + l;
+    if(/^(DADOS ADICIONAIS|C[ÁA]LCULO DO ISSQN)/i.test(l)) atual = null;
+  });
+  if(!prods.length) throw new Error("Não consegui ler os produtos deste PDF. O layout varia de fornecedor para fornecedor. Use o arquivo XML da nota: o fornecedor é obrigado a enviá-lo, normalmente junto com o PDF no e-mail.");
+  const linhas = prods.map(p => { const x = loteDoTexto(p.desc + " " + p.extra); return { cod: p.cod, ean: "", desc: p.desc.trim(), ncm: p.ncm, un: p.un, qtdNF: p.qtdNF, custoNF: p.custoNF, med: false, lote: x.lote, qtd: p.qtdNF, fab: x.fab, val: x.val }; });
+  return { origem: "PDF", chave, numero, serie, emissao, fornecedor, cnpj: "", linhas };
+}
+
+/* ---- casar com itens do estoque ---- */
+function casarItemNF(l, forn){
+  const nf = norm(forn); const cod = norm(l.cod), ds = norm(l.desc);
+  const fornOk = i => !i.fornecedor || !nf || nf.includes(norm(i.fornecedor)) || norm(i.fornecedor).includes(nf);
+  return D.itens.find(i => cod && i.cod_fornecedor && norm(i.cod_fornecedor) === cod && fornOk(i))
+    || D.itens.find(i => l.ean && i.codigo && norm(i.codigo) === norm(l.ean))
+    || D.itens.find(i => ds && (norm(i.descricao) === ds || norm(i.nome) === ds)) || null;
+}
+function prepararNF(nf){
+  const catPadrao = med => { const want = med ? "MEDICAÇÃO" : "MATERIAL MÉDICO-HOSPITALAR"; return D.cats.find(c => norm(c) === norm(want)) || (med ? want : D.cats[0] || ""); };
+  const localPadrao = D.locais.find(c => norm(c) === "almoxarifado") || D.locais[0] || "";
+  nf.linhas = nf.linhas.map(l => {
+    const it = casarItemNF(l, nf.fornecedor);
+    return { ...l, incluir: true, auto: !!it, item_id: it ? it.id : "novo", fator: 1, qtdFinal: l.qtd, custo: l.custoNF, atualizarCusto: true,
+      novo: { nome: l.desc.toUpperCase().slice(0, 45), categoria: catPadrao(l.med), local: localPadrao, unidade: UNID_NF[norm(l.un).toUpperCase()] || String(l.un || "").toUpperCase() } };
+  });
+  const ref = nf.numero ? norm("NF " + nf.numero) : null; const f1 = norm(String(nf.fornecedor || "").split(" ")[0]);
+  nf.duplicada = !!ref && S.movs.some(m => m.motivo && norm(m.motivo).includes(ref) && (!f1 || norm(m.motivo).includes(f1)));
+  return nf;
+}
+
+/* ---- telas ---- */
+function abrirImportNF(){
+  NF = null;
+  abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead("Importar nota fiscal", "Dá entrada de todos os produtos da nota de uma vez")}<div class="m-b">
+    <div class="note info"><b>XML (recomendado):</b> leitura exata de código, descrição, unidade, quantidade, custo e, quando o fornecedor informa, lote, fabricação e validade.<br><b>PDF (DANFE):</b> leitura aproximada, pois o layout muda de fornecedor para fornecedor. Confira tudo na próxima tela.</div>
+    <label class="f">Arquivo da nota (.xml ou .pdf)<input type="file" id="nf_file" accept=".xml,.pdf,text/xml,application/xml,application/pdf"></label>
+    <div id="nf_msg"></div></div>
+    <div class="m-f"><button class="btn" data-act="fechar">Cancelar</button></div></div>`);
+  $("#nf_file").addEventListener("change", async ev => {
+    const f = ev.target.files[0]; if(!f) return; const msg = $("#nf_msg"); msg.innerHTML = `<div class="note info">Lendo ${esc(f.name)}…</div>`;
+    try {
+      let nf;
+      if(/\.pdf$/i.test(f.name) || f.type === "application/pdf") nf = await lerDanfePDF(new Uint8Array(await f.arrayBuffer()));
+      else nf = lerNFeXML(await f.text());
+      nf.arquivo = f.name; NF = prepararNF(nf); renderNF();
+    } catch(e){ msg.innerHTML = `<div class="note crit">${esc(e.message)}</div>`; }
+  });
+}
+function renderNF(manterScroll){
+  const sc = manterScroll && $("#modal .modal") ? $("#modal .modal").scrollTop : 0;
+  const n = NF; const inc = n.linhas.filter(l => l.incluir);
+  const opts = sel => `<option value="novo" ${sel === "novo" ? "selected" : ""}>➕ Criar item novo</option>` + D.itens.slice().sort((a,b) => coll.compare(a.nome, b.nome)).map(i => `<option value="${i.id}" ${sel === i.id ? "selected" : ""}>${esc(i.nome)}${i.cod_fornecedor ? " · " + esc(i.cod_fornecedor) : ""}</option>`).join("");
+  const card = (l, k) => { const it = l.item_id !== "novo" ? D.idx[l.item_id] : null;
+    return `<div class="nfl ${l.incluir ? "" : "off"}">
+      <div class="nfl-h"><label class="check"><input type="checkbox" data-nf="${k}" data-nfk="incluir" ${l.incluir ? "checked" : ""}></label>
+        <div style="min-width:0;flex:1"><b>${esc(l.desc)}</b><small>Cód. ${esc(l.cod || "—")} · NF: ${fNum(l.qtd)} ${esc(l.un || "")} × ${l.custoNF != null ? fBRL(l.custoNF) : "—"}${l.ncm ? " · NCM " + esc(l.ncm) : ""}</small></div>
+        ${l.auto ? '<span class="pill p-ok">item encontrado</span>' : l.item_id === "novo" ? '<span class="pill p-acc">item novo</span>' : ""}${!l.val ? '<span class="pill p-warn">sem validade</span>' : ""}</div>
+      ${l.incluir ? `<div class="nfl-b">
+        <label class="f">Item no estoque<select data-nf="${k}" data-nfk="item_id">${opts(l.item_id)}</select></label>
+        ${l.item_id === "novo" ? `<div class="row2"><label class="f">Nome curto do item novo<input data-nf="${k}" data-nfk="novo.nome" value="${esc(l.novo.nome)}"></label><label class="f">Categoria<input data-nf="${k}" data-nfk="novo.categoria" list="nf_cats" value="${esc(l.novo.categoria)}"></label></div>
+          <div class="row2"><label class="f">Local<input data-nf="${k}" data-nfk="novo.local" list="nf_locs" value="${esc(l.novo.local)}"></label><label class="f">Unidade de controle<input data-nf="${k}" data-nfk="novo.unidade" value="${esc(l.novo.unidade)}"></label></div>` : ""}
+        <div class="row3"><label class="f">Lote<input data-nf="${k}" data-nfk="lote" value="${esc(l.lote)}"></label><label class="f">Fabricação<input type="date" data-nf="${k}" data-nfk="fab" value="${esc(l.fab)}"></label><label class="f">Validade<input type="date" data-nf="${k}" data-nfk="val" value="${esc(l.val)}"></label></div>
+        <div class="row3"><label class="f">Itens por embalagem <span class="muted" style="font-weight:400">(ex.: caixa com 100)</span><input type="number" min="1" step="any" data-nf="${k}" data-nfk="fator" value="${esc(l.fator)}"></label>
+          <label class="f">Quantidade que entra${it ? ` (${esc(low(it.unidade))})` : ""}<input type="number" min="0" step="any" data-nf="${k}" data-nfk="qtdFinal" value="${esc(l.qtdFinal ?? "")}"></label>
+          <label class="f">Custo unitário (R$)<input type="number" min="0" step="any" data-nf="${k}" data-nfk="custo" value="${esc(l.custo ?? "")}"></label></div>
+        ${it ? `<label class="check" style="font-size:13px"><input type="checkbox" data-nf="${k}" data-nfk="atualizarCusto" ${l.atualizarCusto ? "checked" : ""}>Atualizar o custo do item para o valor desta nota${it.custo_unit != null ? ` (hoje ${fBRL(it.custo_unit)})` : ""}</label>` : ""}
+      </div>` : ""}</div>`; };
+  abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead("Conferir nota fiscal", `${esc(n.arquivo)} · leitura do ${n.origem}`)}<div class="m-b">
+    <div class="dl"><div><small>Nota fiscal</small><b>${esc(n.numero || "—")}${n.serie ? " · série " + esc(n.serie) : ""}</b></div><div><small>Emissão</small><b>${fData(n.emissao)}</b></div><div><small>Produtos na nota</small><b>${n.linhas.length}</b></div></div>
+    <label class="f">Fornecedor<input id="nf_forn" value="${esc(n.fornecedor || "")}" placeholder="Nome do fornecedor"></label>
+    ${n.duplicada ? `<div class="note crit">Parece que esta nota já foi lançada: há movimentações com "NF ${esc(n.numero)}" deste fornecedor. Confira antes de importar de novo.</div>` : ""}
+    ${n.origem === "PDF" ? `<div class="note warn">Leitura de PDF: confira código, quantidade, lote e validade de cada produto. Se algo vier errado, prefira o XML da nota.</div>` : ""}
+    <div class="note info">Confira cada produto. Itens encontrados no estoque recebem um lote novo (ou somam no lote de mesmo número e validade). Itens não encontrados são criados. Desmarque o que não quiser lançar.</div>
+    <div class="nfls">${n.linhas.map(card).join("")}</div>
+    <datalist id="nf_cats">${D.cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist><datalist id="nf_locs">${D.locais.map(c => `<option value="${esc(c)}">`).join("")}</datalist>
+    <div class="err" id="nf_err" role="alert"></div></div>
+    <div class="m-f"><span class="muted" style="margin-right:auto;align-self:center">${inc.length} de ${n.linhas.length} produtos selecionados</span><button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" data-act="nfImportar" ${inc.length ? "" : "disabled"}>${ic("check",16,2.2)}Lançar entrada de ${inc.length}</button></div></div>`);
+  if(sc) $("#modal .modal").scrollTop = sc;
+}
+function nfCampo(t){
+  const k = Number(t.dataset.nf), campo = t.dataset.nfk, l = NF.linhas[k]; if(!l) return false;
+  const v = t.type === "checkbox" ? t.checked : t.value;
+  if(campo.startsWith("novo.")) l.novo[campo.slice(5)] = v; else l[campo] = v;
+  if(campo === "item_id"){ l.auto = false; return true; }
+  if(campo === "incluir") return true;
+  if(campo === "fator"){ const f = Number(v) || 1; l.qtdFinal = Math.round(l.qtd * f * 1000) / 1000; l.custo = l.custoNF != null ? Math.round(l.custoNF / f * 100000) / 100000 : l.custo;
+    const card = t.closest(".nfl"); const q = card.querySelector('[data-nfk="qtdFinal"]'), c = card.querySelector('[data-nfk="custo"]'); if(q) q.value = l.qtdFinal; if(c) c.value = l.custo ?? ""; }
+  return false;
+}
+async function nfImportar(btn){
+  const n = NF; n.fornecedor = $("#nf_forn").value.trim();
+  const inc = n.linhas.filter(l => l.incluir); const erros = [];
+  inc.forEach((l, i) => { const nome = l.desc.slice(0, 30);
+    if(l.item_id === "novo" && (!String(l.novo.nome).trim() || !String(l.novo.categoria).trim())) erros.push(`${nome}: informe nome e categoria do item novo.`);
+    if(!(Number(l.qtdFinal) > 0)) erros.push(`${nome}: quantidade inválida.`);
+    if(l.fab && l.val && l.val < l.fab) erros.push(`${nome}: validade anterior à fabricação.`); });
+  if(erros.length){ $("#nf_err").innerHTML = erros.map(esc).join("<br>"); return; }
+  btn.disabled = true; const motivo = `NF ${n.numero || "s/n"}${n.serie ? "/" + n.serie : ""} · ${n.fornecedor || "fornecedor"}`.slice(0, 140);
+  // agrupa produtos repetidos (mesmo item, lote e validade)
+  const grupos = new Map();
+  inc.forEach(l => { const chaveItem = l.item_id === "novo" ? "novo:" + norm(l.cod || l.novo.nome) : l.item_id; const g = chaveItem + "|" + norm(l.lote) + "|" + (l.val || "");
+    if(grupos.has(g)) grupos.get(g).qtdFinal = Number(grupos.get(g).qtdFinal) + Number(l.qtdFinal); else grupos.set(g, { ...l, chaveItem, qtdFinal: Number(l.qtdFinal) }); });
+  const criados = {}, custoFeito = {}; let ok = 0, novos = 0; const falhas = [];
+  for(const l of grupos.values()){
+    btn.innerHTML = `Lançando ${ok + falhas.length + 1} de ${grupos.size}…`;
+    try {
+      let itemId = l.item_id; const custo = l.custo === "" || l.custo == null ? null : Number(l.custo);
+      if(itemId === "novo"){
+        if(criados[l.chaveItem]) itemId = criados[l.chaveItem];
+        else { const r = await API.salvarItem({ nome: l.novo.nome.trim(), descricao: l.desc, categoria: l.novo.categoria.trim(), unidade: l.novo.unidade, local: l.novo.local, fornecedor: n.fornecedor, cod_fornecedor: l.cod, codigo: l.ean || "", custo_unit: custo ?? "", estoque_minimo: "", estoque_ideal: "", controlado: false, ativo: true });
+          itemId = criados[l.chaveItem] = r.id; novos++; }
+      } else if(l.atualizarCusto && custo != null && !custoFeito[itemId]){
+        const it = S.itens.find(x => x.id === itemId);
+        if(it && Number(it.custo_unit) !== custo){ await API.salvarItem({ ...it, custo_unit: custo, ativo: it.ativo !== false }); }
+        custoFeito[itemId] = true;
+      }
+      const ex = l.lote && S.lotes.find(x => x.item_id === itemId && norm(x.lote) === norm(l.lote) && (!l.val || String(x.validade || "").slice(0, 10) === l.val));
+      await API.movimentar({ tipo: "entrada", item_id: itemId, lote_id: ex ? ex.id : null, quantidade: Number(l.qtdFinal), motivo, lote: l.lote || "", fabricacao: l.fab || "", validade: l.val || "", origem: "sistema" });
+      ok++;
+    } catch(e){ falhas.push(`${l.desc.slice(0, 40)}: ${e.message}`); }
+  }
+  S.audit = null; await carregar(); fechar(); render();
+  abrir(`<div class="modal" role="dialog" aria-modal="true">${mHead("Nota fiscal lançada", esc(motivo))}<div class="m-b">
+    <div class="note ${falhas.length ? "warn" : "info"}">${ok} ${ok === 1 ? "entrada registrada" : "entradas registradas"}${novos ? `, ${novos} ${novos === 1 ? "item novo criado" : "itens novos criados"}` : ""}.${falhas.length ? ` ${falhas.length} com erro:` : ""}</div>
+    ${falhas.length ? `<div class="err">${falhas.map(esc).join("<br>")}</div>` : ""}
+    ${novos ? `<p class="muted">Lembre de definir o estoque mínimo dos itens novos (Itens → abrir o item → Editar item).</p>` : ""}</div>
+    <div class="m-f"><button class="btn" data-act="nfVerMovs">Ver movimentações</button><button class="btn pri" data-act="fechar">Fechar</button></div></div>`);
+}
+
+/* =====================================================================
    Login por nome + PIN
    ===================================================================== */
 let L = { u: null, pin: "", erro: "" };
@@ -1116,17 +1346,18 @@ const ACT = {
   mTipo: (d) => { guardarCampos(); M.tipo = d.v; M.erro = ""; confirmarSemValidade = false; M.lote_id = M.item_id ? loteSugerido() : null; renderMov(); },
   mItem: (d) => { guardarCampos(); M.item_id = d.id; M.lote_id = loteSugerido(); M.erro = ""; renderMov(); },
   mTroca: () => { guardarCampos(); M.item_id = null; M.lote_id = null; renderMov(); },
-  ordenar: (d) => { const o = S.f.ord && S.f.ord.col === d.col ? S.f.ord : { col: d.col, dir: null }; const prox = { null: "desc", desc: "asc", asc: null }[o.dir]; S.f.ord = prox ? { col: d.col, dir: prox } : null; const el = $("#lista"); if(el) el.innerHTML = listaMovs(); },
+  ordenar: (d) => { const o = S.f.ord && S.f.ord.col === d.col ? S.f.ord : { col: d.col, dir: null }; const prox = { null: "desc", desc: "asc", asc: null }[o.dir]; S.f.ord = prox ? { col: d.col, dir: prox } : null; const el = $("#lista"); if(el && PARTS[S.rota]) el.innerHTML = PARTS[S.rota](); else render(); },
   mMotivo: (d) => { guardarCampos(); M.motivo = d.v; M.erro = ""; renderMov(); const el = $("#m_motivo"); if(el) el.focus(); },
   mLote: (d) => { guardarCampos(); M.lote_id = d.id; M.erro = ""; renderMov(); },
   mSalvar: (d, el) => salvarMov(el),
   editItem: (d) => editItem(d.id), salvarItem: (d, el) => salvarItem(d.id, el),
+  importNF: () => abrirImportNF(), nfImportar: (d, el) => nfImportar(el), nfVerMovs: () => { fechar(); location.hash = "#movimentacoes"; },
   editLote: (d) => editLote(d.id), salvarLote: (d, el) => salvarLote(d.id, el), voltarItem: (d) => abrirItem(d.id),
   editUser: (d) => editUser(d.id), salvarUser: (d, el) => salvarUser(d.id, el),
   lUser: (d) => { L = { u: d.id, pin: "", erro: "" }; render(); }, lVoltar: () => { L = { u: null, pin: "", erro: "" }; render(); },
   lDig: (d) => lDig(d.v), lApaga: () => { L.pin = L.pin.slice(0, -1); render(); },
   consultaOffline: () => { S.sessao = { id: null, nome: "Consulta offline", papel: "funcionaria", pin: "" }; render(); },
-  exportItens: () => baixarXlsx(`itens-${hojeISO()}.xlsx`, [{ nome: "Itens", linhas: itensFiltrados().map(linhaItem) }]),
+  exportItens: () => baixarXlsx(`itens-${hojeISO()}.xlsx`, [{ nome: "Itens", linhas: ordenarPor(itensFiltrados(), COL_ITENS).map(linhaItem) }]),
   exportMovs: () => baixarXlsx(`movimentacoes-${hojeISO()}.xlsx`, [{ nome: "Movimentações", linhas: movsOrdenadas(movsFiltradas()).map(linhaMov) }]),
   exportVal: () => baixarXlsx(`validades-${hojeISO()}.xlsx`, [{ nome: "Validades", linhas: linhaVal() }]),
   exportCompras: () => baixarXlsx(`lista-de-compras-${hojeISO()}.xlsx`, [{ nome: "Lista de compras", linhas: compras().map(({i,sug}) => ({ "Item": i.nome, "Descrição": i.descricao || "", "Fornecedor": i.fornecedor || "", "Cód. fornecedor": i.cod_fornecedor || "", "Saldo": i.saldo, "Mínimo": i.min, "Comprar": sug, "Unidade": i.unidade || "", "Custo estimado": Math.round(sug * Number(i.custo_unit || 0) * 100) / 100 })) }]),
@@ -1148,6 +1379,7 @@ document.addEventListener("click", e => {
 document.addEventListener("input", e => {
   tocar();
   const t = e.target;
+  if(t.dataset.nf !== undefined && NF){ if(nfCampo(t)) renderNF(true); return; }
   if(t.dataset.f){ S.f[t.dataset.f] = t.value; const el = $("#lista"); if(el && PARTS[S.rota]) el.innerHTML = PARTS[S.rota](); return; }
   if(t.id === "m_busca"){ M.busca = t.value; const q = norm(t.value); const xs = D.itens.filter(x => !q || norm([x.nome, x.descricao, x.cod_fornecedor, x.codigo, ...x.lotes.map(l => l.lote)].join(" ")).includes(q)).slice(0, 30);
     $("#m_plist").innerHTML = xs.map(x => `<button data-act="mItem" data-id="${x.id}">${av(x.categoria, 30)}<span><b>${esc(x.nome)}</b><br><small class="muted">${esc(x.local || "")} · ${fNum(x.saldo)} ${esc(low(x.unidade))}</small></span><span class="sp"></span><span class="pill ${ST[x.st][0]}">${ST[x.st][1]}</span></button>`).join("") || `<div class="empty">Nenhum item encontrado.</div>`; return; }
