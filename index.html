@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#0E9AA7">
 <title>Estoque UROtherap</title>
+<link rel="icon" type="image/png" href="img/favicon.png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Estoque">
+<meta name="mobile-web-app-capable" content="yes">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -36,6 +42,13 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .brand{display:flex;align-items:center;gap:10px;padding:0 6px}
 .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(140deg,#16B3BF,var(--accent-2));display:grid;place-items:center;color:#fff;box-shadow:0 4px 12px rgba(14,154,167,.3)}
 .brand b{font-size:19px;letter-spacing:-.01em}
+.brand-img{display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px 6px 0}
+.brand-img img{width:100%;max-width:178px;height:auto;display:block}
+.brand-img small{font-size:11px;letter-spacing:.14em;color:var(--muted);font-weight:600;text-transform:uppercase}
+.login-logo{display:flex;flex-direction:column;align-items:center;gap:8px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.login-logo img{width:min(230px,70%);height:auto;display:block}
+.login-logo small{font-size:11.5px;letter-spacing:.14em;color:var(--muted);font-weight:600;text-transform:uppercase;padding-bottom:14px}
+.mlogo{display:none;width:34px;height:34px;flex:none}
 .clinic{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .clinic .ci{width:30px;height:30px;border-radius:8px;background:var(--accent-soft);color:var(--accent-2);display:grid;place-items:center}
 .clinic b{display:block;font-size:13px}.clinic small{color:var(--muted);font-size:11.5px}
@@ -223,6 +236,7 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{outline:2px soli
   .side{display:none}
   .top{padding:10px 16px}
   .top .when,.top .hide-m{display:none}
+  .mlogo{display:block}
   .content{padding:18px 16px 96px}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .kpi .kv{font-size:24px}
@@ -360,6 +374,7 @@ const API = ONLINE ? (() => {
     },
     movimentar: d => rpc("movimentar", { p_dados: d }),
     salvarItem: i => rpc("salvar_item", { p_item: i }),
+    salvarLote: l => rpc("salvar_lote", { p_lote: l }),
     salvarUsuario: u => rpc("salvar_usuario", { p_dados: u }),
     async auditoria(){ return (await rpc("ler_auditoria", { p_limite: 3000 })).dados; },
     registrarBackup: () => rpc("registrar_backup", {})
@@ -416,6 +431,12 @@ const API = ONLINE ? (() => {
       const it = db.itens.find(x => x.id === i.id); const antes = { ...it };
       campos.forEach(k => it[k] = i[k] || null); it.custo_unit = num("custo_unit"); it.estoque_minimo = num("estoque_minimo"); it.estoque_ideal = num("estoque_ideal"); it.controlado = !!i.controlado; it.ativo = i.ativo !== false;
       aud(u, "UPDATE", "itens", antes, it); salvar(); return { ok: true, id: it.id };
+    },
+    async salvarLote(d){
+      const u = quem(true); const l = db.lotes.find(x => x.id === d.id); if(!l) throw new Error("Lote não encontrado.");
+      if(d.fabricacao && d.validade && d.validade < d.fabricacao) throw new Error("A validade não pode ser anterior à fabricação.");
+      const antes = { ...l }; l.lote = String(d.lote || "").trim() || null; l.fabricacao = d.fabricacao || null; l.validade = d.validade || null;
+      aud(u, "UPDATE", "lotes", antes, l); salvar(); return { ok: true, id: l.id };
     },
     async salvarUsuario(d){
       const u = quem(true); const pin = String(d.pin || "");
@@ -501,8 +522,7 @@ function shell(){
   const nav = (lista) => lista.map(([r,t,i]) => `<a href="#${r}" class="${S.rota === r ? "on" : ""}">${ic(i)}${t}${r === "validades" && venc ? `<span class="badge">${venc}</span>` : ""}</a>`).join("");
   return `<div class="app">
   <aside class="side">
-    <div class="brand"><span class="logo">${ic("cross",18,2.6)}</span><b>Estoque</b></div>
-    <div class="clinic"><span class="ci">${ic("building",16)}</span><div><b>${esc(CLINICA)}</b><small>Medicações, produtos e materiais</small></div></div>
+    <div class="brand-img"><img src="img/logo.png" alt="${esc(CLINICA)}"><small>Controle de estoque</small></div>
     <div><div class="navlbl">ESTOQUE</div><nav class="nav">${nav(NAV)}</nav></div>
     ${isAdmin() ? `<div><div class="navlbl">ADMIN</div><nav class="nav">${nav(NAV_ADMIN)}</nav></div>` : ""}
     <div class="side-foot">
@@ -516,6 +536,7 @@ function shell(){
   </aside>
   <div class="main">
     <header class="top">
+      <img class="mlogo" src="img/emblema.png" alt="${esc(CLINICA)}">
       <div class="search">${ic("search",16)}<input id="gsearch" placeholder="Buscar item, lote ou código" autocomplete="off" aria-label="Buscar item, lote ou código"><kbd class="hide-m">/</kbd><div id="gres"></div></div>
       <div class="sp"></div>
       <div class="when">${ic("cal",16)}<b>${new Date().toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"short"})}</b><span id="clock">· ${fHora(Date.now())}</span></div>
@@ -775,7 +796,7 @@ function abrirItem(id){
       <div><small>Custo unitário</small><b class="num">${i.custo_unit != null ? fBRL(i.custo_unit) : "—"}</b></div>
     </div>
     <h3 style="font-size:14px">Lotes</h3>
-    ${i.lotes.length ? `<div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Lote</th><th class="hide-m">Fabricação</th><th>Validade</th><th class="r">Qtd.</th><th></th></tr></thead><tbody>${i.lotes.map(l => `<tr><td>${esc(l.lote || "—")}</td><td class="hide-m num">${fData(l.fabricacao)}</td><td>${Number(l.quantidade) > 0 ? pillValidade(l.validade) : `<span class="muted">${fData(l.validade)}</span>`}</td><td class="r num"><b>${fNum(l.quantidade)}</b></td><td class="r">${S.offline ? "" : `<button class="btn sm" data-act="novaMov" data-it="${i.id}" data-lote="${l.id}" data-tipo="${Number(l.quantidade) > 0 ? "saida" : "entrada"}">Movimentar</button>`}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">Nenhum lote.</div>`}
+    ${i.lotes.length ? `<div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Lote</th><th class="hide-m">Fabricação</th><th>Validade</th><th class="r">Qtd.</th><th></th></tr></thead><tbody>${i.lotes.map(l => `<tr><td>${esc(l.lote || "—")}</td><td class="hide-m num">${fData(l.fabricacao)}</td><td>${Number(l.quantidade) > 0 ? pillValidade(l.validade) : `<span class="muted">${fData(l.validade)}</span>`}</td><td class="r num"><b>${fNum(l.quantidade)}</b></td><td class="r" style="white-space:nowrap">${S.offline ? "" : `${isAdmin() ? `<button class="btn sm" data-act="editLote" data-id="${l.id}" title="Corrigir número, fabricação ou validade">${ic("edit",14)}Corrigir</button> ` : ""}<button class="btn sm" data-act="novaMov" data-it="${i.id}" data-lote="${l.id}" data-tipo="${Number(l.quantidade) > 0 ? "saida" : "entrada"}">Movimentar</button>`}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">Nenhum lote.</div>`}
     <h3 style="font-size:14px">Histórico</h3>
     <div class="tl" style="padding:0">${ms.length ? ms.map(rowTL).join("") : `<div class="empty">Sem movimentações.</div>`}</div>
   </div>
@@ -863,6 +884,25 @@ async function salvarItem(id, btn){
   btn.disabled = true;
   try { await API.salvarItem(dados); fechar(); S.audit = null; await carregar(); toast("Item salvo."); render(); }
   catch(e){ $("#e_err").textContent = e.message; btn.disabled = false; }
+}
+
+/* ---- corrigir lote (número, fabricação, validade) ---- */
+function editLote(id){
+  const l = D.lotesIdx[id]; if(!l) return; const i = D.idx[l.item_id] || {};
+  abrir(`<div class="modal" role="dialog" aria-modal="true">${mHead("Corrigir lote", esc(i.nome || "") + " · alterações ficam registradas na auditoria")}<div class="m-b">
+    <div class="row3"><label class="f">Número do lote<input id="el_lote" value="${esc(l.lote || "")}" autofocus></label>
+    <label class="f">Fabricação<input id="el_fab" type="date" value="${esc(String(l.fabricacao || "").slice(0,10))}"></label>
+    <label class="f">Validade<input id="el_val" type="date" value="${esc(String(l.validade || "").slice(0,10))}"></label></div>
+    <div class="note info">A quantidade não muda aqui. Para corrigir quantidade, use Movimentar → Ajuste (contagem).</div>
+    <div class="err" id="el_err" role="alert"></div></div>
+    <div class="m-f"><button class="btn" data-act="voltarItem" data-id="${l.item_id}">Cancelar</button><button class="btn pri" data-act="salvarLote" data-id="${l.id}">${ic("check",16,2.2)}Salvar correção</button></div></div>`);
+}
+async function salvarLote(id, btn){
+  const l = D.lotesIdx[id]; const dados = { id, lote: $("#el_lote").value.trim(), fabricacao: $("#el_fab").value, validade: $("#el_val").value };
+  if(dados.fabricacao && dados.validade && dados.validade < dados.fabricacao){ $("#el_err").textContent = "A validade não pode ser anterior à fabricação."; return; }
+  btn.disabled = true;
+  try { await API.salvarLote(dados); S.audit = null; await carregar(); toast("Lote corrigido."); render(); abrirItem(l.item_id); }
+  catch(e){ $("#el_err").textContent = e.message; btn.disabled = false; }
 }
 
 /* ---- editar usuário ---- */
@@ -987,10 +1027,10 @@ async function impConfirmar(btn){
 let L = { u: null, pin: "", erro: "" };
 function vLogin(){
   const us = S.usuarios.filter(u => u.ativo);
-  if(S.erroCarga && !S.offline) return `<div class="login"><div class="card lcard"><div class="brand"><span class="logo">${ic("cross",18,2.6)}</span><b>Estoque ${esc(CLINICA)}</b></div><div class="note crit">Não foi possível conectar ao servidor (${esc(S.erroCarga)}). Verifique a internet e o arquivo config.js.</div><button class="btn pri" data-act="recarregar">Tentar de novo</button></div></div>`;
+  if(S.erroCarga && !S.offline) return `<div class="login"><div class="card lcard"><div class="login-logo"><img src="img/logo.png" alt="${esc(CLINICA)}"><small>Controle de estoque</small></div><div class="note crit">Não foi possível conectar ao servidor (${esc(S.erroCarga)}). Verifique a internet e o arquivo config.js.</div><button class="btn pri" data-act="recarregar">Tentar de novo</button></div></div>`;
   const u = L.u && us.find(x => x.id === L.u);
   return `<div class="login"><div class="card lcard">
-    <div class="brand"><span class="logo">${ic("cross",18,2.6)}</span><b>Estoque ${esc(CLINICA)}</b></div>
+    <div class="login-logo"><img src="img/logo.png" alt="${esc(CLINICA)}"><small>Controle de estoque</small></div>
     ${!ONLINE ? `<div class="banner demo">${ic("db",16)}<span>Demonstração: Administrador usa PIN <b>1234</b> e Enfermagem (exemplo) usa <b>1111</b>.</span></div>` : ""}
     ${S.offline ? `<div class="banner off">${ic("wifi",16)}<span>Sem conexão. Você pode consultar a cópia salva em ${fDH(S.cacheEm)} e baixar a planilha de contingência.</span></div><button class="btn pri" data-act="consultaOffline">Consultar cópia offline</button>` : !u ? `
       <div><h1>Quem está usando?</h1><p class="muted" style="margin:4px 0 0">Toque no seu nome</p></div>
@@ -1035,6 +1075,7 @@ const ACT = {
   mLote: (d) => { guardarCampos(); M.lote_id = d.id; M.erro = ""; renderMov(); },
   mSalvar: (d, el) => salvarMov(el),
   editItem: (d) => editItem(d.id), salvarItem: (d, el) => salvarItem(d.id, el),
+  editLote: (d) => editLote(d.id), salvarLote: (d, el) => salvarLote(d.id, el), voltarItem: (d) => abrirItem(d.id),
   editUser: (d) => editUser(d.id), salvarUser: (d, el) => salvarUser(d.id, el),
   lUser: (d) => { L = { u: d.id, pin: "", erro: "" }; render(); }, lVoltar: () => { L = { u: null, pin: "", erro: "" }; render(); },
   lDig: (d) => lDig(d.v), lApaga: () => { L.pin = L.pin.slice(0, -1); render(); },
