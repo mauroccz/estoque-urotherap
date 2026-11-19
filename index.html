@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0E9AA7">
+<title>Estoque UROtherap</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: sidebar fixa + área de trabalho em cards; no celular vira barra inferior */
+:root{
+  --bg:#EDF3F6; --surface:#FFFFFF; --surface-2:#F6FAFB; --line:#E1E9EE; --ink:#14242F; --muted:#6C7F8B;
+  --accent:#0E9AA7; --accent-2:#0A7E8B; --accent-soft:#E2F4F6;
+  --ok:#1E9A69; --ok-soft:#E4F5EC; --warn:#B9770E; --warn-soft:#FDF2DE; --crit:#D2463F; --crit-soft:#FCE8E6;
+  --violet:#7259C4; --violet-soft:#EEEAFA; --blue:#2C77CC; --blue-soft:#E5EFFB;
+  --navy:#0F2A3B;
+  --font:"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r:16px; --r-sm:10px; --shadow:0 1px 2px rgba(16,42,59,.04), 0 6px 20px rgba(16,42,59,.05);
+  color-scheme: light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;text-wrap:balance}
+.num{font-variant-numeric:tabular-nums}
+.ic{flex:none;display:block}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- Shell ---------- */
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100%}
+.side{background:var(--surface);border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh;overflow:auto}
+.brand{display:flex;align-items:center;gap:10px;padding:0 6px}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(140deg,#16B3BF,var(--accent-2));display:grid;place-items:center;color:#fff;box-shadow:0 4px 12px rgba(14,154,167,.3)}
+.brand b{font-size:19px;letter-spacing:-.01em}
+.clinic{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.clinic .ci{width:30px;height:30px;border-radius:8px;background:var(--accent-soft);color:var(--accent-2);display:grid;place-items:center}
+.clinic b{display:block;font-size:13px}.clinic small{color:var(--muted);font-size:11.5px}
+.navlbl{font-size:11px;letter-spacing:.12em;color:#93A3AD;font-weight:600;padding:0 10px;margin-bottom:6px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:#3D5260;text-decoration:none;font-weight:500;position:relative}
+.nav a:hover{background:var(--surface-2)}
+.nav a.on{background:var(--accent-soft);color:var(--accent-2);font-weight:600}
+.nav a.on::before{content:"";position:absolute;left:-16px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+.nav .badge{margin-left:auto;background:var(--crit-soft);color:var(--crit);font-size:11px;font-weight:700;border-radius:999px;padding:1px 7px}
+.side-foot{margin-top:auto;display:flex;flex-direction:column;gap:12px}
+.duty{background:radial-gradient(120% 120% at 100% 0%,#1C5C70 0%,var(--navy) 55%);color:#fff;border-radius:14px;padding:14px}
+.duty small{color:#A9C3CF;font-size:11.5px}
+.duty .av-row{display:flex;margin:10px 0 8px}
+.duty .av-row .av{margin-left:-6px;border:2px solid var(--navy)}.duty .av-row .av:first-child{margin-left:0}
+.duty b{font-size:13px}
+.me{display:flex;align-items:center;gap:10px;padding:4px 6px}
+.me b{display:block;font-size:13px}.me small{color:var(--muted);font-size:11.5px}
+.me button{margin-left:auto}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.top{display:flex;align-items:center;gap:12px;padding:14px 28px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.search{flex:1;max-width:380px;display:flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:0 12px;color:var(--muted);position:relative}
+.search input{border:0;background:none;outline:none;padding:10px 0;width:100%;color:var(--ink)}
+.search kbd{font:600 11px var(--font);background:#fff;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--muted)}
+.sresults{position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;z-index:20;max-height:360px;overflow:auto}
+.sresults button{display:flex;width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:8px;cursor:pointer;gap:10px;align-items:center}
+.sresults button:hover{background:var(--surface-2)}
+.top .sp{flex:1}
+.when{display:flex;align-items:center;gap:8px;color:var(--muted);white-space:nowrap}.when b{color:var(--ink)}
+.iconbtn{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;position:relative;color:#3D5260}
+.iconbtn:hover{background:var(--surface-2)}
+.iconbtn .dot{position:absolute;top:6px;right:6px;min-width:16px;height:16px;border-radius:99px;background:var(--crit);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+.btn{text-decoration:none;display:inline-flex;align-items:center;gap:8px;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.pri{background:linear-gradient(135deg,#14AEBA,var(--accent-2));color:#fff;border:0;box-shadow:0 4px 14px rgba(14,154,167,.28)}
+.btn.pri:hover{filter:brightness(1.05)}
+.btn.sm{padding:7px 12px;font-size:13px}
+.btn.danger{color:var(--crit)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.content{padding:26px 28px 40px;display:flex;flex-direction:column;gap:20px}
+.banner{display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:12px;font-size:13px}
+.banner.demo{background:var(--blue-soft);color:#1F5A9E}
+.banner.off{background:var(--warn-soft);color:#8A5A08}
+.banner.warn{background:var(--warn-soft);color:#8A5A08}
+.head{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+.head h1{font-size:24px;letter-spacing:-.015em}
+.head p{margin:4px 0 0;color:var(--muted)}
+.head .sp{flex:1}
+
+/* ---------- Cards ---------- */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:center;gap:10px;padding:16px 18px 10px}
+.card-h h2{font-size:15px}
+.card-h .sp{flex:1}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 9px;font-size:11.5px;font-weight:600;white-space:nowrap}
+.p-ok{background:var(--ok-soft);color:var(--ok)}.p-warn{background:var(--warn-soft);color:var(--warn)}.p-crit{background:var(--crit-soft);color:var(--crit)}
+.p-violet{background:var(--violet-soft);color:var(--violet)}.p-blue{background:var(--blue-soft);color:var(--blue)}.p-mute{background:#EEF2F4;color:#5D707C}.p-acc{background:var(--accent-soft);color:var(--accent-2)}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
+.kpi{padding:16px 18px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.kpi:hover{border-color:#CFDDE4}
+.kpi .kh{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
+.kpi .kic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center}
+.kpi .kv{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.kpi .kv small{font-size:13px;font-weight:500;color:var(--muted);margin-left:2px}
+.kpi .ks{color:var(--muted);font-size:12px}
+.grid-home{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:18px;align-items:start}
+.tl{padding:4px 18px 16px;display:flex;flex-direction:column}
+.tl-row{display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:center;padding:9px 0;border-top:1px dashed var(--line)}
+.tl-row:first-child{border-top:0}
+.tl-t{color:var(--muted);font-size:12px}
+.chip{border-left:3px solid;border-radius:8px;padding:7px 10px;display:flex;flex-direction:column;min-width:0}
+.chip b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chip span{font-size:12px;opacity:.85}
+.c-entrada{background:var(--ok-soft);border-color:var(--ok);color:#16583F}
+.c-saida{background:var(--blue-soft);border-color:var(--blue);color:#1D4E86}
+.c-ajuste{background:var(--violet-soft);border-color:var(--violet);color:#4B3A87}
+.c-descarte{background:var(--crit-soft);border-color:var(--crit);color:#8C2E2A}
+.qty{font-weight:700;font-size:13px;text-align:right;white-space:nowrap}
+.q-pos{color:var(--ok)}.q-neg{color:var(--blue)}
+.av{width:28px;height:28px;border-radius:50%;display:inline-grid;place-items:center;font-size:11px;font-weight:700;flex:none}
+.hero{margin:4px 14px 10px;border-radius:14px;padding:16px;color:#fff;background:radial-gradient(90% 120% at 100% 100%,rgba(255,255,255,.18),transparent 60%),linear-gradient(140deg,#13A9B5,#0A6F7C);position:relative;overflow:hidden;cursor:pointer}
+.hero.crit{background:radial-gradient(90% 120% at 100% 100%,rgba(255,255,255,.16),transparent 60%),linear-gradient(140deg,#E0625A,#A8322C)}
+.hero small{opacity:.85;font-size:12px}
+.hero .hv{font-size:22px;font-weight:700;margin:6px 0 2px;letter-spacing:-.01em}
+.hero .hs{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
+.hero .tag{background:rgba(255,255,255,.2);border-radius:999px;padding:3px 10px;font-size:12px;white-space:nowrap}
+.al{display:flex;flex-direction:column;padding:0 14px 12px}
+.al-row{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 4px;border-top:1px solid var(--line);cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left;font:inherit;color:inherit}
+.al-row:hover{background:var(--surface-2)}
+.al-row b{display:block;font-size:13px}.al-row small{color:var(--muted);font-size:12px}
+.al-code{font-size:11px;font-weight:700;width:36px;height:36px;border-radius:9px;display:grid;place-items:center}
+.al-r{text-align:right;font-size:12px;color:var(--muted);white-space:nowrap}.al-r b{font-size:13px}
+.bars{padding:4px 18px 18px;display:flex;flex-direction:column;gap:12px}
+.bar-row{display:grid;grid-template-columns:180px 1fr 110px;gap:12px;align-items:center;font-size:13px}
+.bar{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#16B3BF,var(--accent-2));border-radius:99px}
+.empty{padding:28px 18px;text-align:center;color:var(--muted)}
+
+/* ---------- Tabelas e filtros ---------- */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+.toolbar .search{max-width:none;flex:1;min-width:200px}
+.field,select.field{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;min-width:0}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#8597A2;font-weight:600;text-align:left;padding:10px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.click{cursor:pointer}tr.click:hover td{background:#FAFCFD}
+td .sub{display:block;color:var(--muted);font-size:12px;max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+td.r,th.r{text-align:right}
+.level{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.level .bar{width:70px;height:6px}
+.level .bar i.low{background:var(--crit)}.level .bar i.mid{background:#E0A53A}
+.groups{display:flex;flex-direction:column;gap:16px}
+.cards2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.pad{padding:4px 18px 18px}
+.pad p{margin:0 0 12px;color:var(--muted)}
+.muted{color:var(--muted)}
+
+/* ---------- Modal ---------- */
+.ov{position:fixed;inset:0;background:rgba(15,42,59,.35);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal{background:#fff;border-radius:18px;width:min(560px,100%);max-height:calc(100% - 20px);overflow:auto;box-shadow:0 20px 60px rgba(15,42,59,.25)}
+.modal.wide{width:min(860px,100%)}
+.ov.drawer{justify-content:flex-end;padding:0}
+.ov.drawer .modal{height:100%;max-height:none;border-radius:18px 0 0 18px;width:min(640px,100%)}
+.m-h{display:flex;align-items:flex-start;gap:12px;padding:20px 22px 8px;position:sticky;top:0;background:#fff;z-index:2}
+.m-h h2{font-size:18px}.m-h p{margin:3px 0 0;color:var(--muted);font-size:13px}
+.m-h .sp{flex:1}
+.m-b{padding:10px 22px 8px;display:flex;flex-direction:column;gap:14px}
+.m-f{display:flex;gap:10px;justify-content:flex-end;padding:14px 22px 20px;position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line)}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:var(--surface-2);padding:5px;border-radius:12px;border:1px solid var(--line)}
+.seg button{border:0;background:none;padding:9px 6px;border-radius:9px;font-weight:600;cursor:pointer;color:#4E6371}
+.seg button.on{background:#fff;box-shadow:0 1px 4px rgba(16,42,59,.1);color:var(--ink)}
+.seg button.on[data-v="entrada"]{color:var(--ok)}.seg button.on[data-v="saida"]{color:var(--blue)}.seg button.on[data-v="ajuste"]{color:var(--violet)}.seg button.on[data-v="descarte"]{color:var(--crit)}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:600;color:#4E6371}
+label.f input,label.f select,label.f textarea{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-weight:400;background:#fff;width:100%}
+label.f input:focus,label.f select:focus,label.f textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.picked{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--surface-2)}
+.picked b{display:block}.picked small{color:var(--muted)}
+.picked .sp{flex:1}
+.plist{border:1px solid var(--line);border-radius:12px;max-height:260px;overflow:auto}
+.plist button{display:flex;width:100%;gap:10px;align-items:center;text-align:left;border:0;border-bottom:1px solid var(--line);background:#fff;padding:10px 12px;cursor:pointer}
+.plist button:last-child{border-bottom:0}.plist button:hover{background:var(--surface-2)}
+.plist .sp{flex:1}
+.lots{display:flex;flex-direction:column;gap:6px}
+.lot{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer;background:#fff;text-align:left}
+.lot.on{border-color:var(--accent);background:var(--accent-soft)}
+.lot input{accent-color:var(--accent)}
+.lot small{color:var(--muted)}
+.note{border-radius:10px;padding:9px 12px;font-size:13px}
+.note.warn{background:var(--warn-soft);color:#8A5A08}.note.crit{background:var(--crit-soft);color:#8C2E2A}.note.info{background:var(--accent-soft);color:var(--accent-2)}
+.err{color:var(--crit);font-size:13px;font-weight:600}
+.dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.dl div{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.dl small{display:block;color:var(--muted);font-size:11.5px}.dl b{font-size:13.5px;word-break:break-word}
+.check{display:flex;align-items:center;gap:8px;font-weight:500;color:var(--ink)}
+.check input{width:18px;height:18px;accent-color:var(--accent)}
+
+/* ---------- Login ---------- */
+.login{min-height:100%;display:grid;place-items:center;padding:24px;background:radial-gradient(60% 50% at 80% 0%,#D5EEF2,transparent),var(--bg)}
+.lcard{width:min(420px,100%);padding:28px;display:flex;flex-direction:column;gap:18px}
+.lcard h1{font-size:22px}
+.ulist{display:flex;flex-direction:column;gap:8px}
+.ubtn{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;text-align:left}
+.ubtn:hover{border-color:var(--accent);background:var(--accent-soft)}
+.ubtn small{color:var(--muted);display:block;font-size:12px}
+.pin-dots{display:flex;gap:14px;justify-content:center;margin:6px 0}
+.pin-dots i{width:14px;height:14px;border-radius:50%;border:2px solid #B8C7CF}
+.pin-dots i.f{background:var(--accent);border-color:var(--accent)}
+.pad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.pad-grid button{height:56px;border-radius:14px;border:1px solid var(--line);background:#fff;font-size:20px;font-weight:600;cursor:pointer}
+.pad-grid button:active{background:var(--accent-soft)}
+.pad-grid button.ghost{border:0;background:none;font-size:14px;color:var(--muted)}
+
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(15,42,59,.3);z-index:80;display:flex;gap:10px;align-items:center;max-width:calc(100% - 32px)}
+.toast.bad{background:#8C2E2A}
+.mobnav,.fab{display:none}
+
+/* ---------- Responsivo ---------- */
+@media (max-width:1180px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-home{grid-template-columns:1fr}}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr}
+  .side{display:none}
+  .top{padding:10px 16px}
+  .top .when,.top .hide-m{display:none}
+  .content{padding:18px 16px 96px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .kpi .kv{font-size:24px}
+  .cards2,.row3,.dl{grid-template-columns:1fr}
+  .bar-row{grid-template-columns:110px 1fr 90px}
+  .mobnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);z-index:30;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  .mobnav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--muted);text-decoration:none;padding:4px 0;font-weight:600}
+  .mobnav a.on{color:var(--accent-2)}
+  .fab{display:grid;place-items:center;position:fixed;right:18px;bottom:78px;width:56px;height:56px;border-radius:18px;border:0;background:linear-gradient(135deg,#14AEBA,var(--accent-2));color:#fff;box-shadow:0 8px 24px rgba(14,154,167,.4);z-index:31;cursor:pointer}
+  .ov{padding:0;align-items:flex-end}
+  .modal{border-radius:18px 18px 0 0;max-height:94%}
+  .ov.drawer .modal{border-radius:18px 18px 0 0;height:94%}
+  .hide-m{display:none}
+}
+@media (max-width:420px){.row2{grid-template-columns:1fr}.tl-row{grid-template-columns:44px 1fr auto}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="modal"></div>
+<div id="toast"></div>
+
+<script>window.ESTOQUE_CONFIG = window.ESTOQUE_CONFIG || {};</script>
+<script src="config.js" onerror="void 0"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+"use strict";
+/* =====================================================================
+   ESTOQUE UROtherap — aplicativo de página única
+   Sem config.js preenchido: roda em MODO DEMONSTRAÇÃO (dados da planilha,
+   alterações salvas só neste navegador). Com config.js: usa o Supabase.
+   ===================================================================== */
+const CFG = window.ESTOQUE_CONFIG || {};
+const ONLINE = !!(CFG.supabaseUrl && CFG.supabaseAnonKey);
+const CLINICA = CFG.clinica || "UROtherap";
+const SEED = {"itens": [{"id": "i1", "codigo": null, "nome": "COMPRESSA CIRURGICA", "descricao": "COMP CAMPO OPERAT EST 25X28CM 20GR C/RX C/DUP EMB (CF)", "categoria": "MATERIAL MÉDICO-HOSPITALAR", "unidade": "PACOTE", "local": "ALMOXARIFADO", "cod_fornecedor": "F08662", "fornecedor": "POLARFIX", "custo_unit": 8.0805, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i2", "codigo": null, "nome": "POLARBEC 10X15CM", "descricao": "COMPRESSA PARA CURATIVO CIRURGICO ESTERIL 10 X 15 CM", "categoria": "MATERIAL MÉDICO-HOSPITALAR", "unidade": "PACOTE", "local": "ALMOXARIFADO", "cod_fornecedor": "F08445", "fornecedor": "POLARFIX", "custo_unit": 1.12, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i3", "codigo": null, "nome": "POLARBEC 15X30CM", "descricao": "COMPRESSA PARA CURATIVO CIRURGICO ESTERIL 15 X 30 CM", "categoria": "MATERIAL MÉDICO-HOSPITALAR", "unidade": "PACOTE", "local": "ALMOXARIFADO", "cod_fornecedor": "F08446", "fornecedor": "POLARFIX", "custo_unit": 1.56, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i4", "codigo": null, "nome": "MASCARA PROTEÇÃO", "descricao": "MASCARA DESC COM ELASTICO TRES CAMADAS", "categoria": "EPI", "unidade": "UNIDADE", "local": "ALMOXARIFADO", "cod_fornecedor": "FP0148", "fornecedor": "POLARFIX", "custo_unit": 0.03092, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i5", "codigo": null, "nome": "AVENTAL CIRURGICO", "descricao": "AVENTAL CIR EST SMS DESC G RAGLAN M/L C/DUPLA BEM WRAPS + TOALHA", "categoria": "MATERIAL MÉDICO-HOSPITALAR", "unidade": "UNIDADE", "local": "ALMOXARIFADO", "cod_fornecedor": "F08386", "fornecedor": "POLARFIX", "custo_unit": 20.772, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i6", "codigo": null, "nome": "CAMPO FENESTRADO 1,5 X 2,20", "descricao": "CAMPO CIRURGICO EST EM NÃO TECIDO 1,50 X 2,20 M C/ FENESTRA E FITA ADESIVA (LIA)", "categoria": "MATERIAL MÉDICO-HOSPITALAR", "unidade": "UNIDADE", "local": "ALMOXARIFADO", "cod_fornecedor": "F08218", "fornecedor": "POLARFIX", "custo_unit": 19.4113, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i7", "codigo": null, "nome": "KIT URO/GINECO/PROCTO", "descricao": "KIT CIRURGICO GINECO - URO E PROCTO (GUP) C/ BOLSACOL DE FLUIDOS", "categoria": "MATERIAL MÉDICO-HOSPITALAR", "unidade": "UNIDADE", "local": "ALMOXARIFADO", "cod_fornecedor": "F08365", "fornecedor": "POLARFIX", "custo_unit": 88.7479, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i8", "codigo": null, "nome": "KIT UNIVERSAL", "descricao": "KIT CIRURGICO UNIVERSAL ESTERIL SORBDRAPE (PFX)", "categoria": "MATERIAL MÉDICO-HOSPITALAR", "unidade": "UNIDADE", "local": "ALMOXARIFADO", "cod_fornecedor": "F08273", "fornecedor": "POLARFIX", "custo_unit": 46.5643, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i9", "codigo": null, "nome": "CAMPO DE MESA", "descricao": "CAMPO CIRURGICO EST EM NÃO TECIDO 1,50 M  X 1,93 M LIA", "categoria": "MATERIAL MÉDICO-HOSPITALAR", "unidade": "UNIDADE", "local": "ALMOXARIFADO", "cod_fornecedor": "F00208", "fornecedor": "POLARFIX", "custo_unit": 9.56, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i10", "codigo": null, "nome": "ROPIVACAINA 0,75% (7,5 MG/ML)", "descricao": "ROPI 7,5mg/ml sol inj fr 20ml", "categoria": "MEDICAÇÃO", "unidade": "UNIDADE", "local": "COFRE CONTROLADO", "cod_fornecedor": "70001232", "fornecedor": "CRISTALIA", "custo_unit": 21, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i11", "codigo": null, "nome": "PROPOFOL 1% 20ML", "descricao": "PROPOVAN 10mg/ml fr 20ml", "categoria": "MEDICAÇÃO", "unidade": "UNIDADE", "local": "COFRE CONTROLADO", "cod_fornecedor": "70000070", "fornecedor": "CRISTALIA", "custo_unit": 10, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i12", "codigo": null, "nome": "LIDOCAINA 2% C/ VASO", "descricao": "XYLESTESIN 2% CV fr 20ml", "categoria": "MEDICAÇÃO", "unidade": "UNIDADE", "local": "COFRE CONTROLADO", "cod_fornecedor": "70000105", "fornecedor": "CRISTALIA", "custo_unit": 12, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i13", "codigo": null, "nome": "LIDOCAINA 2% SEM VASO", "descricao": "XYLESTESIN 2% SV fr 20ml", "categoria": "MEDICAÇÃO", "unidade": "UNIDADE", "local": "COFRE CONTROLADO", "cod_fornecedor": "70000106", "fornecedor": "CRISTALIA", "custo_unit": 11, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}, {"id": "i14", "codigo": null, "nome": "XYLOCAINA 2% GELEIA", "descricao": "XYLESTESIN 2% GELEIA bisnaga 30g", "categoria": "MEDICAÇÃO", "unidade": "UNIDADE", "local": "COFRE CONTROLADO", "cod_fornecedor": "70000088", "fornecedor": "CRISTALIA", "custo_unit": 5, "estoque_minimo": 0, "estoque_ideal": 0, "controlado": false, "ativo": true}], "lotes": [{"id": "l1", "item_id": "i1", "lote": "092026", "fabricacao": "2026-09-01", "validade": "2031-08-01", "quantidade": 72}, {"id": "l2", "item_id": "i2", "lote": "092026", "fabricacao": "2026-09-01", "validade": "2031-08-01", "quantidade": 240}, {"id": "l3", "item_id": "i3", "lote": "092026", "fabricacao": "2026-09-01", "validade": "2031-08-01", "quantidade": 90}, {"id": "l4", "item_id": "i4", "lote": "25/0064430000", "fabricacao": "2026-01-01", "validade": "2031-01-01", "quantidade": 250}, {"id": "l5", "item_id": "i5", "lote": "092026", "fabricacao": "2026-09-01", "validade": "2031-08-01", "quantidade": 36}, {"id": "l6", "item_id": "i6", "lote": "062026", "fabricacao": "2026-06-01", "validade": "2031-05-01", "quantidade": 24}, {"id": "l7", "item_id": "i6", "lote": "64662", "fabricacao": "2022-12-02", "validade": "2027-12-02", "quantidade": 2}, {"id": "l8", "item_id": "i6", "lote": "102025", "fabricacao": "2025-10-01", "validade": "2030-09-01", "quantidade": 4}, {"id": "l9", "item_id": "i7", "lote": "092026", "fabricacao": "2026-09-01", "validade": "2031-08-01", "quantidade": 14}, {"id": "l10", "item_id": "i8", "lote": "092026", "fabricacao": "2026-09-01", "validade": "2031-08-01", "quantidade": 7}, {"id": "l11", "item_id": "i9", "lote": "092026", "fabricacao": "2026-09-01", "validade": "2031-08-01", "quantidade": 28}, {"id": "l12", "item_id": "i9", "lote": "052026", "fabricacao": "2026-05-02", "validade": "2026-04-02", "quantidade": 12}, {"id": "l13", "item_id": "i10", "lote": "50046781", "fabricacao": "2026-08-01", "validade": "2029-08-01", "quantidade": 10}, {"id": "l14", "item_id": "i11", "lote": "50047185", "fabricacao": "2026-09-01", "validade": "2028-03-01", "quantidade": 30}, {"id": "l15", "item_id": "i12", "lote": "50045266", "fabricacao": "2026-07-01", "validade": "2028-01-01", "quantidade": 10}, {"id": "l16", "item_id": "i13", "lote": "50046379", "fabricacao": "2026-08-01", "validade": "2029-08-01", "quantidade": 30}, {"id": "l17", "item_id": "i14", "lote": "500044647", "fabricacao": "2026-07-01", "validade": "2028-07-01", "quantidade": 40}]};
+
+/* ---------- utilidades ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store = {
+  get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch(e){ return null; } },
+  set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} },
+  sget(k){ try { return JSON.parse(sessionStorage.getItem(k)); } catch(e){ return null; } },
+  sset(k,v){ try { sessionStorage.setItem(k, JSON.stringify(v)); } catch(e){} },
+  sdel(k){ try { sessionStorage.removeItem(k); } catch(e){} }
+};
+const novoId = () => (crypto.randomUUID ? crypto.randomUUID() : "id" + Date.now() + Math.random().toString(16).slice(2));
+function hojeISO(){ const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function diasAte(iso){ if(!iso) return null; const [y,m,d] = String(iso).slice(0,10).split("-").map(Number); const a = new Date(y,m-1,d); const h = new Date(); h.setHours(0,0,0,0); return Math.round((a-h)/864e5); }
+const fData = iso => iso ? String(iso).slice(8,10) + "/" + String(iso).slice(5,7) + "/" + String(iso).slice(0,4) : "—";
+const fHora = ts => new Date(ts).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+const fDH = ts => ts ? new Date(ts).toLocaleDateString("pt-BR") + " " + fHora(ts) : "—";
+const diaLocal = ts => { const d = new Date(ts); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); };
+const fNum = n => Number(n || 0).toLocaleString("pt-BR",{maximumFractionDigits:2});
+const fBRL = n => Number(n || 0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+const norm = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().trim();
+const iniciais = n => String(n||"?").replace(/[^\p{L}\s]/gu," ").split(/\s+/).filter(Boolean).slice(0,2).map(p => p[0]).join("").toUpperCase();
+const AVC = [["#FDE7DA","#B4532A"],["#DDF3EA","#1C7A55"],["#E4E7FB","#4A55B5"],["#FCE3EC","#A63A62"],["#E0F1F7","#1F6E8A"],["#F4ECD9","#8A6416"]];
+function av(nome, size){ let h = 0; for(const c of String(nome)) h = (h*31 + c.charCodeAt(0)) >>> 0; const [bg,fg] = AVC[h % AVC.length]; const s = size ? `width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;` : ""; return `<span class="av" style="background:${bg};color:${fg};${s}" title="${esc(nome)}">${esc(iniciais(nome))}</span>`; }
+function saudacao(){ const h = new Date().getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; }
+
+const IC = {
+  grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
+  box:'<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
+  swap:'<path d="M7 4v16"/><path d="M3 8l4-4 4 4"/><path d="M17 20V4"/><path d="M21 16l-4 4-4-4"/>',
+  cal:'<rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><path d="M12 13v3l2 1"/>',
+  cart:'<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2 3h3l2.4 12h11.8l2-8H6.1"/>',
+  chart:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/><path d="M9 12l2 2 4-4"/>',
+  users:'<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 010 6.8M18 14.6c2 .6 3.2 2.5 3.5 5.4"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  bell:'<path d="M6 8a6 6 0 1112 0c0 7 3 8 3 8H3s3-1 3-8"/><path d="M10 20a2 2 0 004 0"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  down:'<path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 21h16"/>',
+  up:'<path d="M12 21V9M7 14l5-5 5 5"/><path d="M4 3h16"/>',
+  alert:'<path d="M12 3.5l9.5 17h-19L12 3.5z"/><path d="M12 10v4.5M12 17.5h.01"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  out:'<path d="M15 4h4a1 1 0 011 1v14a1 1 0 01-1 1h-4"/><path d="M10 17l-5-5 5-5M5 12h11"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  check:'<path d="M5 12l5 5L20 7"/>',
+  copy:'<rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 00-2-2H5a2 2 0 00-2 2v9a2 2 0 002 2h3"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/>',
+  coin:'<circle cx="12" cy="12" r="9"/><path d="M15 9.5c-.5-1-1.6-1.5-3-1.5-1.7 0-3 .8-3 2s1.3 1.7 3 2 3 .8 3 2-1.3 2-3 2c-1.4 0-2.5-.5-3-1.5M12 6.5v11"/>',
+  wifi:'<path d="M2 2l20 20"/><path d="M8.5 16.5a5 5 0 017 0M5 12.6a10 10 0 015.2-2.7M19 12.6a10 10 0 00-2.2-1.6M12 20h.01"/>',
+  cross:'<path d="M12 5v14M5 12h14"/>',
+  building:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1M10 21v-3h4v3"/>',
+  sheet:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/>',
+  db:'<ellipse cx="12" cy="5.5" rx="8" ry="2.8"/><path d="M4 5.5v13c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8v-13"/><path d="M4 12c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8"/>',
+  back:'<path d="M5 12h14M11 6l-6 6 6 6"/>'
+};
+const ic = (n, s = 18, w = 1.8) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
+
+/* ---------- estado ---------- */
+const S = {
+  usuarios: [], itens: [], lotes: [], movs: [], config: {},
+  sessao: store.sget("estoque_sessao"),
+  offline: false, cacheEm: null, carregadoEm: null,
+  rota: "hoje", f: {}, audit: null, busca: ""
+};
+
+/* =====================================================================
+   API — mesma interface para o modo online (Supabase) e demonstração
+   ===================================================================== */
+const API = ONLINE ? (() => {
+  const base = CFG.supabaseUrl.replace(/\/$/,"") + "/rest/v1/";
+  const H = { apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + CFG.supabaseAnonKey, "Content-Type": "application/json" };
+  async function req(path, opt = {}){
+    const r = await fetch(base + path, { ...opt, headers: { ...H, ...(opt.headers || {}) } });
+    if(!r.ok){ let m = r.status + ""; try { const j = await r.json(); m = j.message || j.hint || m; } catch(e){} throw new Error(m); }
+    return r.status === 204 ? null : r.json();
+  }
+  async function todos(tabela, ordem){
+    const out = []; for(let o = 0; ; o += 1000){ const p = await req(`${tabela}?select=*&order=${ordem}&limit=1000&offset=${o}`); out.push(...p); if(p.length < 1000) break; } return out;
+  }
+  async function rpc(nome, corpo){
+    const s = S.sessao || {};
+    const r = await req("rpc/" + nome, { method: "POST", body: JSON.stringify({ p_usuario: s.id, p_pin: s.pin, ...corpo }) });
+    if(r && r.ok === false) throw new Error(r.erro || "Não foi possível salvar.");
+    return r;
+  }
+  return {
+    async carregar(){
+      const [usuarios, itens, lotes, movs, config] = await Promise.all([
+        req("usuarios_publicos?select=*&order=nome"), todos("itens","nome"), todos("lotes","validade.nullslast"),
+        req("movimentacoes?select=*&order=id.desc&limit=1000"), req("config?select=*")
+      ]);
+      return { usuarios, itens, lotes, movs, config: Object.fromEntries(config.map(c => [c.chave, c.valor])) };
+    },
+    async todasMovs(){ return todos("movimentacoes","id.desc"); },
+    async entrar(id, pin){
+      const r = await req("rpc/entrar", { method: "POST", body: JSON.stringify({ p_usuario: id, p_pin: pin }) });
+      if(!r.ok) throw new Error(r.erro); return r.usuario;
+    },
+    movimentar: d => rpc("movimentar", { p_dados: d }),
+    salvarItem: i => rpc("salvar_item", { p_item: i }),
+    salvarUsuario: u => rpc("salvar_usuario", { p_dados: u }),
+    async auditoria(){ return (await rpc("ler_auditoria", { p_limite: 3000 })).dados; },
+    registrarBackup: () => rpc("registrar_backup", {})
+  };
+})() : (() => {
+  /* ---- modo demonstração: banco em memória, salvo neste navegador ---- */
+  const KEY = "estoque_demo_v1";
+  function inicial(){
+    const agora = new Date(); agora.setHours(7, 30, 0, 0);
+    const db = { usuarios: [
+        { id: "u1", nome: "Administrador", papel: "admin", ativo: true, pin: "1234" },
+        { id: "u2", nome: "Enfermagem (exemplo)", papel: "funcionaria", ativo: true, pin: "1111" } ],
+      itens: SEED.itens.map(i => ({ ...i })), lotes: SEED.lotes.map(l => ({ ...l })), movs: [], aud: [], config: {}, seq: 1 };
+    db.lotes.forEach(l => db.movs.unshift({ id: db.seq++, item_id: l.item_id, lote_id: l.id, tipo: "entrada", quantidade: l.quantidade, saldo_lote: l.quantidade, motivo: "Carga inicial da planilha", usuario_id: null, usuario_nome: "Importação", origem: "importacao", criado_em: agora.toISOString() }));
+    return db;
+  }
+  let db = store.get(KEY) || inicial();
+  const salvar = () => store.set(KEY, db);
+  function quem(admin){
+    const s = S.sessao; const u = s && db.usuarios.find(x => x.id === s.id);
+    if(!u || !u.ativo || u.pin !== s.pin) throw new Error("Sessão inválida. Entre novamente.");
+    if(admin && u.papel !== "admin") throw new Error("Apenas administradores podem fazer isso.");
+    return u;
+  }
+  function aud(u, acao, tabela, antes, depois){
+    const strip = o => { if(!o) return null; const c = { ...o }; delete c.pin; return c; };
+    db.aud.unshift({ id: db.seq++, usuario_id: u ? u.id : null, usuario_nome: u ? u.nome : "sistema", acao, tabela, registro_id: String((depois || antes).id), antes: strip(antes), depois: strip(depois), criado_em: new Date().toISOString() });
+  }
+  const pub = u => ({ id: u.id, nome: u.nome, papel: u.papel, ativo: u.ativo });
+  return {
+    async carregar(){ return { usuarios: db.usuarios.map(pub).sort((a,b) => a.nome.localeCompare(b.nome)), itens: db.itens, lotes: db.lotes, movs: db.movs.slice(0,1000), config: db.config }; },
+    async todasMovs(){ return db.movs; },
+    async entrar(id, pin){ const u = db.usuarios.find(x => x.id === id); if(!u || !u.ativo) throw new Error("Usuário inválido ou inativo."); if(u.pin !== pin) throw new Error("PIN incorreto."); return pub(u); },
+    async movimentar(d){
+      const u = quem(false); const t = d.tipo; const q = Number(d.quantidade);
+      if(!["entrada","saida","ajuste","descarte"].includes(t)) throw new Error("Tipo de movimentação inválido.");
+      if(!(q >= 0) || (t !== "ajuste" && q === 0)) throw new Error("Informe uma quantidade válida.");
+      if((t === "ajuste" || t === "descarte") && !String(d.motivo || "").trim()) throw new Error("Informe o motivo do ajuste ou descarte.");
+      let l;
+      if(t === "entrada" && !d.lote_id){ l = { id: novoId(), item_id: d.item_id, lote: d.lote || null, fabricacao: d.fabricacao || null, validade: d.validade || null, quantidade: 0 }; db.lotes.push(l); aud(u, "INSERT", "lotes", null, l); }
+      else { l = db.lotes.find(x => x.id === d.lote_id && x.item_id === d.item_id); if(!l) throw new Error("Lote não encontrado."); }
+      const delta = t === "entrada" ? q : t === "ajuste" ? q - l.quantidade : -q;
+      if(l.quantidade + delta < 0) throw new Error(`Saldo insuficiente no lote (disponível: ${fNum(l.quantidade)}).`);
+      const antes = { ...l }; l.quantidade = l.quantidade + delta; aud(u, "UPDATE", "lotes", antes, l);
+      const m = { id: db.seq++, item_id: d.item_id, lote_id: l.id, tipo: t, quantidade: delta, saldo_lote: l.quantidade, motivo: String(d.motivo || "").trim() || null, usuario_id: u.id, usuario_nome: u.nome, origem: d.origem || "sistema", criado_em: new Date().toISOString() };
+      db.movs.unshift(m); aud(u, "INSERT", "movimentacoes", null, m); salvar(); return { ok: true, id: m.id };
+    },
+    async salvarItem(i){
+      const u = quem(true);
+      if(!String(i.nome||"").trim() || !String(i.categoria||"").trim()) throw new Error("Nome e categoria são obrigatórios.");
+      const campos = ["codigo","nome","descricao","categoria","unidade","local","cod_fornecedor","fornecedor"];
+      const num = k => i[k] === "" || i[k] == null ? (k === "custo_unit" ? null : 0) : Number(i[k]);
+      if(!i.id){ const n = { id: novoId(), ativo: true }; campos.forEach(k => n[k] = i[k] || null); n.custo_unit = num("custo_unit"); n.estoque_minimo = num("estoque_minimo"); n.estoque_ideal = num("estoque_ideal"); n.controlado = !!i.controlado; db.itens.push(n); aud(u, "INSERT", "itens", null, n); salvar(); return { ok: true, id: n.id }; }
+      const it = db.itens.find(x => x.id === i.id); const antes = { ...it };
+      campos.forEach(k => it[k] = i[k] || null); it.custo_unit = num("custo_unit"); it.estoque_minimo = num("estoque_minimo"); it.estoque_ideal = num("estoque_ideal"); it.controlado = !!i.controlado; it.ativo = i.ativo !== false;
+      aud(u, "UPDATE", "itens", antes, it); salvar(); return { ok: true, id: it.id };
+    },
+    async salvarUsuario(d){
+      const u = quem(true); const pin = String(d.pin || "");
+      if(pin && !/^\d{4}$/.test(pin)) throw new Error("O PIN deve ter 4 números.");
+      const nome = String(d.nome || "").trim(); if(!nome) throw new Error("Informe o nome.");
+      if(db.usuarios.some(x => norm(x.nome) === norm(nome) && x.id !== d.id)) throw new Error("Já existe um usuário com esse nome.");
+      if(!d.id){ if(!pin) throw new Error("Defina um PIN de 4 números."); const n = { id: novoId(), nome, papel: d.papel || "funcionaria", ativo: true, pin }; db.usuarios.push(n); aud(u, "INSERT", "usuarios", null, n); salvar(); return { ok: true }; }
+      if(d.id === u.id && (d.ativo === false || d.papel !== "admin")) throw new Error("Você não pode desativar nem rebaixar o próprio acesso.");
+      const x = db.usuarios.find(y => y.id === d.id); const antes = { ...x };
+      x.nome = nome; x.papel = d.papel; x.ativo = d.ativo !== false; if(pin) x.pin = pin;
+      const dep = { ...x }; if(pin) dep.pin_alterado = true; aud(u, "UPDATE", "usuarios", antes, dep); salvar(); return { ok: true };
+    },
+    async auditoria(){ quem(true); return db.aud; },
+    async registrarBackup(){ const u = quem(false); db.config.ultimo_backup = new Date().toISOString(); db.config.ultimo_backup_por = u.nome; salvar(); return { ok: true }; },
+    resetar(){ db = inicial(); salvar(); }
+  };
+})();
+
+/* ---------- carregamento e dados derivados ---------- */
+async function carregar(silencioso){
+  try {
+    const d = await API.carregar();
+    Object.assign(S, d); S.offline = false; S.carregadoEm = new Date().toISOString();
+    if(ONLINE) store.set("estoque_cache", { em: S.carregadoEm, ...d });
+  } catch(e){
+    const c = ONLINE && store.get("estoque_cache");
+    if(c){ Object.assign(S, { usuarios: c.usuarios, itens: c.itens, lotes: c.lotes, movs: c.movs, config: c.config || {} }); S.offline = true; S.cacheEm = c.em; }
+    else if(!silencioso) { S.erroCarga = e.message || "Falha de conexão"; }
+  }
+  derivar();
+}
+let D = {};
+function derivar(){
+  const porItem = {}; S.lotes.forEach(l => (porItem[l.item_id] ||= []).push(l));
+  const byVal = (a,b) => (a.validade || "9999") < (b.validade || "9999") ? -1 : (a.validade || "9999") > (b.validade || "9999") ? 1 : 0;
+  const itens = S.itens.filter(i => i.ativo !== false).map(i => {
+    const ls = (porItem[i.id] || []).slice().sort(byVal);
+    const comSaldo = ls.filter(l => Number(l.quantidade) > 0);
+    const saldo = comSaldo.reduce((a,l) => a + Number(l.quantidade), 0);
+    const prox = (comSaldo.find(l => l.validade) || {}).validade || null;
+    const dProx = diasAte(prox);
+    const vencidos = comSaldo.filter(l => l.validade && diasAte(l.validade) < 0);
+    const min = Number(i.estoque_minimo || 0);
+    let st = "ok";
+    if(saldo <= 0) st = "zerado"; else if(vencidos.length) st = "vencido"; else if(min > 0 && saldo < min) st = "baixo"; else if(dProx != null && dProx <= 90) st = "vencendo";
+    return { ...i, lotes: ls, comSaldo, saldo, prox, dProx, vencidos, min, st, valor: saldo * Number(i.custo_unit || 0) };
+  });
+  const idx = Object.fromEntries(itens.map(i => [i.id, i]));
+  S.itens.filter(i => i.ativo === false).forEach(i => idx[i.id] = { ...i, inativo: true, lotes: [], saldo: 0 });
+  const lotesIdx = Object.fromEntries(S.lotes.map(l => [l.id, l]));
+  const alertas = [];
+  itens.forEach(i => {
+    i.comSaldo.forEach(l => { const d = diasAte(l.validade); if(d == null) return;
+      if(d < 0) alertas.push({ sev: 0, tipo: "vencido", item: i, lote: l, d });
+      else if(d <= 30) alertas.push({ sev: 1, tipo: "vence30", item: i, lote: l, d });
+      else if(d <= 90) alertas.push({ sev: 3, tipo: "vence90", item: i, lote: l, d }); });
+    if(i.saldo <= 0) alertas.push({ sev: 1, tipo: "zerado", item: i });
+    else if(i.min > 0 && i.saldo < i.min) alertas.push({ sev: 2, tipo: "baixo", item: i });
+  });
+  alertas.sort((a,b) => a.sev - b.sev || (a.d ?? 0) - (b.d ?? 0));
+  const cats = [...new Set(itens.map(i => i.categoria).filter(Boolean))].sort();
+  const locais = [...new Set(itens.map(i => i.local).filter(Boolean))].sort();
+  D = { itens, idx, lotesIdx, alertas, cats, locais };
+}
+const ST = {
+  ok: ["p-ok","Em dia"], vencendo: ["p-warn","Vencendo"], baixo: ["p-warn","Abaixo do mínimo"], vencido: ["p-crit","Lote vencido"], zerado: ["p-crit","Zerado"]
+};
+const TIPO = { entrada: ["Entrada","p-ok"], saida: ["Saída","p-blue"], ajuste: ["Ajuste","p-violet"], descarte: ["Descarte","p-crit"] };
+function pillValidade(v){ const d = diasAte(v); if(d == null) return '<span class="pill p-mute">Sem validade</span>'; if(d < 0) return `<span class="pill p-crit">Vencido há ${-d} d</span>`; if(d <= 30) return `<span class="pill p-crit">Vence em ${d} d</span>`; if(d <= 90) return `<span class="pill p-warn">Vence em ${d} d</span>`; return `<span class="pill p-ok">${fData(v)}</span>`; }
+const isAdmin = () => S.sessao && S.sessao.papel === "admin";
+
+/* =====================================================================
+   Telas
+   ===================================================================== */
+const NAV = [
+  ["hoje","Hoje","grid"],["itens","Itens","box"],["movimentacoes","Movimentações","swap"],["validades","Validades","cal"],["compras","Lista de compras","cart"],["backup","Relatórios e backup","chart"]
+];
+const NAV_ADMIN = [["auditoria","Auditoria","shield"],["usuarios","Usuários","users"]];
+
+function shell(){
+  const s = S.sessao; const venc = D.alertas.filter(a => a.sev <= 1).length;
+  const hoje = hojeISO(); const equipe = [...new Set(S.movs.filter(m => m.usuario_id && diaLocal(m.criado_em) === hoje).map(m => m.usuario_nome))];
+  const nav = (lista) => lista.map(([r,t,i]) => `<a href="#${r}" class="${S.rota === r ? "on" : ""}">${ic(i)}${t}${r === "validades" && venc ? `<span class="badge">${venc}</span>` : ""}</a>`).join("");
+  return `<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo">${ic("cross",18,2.6)}</span><b>Estoque</b></div>
+    <div class="clinic"><span class="ci">${ic("building",16)}</span><div><b>${esc(CLINICA)}</b><small>Medicações, produtos e materiais</small></div></div>
+    <div><div class="navlbl">ESTOQUE</div><nav class="nav">${nav(NAV)}</nav></div>
+    ${isAdmin() ? `<div><div class="navlbl">ADMIN</div><nav class="nav">${nav(NAV_ADMIN)}</nav></div>` : ""}
+    <div class="side-foot">
+      <div class="duty"><small>Equipe hoje</small>
+        <div class="av-row">${equipe.length ? equipe.slice(0,5).map(n => av(n)).join("") : av(s.nome)}</div>
+        <b>${equipe.length ? equipe.length + (equipe.length > 1 ? " pessoas registraram" : " pessoa registrou") + " hoje" : "Nenhum registro hoje ainda"}</b>
+      </div>
+      <div class="me">${av(s.nome,34)}<div><b>${esc(s.nome)}</b><small>${s.papel === "admin" ? "Administrador" : "Funcionária"}</small></div>
+        <button class="iconbtn" data-act="sair" title="Sair" aria-label="Sair">${ic("out")}</button></div>
+    </div>
+  </aside>
+  <div class="main">
+    <header class="top">
+      <div class="search">${ic("search",16)}<input id="gsearch" placeholder="Buscar item, lote ou código" autocomplete="off" aria-label="Buscar item, lote ou código"><kbd class="hide-m">/</kbd><div id="gres"></div></div>
+      <div class="sp"></div>
+      <div class="when">${ic("cal",16)}<b>${new Date().toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"short"})}</b><span id="clock">· ${fHora(Date.now())}</span></div>
+      <a class="iconbtn" href="#validades" title="Alertas" aria-label="Alertas">${ic("bell")}${venc ? `<span class="dot">${venc}</span>` : ""}</a>
+      <button class="btn pri hide-m" data-act="novaMov" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Nova movimentação</button>
+    </header>
+    <section class="content" id="view"></section>
+  </div>
+  <nav class="mobnav">${[["hoje","Hoje","grid"],["itens","Itens","box"],["movimentacoes","Registros","swap"],["validades","Validades","cal"],["mais","Mais","chart"]].map(([r,t,i]) => `<a href="#${r === "mais" ? "backup" : r}" class="${S.rota === r || (r === "mais" && ["backup","compras","auditoria","usuarios"].includes(S.rota)) ? "on" : ""}">${ic(i,20)}${t}</a>`).join("")}</nav>
+  <button class="fab" data-act="novaMov" aria-label="Nova movimentação" ${S.offline ? "disabled" : ""}>${ic("plus",26,2.2)}</button>
+</div>`;
+}
+
+function banners(){
+  let h = "";
+  if(!ONLINE) h += `<div class="banner demo">${ic("db",16)}<span><b>Modo demonstração.</b> Dados reais da planilha; o que for registrado fica salvo só neste navegador até o sistema ser ligado ao Supabase.</span></div>`;
+  if(S.offline) h += `<div class="banner off">${ic("wifi",16)}<span><b>Sem conexão com o servidor.</b> Exibindo a cópia salva neste aparelho em ${fDH(S.cacheEm)}. Registros estão bloqueados: use a planilha de contingência em Relatórios e backup.</span></div>`;
+  const ub = S.config.ultimo_backup; const dias = ub ? Math.floor((Date.now() - new Date(ub)) / 864e5) : null;
+  if(ONLINE && !S.offline && (dias == null || dias >= 7)) h += `<div class="banner warn">${ic("down",16)}<span>${dias == null ? "Nenhum backup em planilha foi feito ainda." : `Último backup em planilha há ${dias} dias.`} </span><a class="btn sm" href="#backup" style="margin-left:auto">Fazer backup</a></div>`;
+  return h;
+}
+
+/* ---- Hoje ---- */
+function vHoje(){
+  const its = D.itens; const hoje = hojeISO();
+  const lotesAtivos = its.reduce((a,i) => a + i.comSaldo.length, 0);
+  const baixo = its.filter(i => i.st === "baixo" || i.st === "zerado").length;
+  const semMin = its.filter(i => !i.min).length;
+  const venc90 = D.alertas.filter(a => a.tipo === "vence30" || a.tipo === "vence90");
+  const vencidos = D.alertas.filter(a => a.tipo === "vencido");
+  const unVenc = vencidos.reduce((a,x) => a + Number(x.lote.quantidade), 0);
+  const valor = its.reduce((a,i) => a + i.valor, 0);
+  const movHoje = S.movs.filter(m => diaLocal(m.criado_em) === hoje && m.origem !== "importacao").length;
+  const k = (ico, cor, t, v, s, rota) => `<button class="card kpi" data-go="${rota}"><span class="kh"><span class="kic" style="background:var(--${cor}-soft);color:var(--${cor})">${ic(ico,16)}</span>${t}</span><span class="kv num">${v}</span><span class="ks">${s}</span></button>`;
+  const recentes = S.movs.slice(0, 12);
+  const top = D.alertas[0];
+  const porCat = D.cats.map(c => ({ c, v: its.filter(i => i.categoria === c).reduce((a,i) => a + i.valor, 0), n: its.filter(i => i.categoria === c).length })).sort((a,b) => b.v - a.v);
+  const maxCat = Math.max(1, ...porCat.map(x => x.v));
+  return `${banners()}
+  <div class="head"><div><h1>${saudacao()}, ${esc(S.sessao.nome.split(" ")[0])}</h1><p>${its.length} itens ativos · ${D.alertas.length} ${D.alertas.length === 1 ? "alerta" : "alertas"} · atualizado às ${fHora(S.carregadoEm || Date.now())}</p></div><div class="sp"></div>
+    <button class="btn" data-act="novaMov" data-tipo="entrada" ${S.offline ? "disabled" : ""}>${ic("down",16)}Dar entrada</button></div>
+  <div class="kpis">
+    ${k("box","accent","Itens ativos", its.length, `${lotesAtivos} lotes com saldo`, "itens")}
+    ${k("cart","warn","Abaixo do mínimo", baixo, semMin ? `${semMin} sem mínimo definido` : "mínimos definidos", "compras")}
+    ${k("clock","warn","Vencendo em 90 dias", venc90.length, venc90.length ? `${venc90.filter(a => a.d <= 30).length} em até 30 dias` : "nenhum lote", "validades")}
+    ${k("alert","crit","Vencidos", vencidos.length, vencidos.length ? `${fNum(unVenc)} unidades a descartar` : "nenhum lote vencido", "validades")}
+    ${k("coin","ok","Valor em estoque", `<span style="font-size:.78em">${fBRL(valor)}</span>`, `${movHoje} movimentações hoje`, "backup")}
+  </div>
+  <div class="grid-home">
+    <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+      <div class="card"><div class="card-h"><h2>Movimentações recentes</h2><span class="pill p-mute">${recentes.length ? "últimas " + recentes.length : "nenhuma"}</span><div class="sp"></div><a class="btn sm" href="#movimentacoes">Ver todas</a></div>
+        <div class="tl">${recentes.length ? recentes.map(rowTL).join("") : `<div class="empty">Nenhuma movimentação registrada.</div>`}</div></div>
+      <div class="card"><div class="card-h"><h2>Valor em estoque por categoria</h2><div class="sp"></div><span class="muted" style="font-size:12px">custo unitário × saldo</span></div>
+        <div class="bars">${porCat.map(x => `<div class="bar-row"><span>${esc(x.c)} <span class="muted">· ${x.n}</span></span><div class="bar"><i style="width:${Math.max(2, x.v / maxCat * 100)}%"></i></div><b class="num" style="text-align:right">${fBRL(x.v)}</b></div>`).join("")}</div></div>
+    </div>
+    <div class="card"><div class="card-h"><h2>Alertas</h2><div class="sp"></div>${D.alertas.length ? `<span class="pill p-warn">${D.alertas.length} ${D.alertas.length === 1 ? "pendente" : "pendentes"}</span>` : `<span class="pill p-ok">tudo em dia</span>`}</div>
+      ${top ? `<div class="hero ${top.sev === 0 ? "crit" : ""}" data-item="${top.item.id}"><small>Mais urgente · ${esc(top.item.local || "sem local")}</small><div class="hv">${esc(top.item.nome)}</div><div class="hs"><span>${alertaTexto(top)}</span><span class="tag">${top.lote ? "Lote " + esc(top.lote.lote || "—") : fNum(top.item.saldo) + " " + esc(low(top.item.unidade))}</span></div></div>` : `<div class="empty">Nenhum lote vencendo e nenhum item abaixo do mínimo.</div>`}
+      <div class="al">${D.alertas.slice(1, 9).map(rowAlerta).join("")}</div>
+      ${D.alertas.length > 9 ? `<div style="padding:0 18px 16px"><a class="btn sm" href="#validades">Ver todos os alertas</a></div>` : ""}
+    </div>
+  </div>`;
+}
+const low = s => String(s || "").toLowerCase();
+function alertaTexto(a){
+  if(a.tipo === "vencido") return `Venceu em ${fData(a.lote.validade)}`;
+  if(a.tipo === "vence30" || a.tipo === "vence90") return `Vence em ${a.d} dias (${fData(a.lote.validade)})`;
+  if(a.tipo === "zerado") return "Sem saldo em estoque";
+  return `Saldo ${fNum(a.item.saldo)} · mínimo ${fNum(a.item.min)}`;
+}
+function rowAlerta(a){
+  const map = { vencido: ["VNC","crit"], vence30: ["30d","crit"], vence90: ["90d","warn"], zerado: ["0","crit"], baixo: ["MIN","warn"] };
+  const [code, cor] = map[a.tipo];
+  const dir = a.lote ? `<b class="num">${fNum(a.lote.quantidade)}</b><br>${esc(low(a.item.unidade))}` : `<b class="num">${fNum(a.item.saldo)}</b><br>em estoque`;
+  return `<button class="al-row" data-item="${a.item.id}"><span class="al-code" style="background:var(--${cor}-soft);color:var(--${cor})">${code}</span><span style="min-width:0"><b>${esc(a.item.nome)}</b><small>${alertaTexto(a)}</small></span><span class="al-r">${dir}</span></button>`;
+}
+function rowTL(m){
+  const it = D.idx[m.item_id] || { nome: "Item removido", unidade: "" }; const l = D.lotesIdx[m.lote_id];
+  return `<div class="tl-row"><span class="tl-t num">${diaLocal(m.criado_em) === hojeISO() ? fHora(m.criado_em) : fData(diaLocal(m.criado_em)).slice(0,5)}</span>
+    <span class="chip c-${m.tipo}" data-item="${m.item_id}" style="cursor:pointer"><b>${esc(it.nome)}</b><span>${TIPO[m.tipo][0]}${l ? " · lote " + esc(l.lote || "—") : ""}${m.motivo ? " · " + esc(m.motivo) : ""}</span></span>
+    <span style="display:flex;align-items:center;gap:8px"><span class="qty num ${m.quantidade >= 0 ? "q-pos" : "q-neg"}">${m.quantidade > 0 ? "+" : ""}${fNum(m.quantidade)}</span>${av(m.usuario_nome || "?")}</span></div>`;
+}
+
+/* ---- Itens ---- */
+function vItens(){
+  const f = S.f;
+  return `${banners()}<div class="head"><div><h1>Itens</h1><p>Saldo somado de todos os lotes. Clique em um item para ver lotes e histórico.</p></div><div class="sp"></div>
+    <button class="btn" data-act="exportItens">${ic("down",16)}Exportar planilha</button>${isAdmin() ? `<button class="btn pri" data-act="editItem" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Novo item</button>` : ""}</div>
+  <div class="card"><div class="toolbar">
+    <div class="search">${ic("search",16)}<input data-f="q" value="${esc(f.q || "")}" placeholder="Nome, descrição, código ou fornecedor" aria-label="Filtrar itens"></div>
+    <select class="field" data-f="cat" aria-label="Categoria"><option value="">Todas as categorias</option>${D.cats.map(c => `<option ${f.cat === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>
+    <select class="field" data-f="local" aria-label="Local"><option value="">Todos os locais</option>${D.locais.map(c => `<option ${f.local === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>
+    <select class="field" data-f="st" aria-label="Situação"><option value="">Todas as situações</option>${Object.entries(ST).map(([k,[,t]]) => `<option value="${k}" ${f.st === k ? "selected" : ""}>${t}</option>`).join("")}</select>
+  </div><div id="lista" class="tbl-wrap">${listaItens()}</div></div>`;
+}
+function itensFiltrados(){
+  const f = S.f; const q = norm(f.q);
+  return D.itens.filter(i => (!f.cat || i.categoria === f.cat) && (!f.local || i.local === f.local) && (!f.st || i.st === f.st) &&
+    (!q || norm([i.nome, i.descricao, i.codigo, i.cod_fornecedor, i.fornecedor, ...i.lotes.map(l => l.lote)].join(" ")).includes(q)));
+}
+function listaItens(){
+  const its = itensFiltrados();
+  if(!its.length) return `<div class="empty">Nenhum item encontrado com esses filtros.</div>`;
+  return `<table><thead><tr><th>Item</th><th class="hide-m">Categoria</th><th class="hide-m">Local</th><th class="r">Saldo</th><th class="r hide-m">Mínimo</th><th>Próx. validade</th><th>Situação</th></tr></thead><tbody>
+  ${its.map(i => { const ref = i.min > 0 ? i.saldo / (i.estoque_ideal > 0 ? i.estoque_ideal : i.min * 2) : null; const cls = i.min > 0 && i.saldo < i.min ? "low" : ref != null && ref < .75 ? "mid" : "";
+    return `<tr class="click" data-item="${i.id}"><td><b>${esc(i.nome)}</b>${i.controlado ? ' <span class="pill p-violet">Controlado</span>' : ""}<span class="sub">${esc(i.descricao || "")}</span></td>
+    <td class="hide-m">${esc(i.categoria)}</td><td class="hide-m">${esc(i.local || "—")}</td>
+    <td class="r"><div class="level">${ref != null ? `<span class="bar hide-m"><i class="${cls}" style="width:${Math.min(100, ref * 100)}%"></i></span>` : ""}<b class="num">${fNum(i.saldo)}</b> <span class="muted">${esc(low(i.unidade))}</span></div></td>
+    <td class="r num hide-m">${i.min ? fNum(i.min) : '<span class="muted">—</span>'}</td>
+    <td>${i.prox ? pillValidade(i.prox) : '<span class="muted">—</span>'}</td><td><span class="pill ${ST[i.st][0]}">${ST[i.st][1]}</span></td></tr>`; }).join("")}
+  </tbody></table>`;
+}
+
+/* ---- Movimentações ---- */
+function vMovs(){
+  const f = S.f;
+  return `${banners()}<div class="head"><div><h1>Movimentações</h1><p>Registros não podem ser editados nem apagados. Para corrigir, registre um ajuste.</p></div><div class="sp"></div>
+    <button class="btn" data-act="exportMovs">${ic("down",16)}Exportar planilha</button><button class="btn pri" data-act="novaMov" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Nova movimentação</button></div>
+  <div class="card"><div class="toolbar">
+    <div class="search">${ic("search",16)}<input data-f="q" value="${esc(f.q || "")}" placeholder="Item, lote ou motivo" aria-label="Filtrar movimentações"></div>
+    <select class="field" data-f="per" aria-label="Período">${[["7","Últimos 7 dias"],["30","Últimos 30 dias"],["90","Últimos 90 dias"],["","Todo o período"]].map(([v,t]) => `<option value="${v}" ${(f.per ?? "30") === v ? "selected" : ""}>${t}</option>`).join("")}</select>
+    <select class="field" data-f="tipo" aria-label="Tipo"><option value="">Todos os tipos</option>${Object.entries(TIPO).map(([k,[t]]) => `<option value="${k}" ${f.tipo === k ? "selected" : ""}>${t}</option>`).join("")}</select>
+    <select class="field" data-f="user" aria-label="Usuário"><option value="">Todas as pessoas</option>${[...new Set(S.movs.map(m => m.usuario_nome).filter(Boolean))].sort().map(n => `<option ${f.user === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
+  </div><div id="lista" class="tbl-wrap">${listaMovs()}</div></div>`;
+}
+function movsFiltradas(lista){
+  const f = S.f; const q = norm(f.q); const per = f.per ?? "30"; const lim = per ? Date.now() - Number(per) * 864e5 : 0;
+  return (lista || S.movs).filter(m => { const it = D.idx[m.item_id] || {}; const l = D.lotesIdx[m.lote_id] || {};
+    return (!per || new Date(m.criado_em) >= lim) && (!f.tipo || m.tipo === f.tipo) && (!f.user || m.usuario_nome === f.user) &&
+      (!q || norm([it.nome, it.descricao, l.lote, m.motivo].join(" ")).includes(q)); });
+}
+function listaMovs(){
+  const ms = movsFiltradas();
+  if(!ms.length) return `<div class="empty">Nenhuma movimentação nesse período.</div>`;
+  return `<table><thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th class="hide-m">Lote</th><th class="r">Qtd.</th><th class="r hide-m">Saldo lote</th><th class="hide-m">Motivo</th><th>Quem</th></tr></thead><tbody>
+  ${ms.slice(0, 500).map(m => { const it = D.idx[m.item_id] || { nome: "—" }; const l = D.lotesIdx[m.lote_id] || {};
+    return `<tr class="click" data-item="${m.item_id}"><td class="num" style="white-space:nowrap">${fDH(m.criado_em)}</td><td><span class="pill ${TIPO[m.tipo][1]}">${TIPO[m.tipo][0]}</span></td><td><b>${esc(it.nome)}</b></td><td class="hide-m">${esc(l.lote || "—")}</td>
+    <td class="r num qty ${m.quantidade >= 0 ? "q-pos" : "q-neg"}">${m.quantidade > 0 ? "+" : ""}${fNum(m.quantidade)}</td><td class="r num hide-m">${fNum(m.saldo_lote)}</td><td class="hide-m">${esc(m.motivo || "—")}${m.origem === "contingencia" ? ' <span class="pill p-warn">contingência</span>' : ""}</td>
+    <td><span style="display:inline-flex;align-items:center;gap:8px">${av(m.usuario_nome || "?")}<span class="hide-m">${esc(m.usuario_nome || "—")}</span></span></td></tr>`; }).join("")}
+  </tbody></table>${ms.length > 500 ? `<div class="empty">Mostrando 500 de ${ms.length}. Use a exportação para ver todas.</div>` : ""}`;
+}
+
+/* ---- Validades ---- */
+function vValidades(){
+  const lots = []; D.itens.forEach(i => i.comSaldo.forEach(l => lots.push({ i, l, d: diasAte(l.validade) })));
+  const g = [["Vencidos", x => x.d != null && x.d < 0, "crit"], ["Vencem em até 30 dias", x => x.d != null && x.d >= 0 && x.d <= 30, "crit"], ["Vencem em 31 a 90 dias", x => x.d > 30 && x.d <= 90, "warn"], ["Vencem em 91 a 180 dias", x => x.d > 90 && x.d <= 180, "acc"], ["Mais de 180 dias", x => x.d > 180, "ok"], ["Sem validade cadastrada", x => x.d == null, "mute"]];
+  return `${banners()}<div class="head"><div><h1>Validades</h1><p>Lotes com saldo, do que vence primeiro ao último. A saída sugere sempre o lote que vence primeiro.</p></div><div class="sp"></div><button class="btn" data-act="exportVal">${ic("down",16)}Exportar planilha</button></div>
+  <div class="groups">${g.map(([t, fn, cor]) => { const xs = lots.filter(fn).sort((a,b) => (a.d ?? 1e9) - (b.d ?? 1e9)); if(!xs.length) return "";
+    return `<div class="card"><div class="card-h"><h2>${t}</h2><span class="pill p-${cor}">${xs.length} ${xs.length === 1 ? "lote" : "lotes"}</span></div><div class="tbl-wrap"><table><thead><tr><th>Item</th><th>Lote</th><th class="hide-m">Fabricação</th><th>Validade</th><th class="r">Qtd.</th><th class="hide-m">Local</th><th></th></tr></thead><tbody>
+    ${xs.map(({i,l}) => `<tr class="click" data-item="${i.id}"><td><b>${esc(i.nome)}</b><span class="sub">${esc(i.categoria)}</span></td><td>${esc(l.lote || "—")}</td><td class="hide-m num">${fData(l.fabricacao)}</td><td>${pillValidade(l.validade)}${l.fabricacao && l.validade && l.validade < l.fabricacao ? ' <span class="pill p-warn" title="A validade é anterior à fabricação: confira a digitação">confira datas</span>' : ""}</td><td class="r num"><b>${fNum(l.quantidade)}</b></td><td class="hide-m">${esc(i.local || "—")}</td>
+    <td class="r">${cor === "crit" && !S.offline ? `<button class="btn sm danger" data-act="novaMov" data-tipo="descarte" data-it="${i.id}" data-lote="${l.id}">Descartar</button>` : ""}</td></tr>`).join("")}</tbody></table></div></div>`; }).join("")}</div>`;
+}
+
+/* ---- Lista de compras ---- */
+function compras(){
+  return D.itens.filter(i => i.min > 0 && i.saldo < i.min).map(i => { const alvo = i.estoque_ideal > 0 ? i.estoque_ideal : i.min * 2; return { i, sug: Math.max(0, Math.ceil(alvo - i.saldo)) }; });
+}
+function vCompras(){
+  const cs = compras(); const semMin = D.itens.filter(i => !i.min);
+  const total = cs.reduce((a,x) => a + x.sug * Number(x.i.custo_unit || 0), 0);
+  return `${banners()}<div class="head"><div><h1>Lista de compras</h1><p>Itens com saldo abaixo do mínimo. Sugestão = estoque ideal (ou 2× o mínimo) menos o saldo atual.</p></div><div class="sp"></div>
+    <button class="btn" data-act="copiarCompras" ${cs.length ? "" : "disabled"}>${ic("copy",16)}Copiar para WhatsApp</button><button class="btn" data-act="exportCompras" ${cs.length ? "" : "disabled"}>${ic("down",16)}Exportar planilha</button></div>
+  <div class="card">${cs.length ? `<div class="tbl-wrap"><table><thead><tr><th>Item</th><th class="hide-m">Fornecedor</th><th class="r">Saldo</th><th class="r">Mínimo</th><th class="r">Comprar</th><th class="r hide-m">Custo estimado</th></tr></thead><tbody>
+    ${cs.map(({i,sug}) => `<tr class="click" data-item="${i.id}"><td><b>${esc(i.nome)}</b><span class="sub">${esc(i.cod_fornecedor || "")} ${esc(i.descricao || "")}</span></td><td class="hide-m">${esc(i.fornecedor || "—")}</td><td class="r num">${fNum(i.saldo)}</td><td class="r num">${fNum(i.min)}</td><td class="r num"><b>${fNum(sug)}</b> <span class="muted">${esc(low(i.unidade))}</span></td><td class="r num hide-m">${fBRL(sug * Number(i.custo_unit || 0))}</td></tr>`).join("")}
+    <tr><td colspan="5" class="r hide-m"><b>Total estimado</b></td><td class="r num hide-m"><b>${fBRL(total)}</b></td></tr></tbody></table></div>` : `<div class="empty">Nenhum item abaixo do mínimo.</div>`}</div>
+  ${semMin.length ? `<div class="card"><div class="card-h"><h2>Itens sem estoque mínimo definido</h2><span class="pill p-warn">${semMin.length}</span></div><div class="pad"><p>Sem o mínimo, o sistema não consegue avisar quando comprar. ${isAdmin() ? "Clique no item e use Editar para definir." : "Peça ao administrador para definir."}</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px">${semMin.map(i => `<button class="btn sm" data-item="${i.id}">${esc(i.nome)}</button>`).join("")}</div></div></div>` : ""}`;
+}
+
+/* ---- Relatórios e backup ---- */
+function vBackup(){
+  const ub = S.config.ultimo_backup; const cache = ONLINE ? store.get("estoque_cache") : null;
+  const lim = Date.now() - 30 * 864e5; const cons = {};
+  S.movs.filter(m => (m.tipo === "saida") && new Date(m.criado_em) >= lim).forEach(m => cons[m.item_id] = (cons[m.item_id] || 0) - m.quantidade);
+  const rank = Object.entries(cons).map(([id,q]) => ({ i: D.idx[id], q })).filter(x => x.i).sort((a,b) => b.q - a.q).slice(0, 8);
+  const mx = Math.max(1, ...rank.map(x => x.q));
+  const perdas = S.movs.filter(m => m.tipo === "descarte").reduce((a,m) => a + (-m.quantidade) * Number((D.idx[m.item_id] || {}).custo_unit || 0), 0);
+  return `${banners()}<div class="head"><div><h1>Relatórios e backup</h1><p>Exporte tudo em planilha para guardar uma cópia fora do sistema.</p></div></div>
+  <div class="cards2">
+    <div class="card"><div class="card-h"><span class="kic" style="width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-2)">${ic("sheet",18)}</span><h2>Backup completo</h2></div>
+      <div class="pad"><p>Um arquivo .xlsx com uma aba para cada parte: estoque atual, lotes (no mesmo formato da planilha original), movimentações, usuários${isAdmin() ? " e auditoria" : ""}.</p>
+      <p><b style="color:var(--ink)">Último backup:</b> ${ub ? fDH(ub) + (S.config.ultimo_backup_por ? " por " + esc(S.config.ultimo_backup_por) : "") : "nunca feito"}</p>
+      <button class="btn pri" data-act="backup">${ic("down",16)}Baixar backup completo</button></div></div>
+    <div class="card"><div class="card-h"><span class="kic" style="width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--warn-soft);color:var(--warn)">${ic("alert",18)}</span><h2>Se o sistema cair</h2></div>
+      <div class="pad"><p>Baixe a planilha de contingência: ela traz o estoque atual e uma aba para anotar as movimentações à mão. Quando o sistema voltar, o administrador importa essa aba.</p>
+      ${ONLINE ? `<p><b style="color:var(--ink)">Cópia guardada neste aparelho:</b> ${cache ? fDH(cache.em) : "ainda não"}</p>` : ""}
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-act="contingencia">${ic("down",16)}Planilha de contingência</button>${isAdmin() && !S.offline ? `<button class="btn" data-act="importar">${ic("up",16)}Importar contingência</button>` : ""}</div></div></div>
+  </div>
+  <div class="cards2">
+    <div class="card"><div class="card-h"><h2>Mais usados nos últimos 30 dias</h2></div>
+      ${rank.length ? `<div class="bars">${rank.map(x => `<div class="bar-row"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.i.nome)}</span><div class="bar"><i style="width:${x.q / mx * 100}%"></i></div><b class="num" style="text-align:right">${fNum(x.q)} ${esc(low(x.i.unidade))}</b></div>`).join("")}</div>` : `<div class="empty">Ainda não há saídas registradas nos últimos 30 dias.</div>`}</div>
+    <div class="card"><div class="card-h"><h2>Resumo</h2></div><div class="pad"><div class="dl" style="grid-template-columns:1fr 1fr">
+      <div><small>Valor em estoque</small><b class="num">${fBRL(D.itens.reduce((a,i) => a + i.valor, 0))}</b></div>
+      <div><small>Perdas por descarte</small><b class="num">${fBRL(perdas)}</b></div>
+      <div><small>Itens ativos</small><b class="num">${D.itens.length}</b></div>
+      <div><small>Movimentações carregadas</small><b class="num">${S.movs.length}</b></div></div>
+      ${!ONLINE ? `<p style="margin-top:14px">Na demonstração, você pode voltar aos dados originais da planilha.</p><button class="btn sm" data-act="resetDemo">Restaurar dados da planilha</button>` : ""}</div></div>
+  </div>`;
+}
+
+/* ---- Auditoria ---- */
+function vAuditoria(){
+  if(!isAdmin()) return `<div class="empty">Acesso restrito ao administrador.</div>`;
+  if(S.audit == null){ API.auditoria().then(a => { S.audit = a; if(S.rota === "auditoria") render(); }).catch(e => { S.audit = []; toast(e.message, true); }); return `${banners()}<div class="card"><div class="empty">Carregando auditoria…</div></div>`; }
+  const f = S.f; const us = [...new Set(S.audit.map(a => a.usuario_nome).filter(Boolean))].sort();
+  return `${banners()}<div class="head"><div><h1>Auditoria</h1><p>Toda alteração no banco fica registrada aqui, com quem fez e o que mudou. Ninguém consegue apagar estes registros.</p></div><div class="sp"></div><button class="btn" data-act="exportAud">${ic("down",16)}Exportar planilha</button></div>
+  <div class="card"><div class="toolbar"><select class="field" data-f="user" aria-label="Usuário"><option value="">Todas as pessoas</option>${us.map(n => `<option ${f.user === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
+    <select class="field" data-f="tab" aria-label="Tabela"><option value="">Tudo</option>${[["movimentacoes","Movimentações"],["lotes","Lotes"],["itens","Itens"],["usuarios","Usuários"]].map(([v,t]) => `<option value="${v}" ${f.tab === v ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+  <div id="lista" class="tbl-wrap">${listaAud()}</div></div>`;
+}
+const TAB = { movimentacoes: "Movimentação", lotes: "Lote", itens: "Item", usuarios: "Usuário" };
+const ACAO = { INSERT: ["Criou","p-ok"], UPDATE: ["Alterou","p-blue"], DELETE: ["Removeu","p-crit"] };
+function resumoAud(a){
+  const ign = ["criado_em","id","item_id","lote_id","usuario_id"];
+  const nomeItem = id => (D.idx[id] || {}).nome || "";
+  if(a.acao === "INSERT"){ const d = a.depois || {};
+    if(a.tabela === "movimentacoes") return `${TIPO[d.tipo] ? TIPO[d.tipo][0] : d.tipo} de ${fNum(Math.abs(d.quantidade))} · ${esc(nomeItem(d.item_id))}${d.motivo ? " · " + esc(d.motivo) : ""}`;
+    if(a.tabela === "lotes") return `Lote ${esc(d.lote || "—")} de ${esc(nomeItem(d.item_id))}`;
+    return esc(d.nome || ""); }
+  const an = a.antes || {}, dp = a.depois || {};
+  const mud = Object.keys({ ...an, ...dp }).filter(k => !ign.includes(k) && JSON.stringify(an[k]) !== JSON.stringify(dp[k]));
+  const nome = a.tabela === "lotes" ? `Lote ${esc(dp.lote || an.lote || "—")} (${esc(nomeItem(dp.item_id || an.item_id))}): ` : esc(dp.nome || an.nome || "") + ": ";
+  return nome + (mud.map(k => k === "pin_alterado" || k === "pin" ? "PIN alterado" : `${esc(k)} ${esc(an[k] ?? "—")} → ${esc(dp[k] ?? "—")}`).join("; ") || "sem mudança visível");
+}
+function listaAud(){
+  const f = S.f; const xs = S.audit.filter(a => (!f.user || a.usuario_nome === f.user) && (!f.tab || a.tabela === f.tab));
+  if(!xs.length) return `<div class="empty">Nenhum registro.</div>`;
+  return `<table><thead><tr><th>Data</th><th>Quem</th><th>Ação</th><th>O que mudou</th></tr></thead><tbody>${xs.slice(0, 500).map(a => `<tr><td class="num" style="white-space:nowrap">${fDH(a.criado_em)}</td><td style="white-space:nowrap">${esc(a.usuario_nome || "sistema")}</td><td style="white-space:nowrap"><span class="pill ${ACAO[a.acao][1]}">${ACAO[a.acao][0]}</span> <span class="muted">${TAB[a.tabela] || a.tabela}</span></td><td>${resumoAud(a)}</td></tr>`).join("")}</tbody></table>`;
+}
+
+/* ---- Usuários ---- */
+function vUsuarios(){
+  if(!isAdmin()) return `<div class="empty">Acesso restrito ao administrador.</div>`;
+  return `${banners()}<div class="head"><div><h1>Usuários</h1><p>Cada pessoa entra com o próprio nome e um PIN de 4 números. Assim o sistema sabe quem fez cada registro.</p></div><div class="sp"></div><button class="btn pri" data-act="editUser" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Novo usuário</button></div>
+  <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Nome</th><th>Perfil</th><th>Situação</th><th></th></tr></thead><tbody>${S.usuarios.map(u => `<tr><td><span style="display:inline-flex;align-items:center;gap:10px">${av(u.nome)}<b>${esc(u.nome)}</b></span></td><td>${u.papel === "admin" ? '<span class="pill p-acc">Administrador</span>' : '<span class="pill p-mute">Funcionária</span>'}</td><td>${u.ativo ? '<span class="pill p-ok">Ativo</span>' : '<span class="pill p-crit">Inativo</span>'}</td><td class="r"><button class="btn sm" data-act="editUser" data-id="${u.id}" ${S.offline ? "disabled" : ""}>${ic("edit",14)}Editar</button></td></tr>`).join("")}</tbody></table></div></div>`;
+}
+
+/* =====================================================================
+   Modais
+   ===================================================================== */
+function abrir(html, cls = ""){ $("#modal").innerHTML = `<div class="ov ${cls}" data-ov>${html}</div>`; const el = $("#modal [autofocus]"); if(el) setTimeout(() => el.focus(), 30); }
+function fechar(){ $("#modal").innerHTML = ""; M = null; }
+const mHead = (t, p) => `<div class="m-h"><div><h2>${t}</h2>${p ? `<p>${p}</p>` : ""}</div><div class="sp"></div><button class="iconbtn" data-act="fechar" aria-label="Fechar">${ic("x")}</button></div>`;
+
+/* ---- ficha do item ---- */
+function abrirItem(id){
+  const i = D.idx[id]; if(!i) return;
+  const ms = S.movs.filter(m => m.item_id === id).slice(0, 40);
+  abrir(`<div class="modal" role="dialog" aria-modal="true">${mHead(esc(i.nome), esc(i.descricao || ""))}
+  <div class="m-b">
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill ${ST[i.st] ? ST[i.st][0] : "p-mute"}">${ST[i.st] ? ST[i.st][1] : "Inativo"}</span><span class="pill p-mute">${esc(i.categoria)}</span>${i.controlado ? '<span class="pill p-violet">Controlado</span>' : ""}</div>
+    <div class="dl">
+      <div><small>Saldo</small><b class="num">${fNum(i.saldo)} ${esc(low(i.unidade))}</b></div>
+      <div><small>Mínimo / ideal</small><b class="num">${i.min ? fNum(i.min) : "—"} / ${i.estoque_ideal ? fNum(i.estoque_ideal) : "—"}</b></div>
+      <div><small>Local</small><b>${esc(i.local || "—")}</b></div>
+      <div><small>Fornecedor</small><b>${esc(i.fornecedor || "—")}</b></div>
+      <div><small>Cód. fornecedor</small><b>${esc(i.cod_fornecedor || "—")}</b></div>
+      <div><small>Custo unitário</small><b class="num">${i.custo_unit != null ? fBRL(i.custo_unit) : "—"}</b></div>
+    </div>
+    <h3 style="font-size:14px">Lotes</h3>
+    ${i.lotes.length ? `<div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Lote</th><th class="hide-m">Fabricação</th><th>Validade</th><th class="r">Qtd.</th><th></th></tr></thead><tbody>${i.lotes.map(l => `<tr><td>${esc(l.lote || "—")}</td><td class="hide-m num">${fData(l.fabricacao)}</td><td>${Number(l.quantidade) > 0 ? pillValidade(l.validade) : `<span class="muted">${fData(l.validade)}</span>`}</td><td class="r num"><b>${fNum(l.quantidade)}</b></td><td class="r">${S.offline ? "" : `<button class="btn sm" data-act="novaMov" data-it="${i.id}" data-lote="${l.id}" data-tipo="${Number(l.quantidade) > 0 ? "saida" : "entrada"}">Movimentar</button>`}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">Nenhum lote.</div>`}
+    <h3 style="font-size:14px">Histórico</h3>
+    <div class="tl" style="padding:0">${ms.length ? ms.map(rowTL).join("") : `<div class="empty">Sem movimentações.</div>`}</div>
+  </div>
+  <div class="m-f">${isAdmin() && !S.offline ? `<button class="btn" data-act="editItem" data-id="${i.id}">${ic("edit",16)}Editar item</button>` : ""}${S.offline ? "" : `<button class="btn pri" data-act="novaMov" data-it="${i.id}">${ic("plus",16,2.2)}Movimentar</button>`}</div></div>`, "drawer");
+}
+
+/* ---- nova movimentação ---- */
+let M = null;
+function novaMov(o = {}){
+  M = { tipo: o.tipo || "saida", item_id: o.it || null, lote_id: o.lote || null, q: "", erro: "" };
+  if(M.item_id && !M.lote_id) M.lote_id = loteSugerido();
+  if(M.tipo === "entrada" && !o.lote) M.lote_id = "novo";
+  renderMov();
+}
+function loteSugerido(){
+  const i = D.idx[M.item_id]; if(!i) return null;
+  if(M.tipo === "entrada") return "novo";
+  const ok = i.comSaldo.filter(l => !(l.validade && diasAte(l.validade) < 0));
+  if(M.tipo === "descarte") return (i.vencidos[0] || i.comSaldo[0] || {}).id || null;
+  return ((ok[0] || i.comSaldo[0] || i.lotes[0]) || {}).id || null;
+}
+function guardarCampos(){ ["q","motivo","lote","fab","val","busca"].forEach(k => { const el = $("#m_" + k); if(el) M[k] = el.value; }); }
+function renderMov(){
+  const i = M.item_id && D.idx[M.item_id];
+  const tit = { entrada: "Dar entrada", saida: "Registrar saída", ajuste: "Ajustar saldo (contagem)", descarte: "Registrar descarte" }[M.tipo];
+  let corpo = `<div class="seg" role="tablist">${Object.entries(TIPO).map(([k,[t]]) => `<button data-act="mTipo" data-v="${k}" class="${M.tipo === k ? "on" : ""}" role="tab" aria-selected="${M.tipo === k}">${t}</button>`).join("")}</div>`;
+  if(!i){
+    const q = norm(M.busca); const xs = D.itens.filter(x => !q || norm([x.nome, x.descricao, x.cod_fornecedor, x.codigo, ...x.lotes.map(l => l.lote)].join(" ")).includes(q)).slice(0, 30);
+    corpo += `<label class="f">Item<input id="m_busca" value="${esc(M.busca || "")}" placeholder="Digite o nome, código ou lote" autocomplete="off" autofocus></label>
+    <div class="plist" id="m_plist">${xs.map(x => `<button data-act="mItem" data-id="${x.id}">${av(x.categoria, 30)}<span><b>${esc(x.nome)}</b><br><small class="muted">${esc(x.local || "")} · ${fNum(x.saldo)} ${esc(low(x.unidade))}</small></span><span class="sp"></span><span class="pill ${ST[x.st][0]}">${ST[x.st][1]}</span></button>`).join("") || `<div class="empty">Nenhum item encontrado.</div>`}</div>`;
+  } else {
+    const lotesOp = M.tipo === "entrada" ? i.lotes : i.lotes.filter(l => Number(l.quantidade) > 0 || l.id === M.lote_id || M.tipo === "ajuste");
+    const l = M.lote_id && M.lote_id !== "novo" ? D.lotesIdx[M.lote_id] : null;
+    corpo += `<div class="picked">${av(i.categoria, 34)}<div><b>${esc(i.nome)}</b><small>${fNum(i.saldo)} ${esc(low(i.unidade))} · ${esc(i.local || "")}</small></div><span class="sp"></span><button class="btn sm" data-act="mTroca">Trocar</button></div>
+    <div><div style="font-size:12.5px;font-weight:600;color:#4E6371;margin-bottom:6px">Lote ${M.tipo === "saida" ? '<span class="muted" style="font-weight:500">· sugerido o que vence primeiro</span>' : ""}</div><div class="lots">
+      ${M.tipo === "entrada" ? `<button class="lot ${M.lote_id === "novo" ? "on" : ""}" data-act="mLote" data-id="novo"><input type="radio" tabindex="-1" ${M.lote_id === "novo" ? "checked" : ""}><span><b>Lote novo</b><br><small>informar número e validade</small></span><span></span></button>` : ""}
+      ${lotesOp.map(x => `<button class="lot ${M.lote_id === x.id ? "on" : ""}" data-act="mLote" data-id="${x.id}"><input type="radio" tabindex="-1" ${M.lote_id === x.id ? "checked" : ""}><span><b>${esc(x.lote || "sem número")}</b><br><small>validade ${fData(x.validade)}</small></span><span style="text-align:right"><b class="num">${fNum(x.quantidade)}</b><br>${x.validade && diasAte(x.validade) < 0 ? '<span class="pill p-crit">vencido</span>' : ""}</span></button>`).join("") || (M.tipo === "entrada" ? "" : `<div class="note warn">Este item não tem lote com saldo.</div>`)}
+    </div></div>
+    ${M.tipo === "entrada" && M.lote_id === "novo" ? `<div class="row3"><label class="f">Número do lote<input id="m_lote" value="${esc(M.lote || "")}"></label><label class="f">Fabricação<input id="m_fab" type="date" value="${esc(M.fab || "")}"></label><label class="f">Validade<input id="m_val" type="date" value="${esc(M.val || "")}"></label></div>` : ""}
+    ${l && M.tipo === "saida" && l.validade && diasAte(l.validade) < 0 ? `<div class="note crit">Este lote está vencido. Para retirar do estoque, use Descarte.</div>` : ""}
+    <div class="row2"><label class="f">${M.tipo === "ajuste" ? "Quantidade contada no lote" : "Quantidade"} (${esc(low(i.unidade) || "un.")})<input id="m_q" type="number" inputmode="decimal" min="0" step="any" value="${esc(M.q)}" autofocus></label>
+      <label class="f">Motivo ${M.tipo === "ajuste" || M.tipo === "descarte" ? "(obrigatório)" : "(opcional)"}<input id="m_motivo" list="m_motivos" value="${esc(M.motivo || "")}" placeholder="${{ entrada: "Ex.: NF 1234", saida: "Ex.: Sala 1, procedimento", ajuste: "Ex.: contagem mensal", descarte: "Ex.: vencido" }[M.tipo]}"></label></div>
+    <datalist id="m_motivos">${({ entrada: ["Compra","Doação","Devolução"], saida: ["Uso em procedimento","Sala 1","Sala 2","Consultório"], ajuste: ["Contagem de inventário","Erro de digitação"], descarte: ["Vencido","Avaria","Contaminado"] })[M.tipo].map(x => `<option value="${x}">`).join("")}</datalist>
+    ${M.tipo === "ajuste" && l ? `<div class="note info">Saldo no sistema: ${fNum(l.quantidade)}. Informe quanto há fisicamente; a diferença é registrada como ajuste.</div>` : ""}`;
+  }
+  if(M.erro) corpo += `<div class="err" role="alert">${esc(M.erro)}</div>`;
+  abrir(`<div class="modal" role="dialog" aria-modal="true">${mHead(tit, "Registrado em nome de " + esc(S.sessao.nome))}<div class="m-b">${corpo}</div>
+  <div class="m-f"><button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" data-act="mSalvar" ${i ? "" : "disabled"}>${ic("check",16,2.2)}Registrar</button></div></div>`);
+}
+async function salvarMov(btn){
+  guardarCampos(); const i = D.idx[M.item_id];
+  if(!M.lote_id) { M.erro = "Escolha o lote."; return renderMov(); }
+  if(M.q === "" || isNaN(Number(M.q))) { M.erro = "Informe a quantidade."; return renderMov(); }
+  if(M.tipo === "entrada" && M.lote_id === "novo" && !M.val && !confirmarSemValidade){ confirmarSemValidade = true; M.erro = "Sem validade informada. Toque em Registrar de novo para confirmar mesmo assim."; return renderMov(); }
+  btn.disabled = true;
+  try {
+    const dados = { tipo: M.tipo, item_id: M.item_id, lote_id: M.lote_id === "novo" ? null : M.lote_id, quantidade: Number(M.q), motivo: M.motivo || "", lote: M.lote || "", fabricacao: M.fab || "", validade: M.val || "" };
+    await API.movimentar(dados); confirmarSemValidade = false;
+    fechar(); await carregar(); const it = D.idx[dados.item_id];
+    toast(`${TIPO[dados.tipo][0]} ${dados.tipo === "entrada" || dados.tipo === "saida" ? "registrada" : "registrado"}: ${it.nome}` + (it.min > 0 && it.saldo < it.min ? ` · atenção, abaixo do mínimo (${fNum(it.saldo)}/${fNum(it.min)})` : ""), it.min > 0 && it.saldo < it.min);
+    render();
+  } catch(e){ M.erro = e.message; btn.disabled = false; renderMov(); }
+}
+let confirmarSemValidade = false;
+
+/* ---- editar item ---- */
+function editItem(id){
+  const i = id ? S.itens.find(x => x.id === id) : { categoria: D.cats[0] || "", unidade: "UNIDADE" };
+  const inp = (k, t, tipo = "text", extra = "") => `<label class="f">${t}<input id="e_${k}" type="${tipo}" value="${esc(i[k] ?? "")}" ${extra}></label>`;
+  abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead(id ? "Editar item" : "Novo item", "Alterações ficam registradas na auditoria")}<div class="m-b">
+    <div class="row2">${inp("nome","Nome curto","text","autofocus")}${inp("codigo","Código interno")}</div>
+    ${inp("descricao","Descrição completa")}
+    <div class="row3"><label class="f">Categoria<input id="e_categoria" list="e_cats" value="${esc(i.categoria || "")}"></label>${inp("unidade","Unidade")}<label class="f">Local<input id="e_local" list="e_locs" value="${esc(i.local || "")}"></label></div>
+    <datalist id="e_cats">${D.cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist><datalist id="e_locs">${D.locais.map(c => `<option value="${esc(c)}">`).join("")}</datalist>
+    <div class="row3">${inp("fornecedor","Fornecedor")}${inp("cod_fornecedor","Cód. fornecedor")}${inp("custo_unit","Custo unitário (R$)","number",'step="any" min="0"')}</div>
+    <div class="row2">${inp("estoque_minimo","Estoque mínimo","number",'step="any" min="0"')}${inp("estoque_ideal","Estoque ideal","number",'step="any" min="0"')}</div>
+    <label class="check"><input type="checkbox" id="e_controlado" ${i.controlado ? "checked" : ""}>Medicamento controlado (Portaria 344)</label>
+    ${id ? `<label class="check"><input type="checkbox" id="e_ativo" ${i.ativo !== false ? "checked" : ""}>Item ativo (desmarque para tirar das listas sem apagar o histórico)</label>` : ""}
+    <div class="err" id="e_err" role="alert"></div></div>
+    <div class="m-f"><button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" data-act="salvarItem" data-id="${id || ""}">${ic("check",16,2.2)}Salvar</button></div></div>`);
+}
+async function salvarItem(id, btn){
+  const g = k => ($("#e_" + k) || {}).value ?? "";
+  const dados = { id: id || null, nome: g("nome").trim(), codigo: g("codigo"), descricao: g("descricao"), categoria: g("categoria").trim(), unidade: g("unidade"), local: g("local"), fornecedor: g("fornecedor"), cod_fornecedor: g("cod_fornecedor"), custo_unit: g("custo_unit"), estoque_minimo: g("estoque_minimo"), estoque_ideal: g("estoque_ideal"), controlado: $("#e_controlado").checked, ativo: $("#e_ativo") ? $("#e_ativo").checked : true };
+  btn.disabled = true;
+  try { await API.salvarItem(dados); fechar(); S.audit = null; await carregar(); toast("Item salvo."); render(); }
+  catch(e){ $("#e_err").textContent = e.message; btn.disabled = false; }
+}
+
+/* ---- editar usuário ---- */
+function editUser(id){
+  const u = id ? S.usuarios.find(x => x.id === id) : { papel: "funcionaria", ativo: true };
+  abrir(`<div class="modal" role="dialog" aria-modal="true">${mHead(id ? "Editar usuário" : "Novo usuário", id ? "Deixe o PIN em branco para manter o atual" : "Combine o PIN pessoalmente com a funcionária")}<div class="m-b">
+    <label class="f">Nome que aparece nos registros<input id="u_nome" value="${esc(u.nome || "")}" autofocus></label>
+    <div class="row2"><label class="f">Perfil<select id="u_papel"><option value="funcionaria" ${u.papel === "funcionaria" ? "selected" : ""}>Funcionária</option><option value="admin" ${u.papel === "admin" ? "selected" : ""}>Administrador</option></select></label>
+    <label class="f">${id ? "Novo PIN (opcional)" : "PIN de 4 números"}<input id="u_pin" inputmode="numeric" maxlength="4" pattern="[0-9]*" autocomplete="off"></label></div>
+    ${id ? `<label class="check"><input type="checkbox" id="u_ativo" ${u.ativo ? "checked" : ""}>Acesso ativo</label>` : ""}
+    <div class="note info">Funcionária: registra entradas, saídas, ajustes e descartes. Administrador: também cadastra itens, usuários e vê a auditoria.</div>
+    <div class="err" id="u_err" role="alert"></div></div>
+    <div class="m-f"><button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" data-act="salvarUser" data-id="${id || ""}">${ic("check",16,2.2)}Salvar</button></div></div>`);
+}
+async function salvarUser(id, btn){
+  const dados = { id: id || null, nome: $("#u_nome").value.trim(), papel: $("#u_papel").value, pin: $("#u_pin").value.trim(), ativo: $("#u_ativo") ? $("#u_ativo").checked : true };
+  btn.disabled = true;
+  try {
+    await API.salvarUsuario(dados);
+    if(id && id === S.sessao.id){ if(dados.pin) S.sessao.pin = dados.pin; S.sessao.nome = dados.nome; store.sset("estoque_sessao", S.sessao); }
+    fechar(); S.audit = null; await carregar(); toast("Usuário salvo."); render();
+  } catch(e){ $("#u_err").textContent = e.message; btn.disabled = false; }
+}
+
+/* =====================================================================
+   Planilhas (exportar / backup / contingência / importar)
+   ===================================================================== */
+function xlsxOk(){ if(window.XLSX) return true; toast("Biblioteca de planilhas não carregou. Verifique a internet e recarregue a página.", true); return false; }
+function baixarXlsx(nome, abas){
+  if(!xlsxOk()) return false;
+  const wb = XLSX.utils.book_new();
+  abas.forEach(({ nome: n, linhas, cab }) => {
+    const ws = linhas.length ? XLSX.utils.json_to_sheet(linhas) : XLSX.utils.aoa_to_sheet([cab || ["(vazio)"]]);
+    const cols = Object.keys(linhas[0] || {}).length ? Object.keys(linhas[0]) : (cab || []);
+    ws["!cols"] = cols.map(c => ({ wch: Math.min(60, Math.max(String(c).length + 2, ...linhas.slice(0, 300).map(r => String(r[c] ?? "").length + 2))) }));
+    XLSX.utils.book_append_sheet(wb, ws, n.slice(0, 31));
+  });
+  try { XLSX.writeFile(wb, nome); } catch(e){ toast("O navegador bloqueou o download.", true); return false; }
+  if(!ONLINE) toast("Planilha gerada. Na prévia do Claude o download pode ser bloqueado; na versão publicada ele baixa normalmente.");
+  return true;
+}
+const stamp = () => { const d = new Date(); return hojeISO() + "-" + String(d.getHours()).padStart(2,"0") + "h" + String(d.getMinutes()).padStart(2,"0"); };
+const linhaItem = i => ({ "Item": i.nome, "Descrição": i.descricao || "", "Categoria": i.categoria, "Unidade": i.unidade || "", "Local": i.local || "", "Saldo": i.saldo, "Estoque mínimo": i.min || "", "Estoque ideal": i.estoque_ideal || "", "Próxima validade": i.prox ? fData(i.prox) : "", "Situação": ST[i.st] ? ST[i.st][1] : "Inativo", "Fornecedor": i.fornecedor || "", "Cód. fornecedor": i.cod_fornecedor || "", "Custo unitário": i.custo_unit ?? "", "Valor em estoque": Math.round(i.valor * 100) / 100, "Controlado": i.controlado ? "Sim" : "Não" });
+function linhasLotes(soComSaldo){
+  const out = []; D.itens.forEach(i => i.lotes.filter(l => !soComSaldo || Number(l.quantidade) > 0).forEach(l => out.push({ "CODIGO": i.codigo || "", "ITEM / DESCRIÇÃO": i.descricao || "", "NOME": i.nome, "CATEGORIA": i.categoria, "UNIDADE": i.unidade || "", "QUANTIDADE": Number(l.quantidade), "LOCAL PADRÃO": i.local || "", "CODIGO FORNECEDOR": i.cod_fornecedor || "", "FORNECEDOR": i.fornecedor || "", "CUSTO UNITARIO": i.custo_unit ?? "", "FABRICADO": fData(l.fabricacao), "VALIDADE": fData(l.validade), "LOTE": l.lote || "" }))); return out;
+}
+const linhaMov = m => { const it = D.idx[m.item_id] || {}; const l = D.lotesIdx[m.lote_id] || {}; return { "Data e hora": fDH(m.criado_em), "Tipo": TIPO[m.tipo] ? TIPO[m.tipo][0] : m.tipo, "Item": it.nome || "", "Lote": l.lote || "", "Quantidade": Number(m.quantidade), "Saldo do lote": m.saldo_lote ?? "", "Motivo": m.motivo || "", "Responsável": m.usuario_nome || "", "Origem": m.origem || "" }; };
+const linhaVal = () => { const out = []; D.itens.forEach(i => i.comSaldo.forEach(l => out.push({ "Item": i.nome, "Lote": l.lote || "", "Validade": fData(l.validade), "Dias para vencer": diasAte(l.validade) ?? "", "Quantidade": Number(l.quantidade), "Local": i.local || "" }))); return out.sort((a,b) => (a["Dias para vencer"] === "" ? 1e9 : a["Dias para vencer"]) - (b["Dias para vencer"] === "" ? 1e9 : b["Dias para vencer"])); };
+async function backupCompleto(btn){
+  if(!xlsxOk()) return; btn.disabled = true;
+  try {
+    let movs = S.movs; if(!S.offline){ try { movs = await API.todasMovs(); } catch(e){} }
+    let aud = null; if(isAdmin() && !S.offline){ try { aud = await API.auditoria(); } catch(e){} }
+    const abas = [{ nome: "Estoque atual", linhas: D.itens.map(linhaItem) }, { nome: "Lotes (formato original)", linhas: linhasLotes(false) }, { nome: "Movimentações", linhas: movs.map(linhaMov) }, { nome: "Usuários", linhas: S.usuarios.map(u => ({ "Nome": u.nome, "Perfil": u.papel === "admin" ? "Administrador" : "Funcionária", "Ativo": u.ativo ? "Sim" : "Não" })) }];
+    if(aud) abas.push({ nome: "Auditoria", linhas: aud.map(a => ({ "Data e hora": fDH(a.criado_em), "Quem": a.usuario_nome || "sistema", "Ação": ACAO[a.acao][0], "Tabela": TAB[a.tabela] || a.tabela, "Resumo": resumoAud(a).replace(/&amp;/g,"&").replace(/&lt;/g,"<").replace(/&gt;/g,">").replace(/&quot;/g,'"').replace(/&#39;/g,"'"), "Antes": JSON.stringify(a.antes || ""), "Depois": JSON.stringify(a.depois || "") })) });
+    if(baixarXlsx(`estoque-${norm(CLINICA).replace(/\W+/g,"-")}-backup-${stamp()}.xlsx`, abas) && !S.offline){ await API.registrarBackup(); await carregar(true); render(); }
+  } catch(e){ toast(e.message, true); }
+  btn.disabled = false;
+}
+const CONT_CAB = ["Data (dd/mm/aaaa)","Item (nome exato)","Lote","Tipo (entrada/saída/ajuste/descarte)","Quantidade","Motivo","Responsável","Validade (só lote novo)","Fabricação (só lote novo)"];
+function contingencia(){
+  const ex = D.itens[0] && D.itens[0].comSaldo[0] ? D.itens[0] : null;
+  const instr = [["Como usar esta planilha"],[""],["1. Enquanto o sistema estiver fora do ar, anote cada movimentação na aba \"Movimentações manuais\", uma por linha."],["2. Copie o nome do item e o lote exatamente como aparecem na aba \"Estoque atual\"."],["3. Tipo: entrada, saída, ajuste ou descarte. No ajuste, a quantidade é o total contado no lote."],["4. Para lote novo (entrada), preencha também validade e fabricação."],["5. Quando o sistema voltar, o administrador importa o arquivo em Relatórios e backup > Importar contingência."],["6. Apague a linha de exemplo antes de importar."]];
+  if(!xlsxOk()) return;
+  const wb = XLSX.utils.book_new();
+  const w1 = XLSX.utils.aoa_to_sheet(instr); w1["!cols"] = [{ wch: 110 }]; XLSX.utils.book_append_sheet(wb, w1, "Instruções");
+  const lin = linhasLotes(true); const w2 = XLSX.utils.json_to_sheet(lin); w2["!cols"] = Object.keys(lin[0] || { a: 1 }).map(() => ({ wch: 22 })); XLSX.utils.book_append_sheet(wb, w2, "Estoque atual");
+  const rows = [CONT_CAB]; if(ex) rows.push([new Date().toLocaleDateString("pt-BR"), ex.nome, ex.comSaldo[0].lote || "", "saída", 1, "EXEMPLO - apagar esta linha", S.sessao.nome, "", ""]);
+  const w3 = XLSX.utils.aoa_to_sheet(rows); w3["!cols"] = CONT_CAB.map(c => ({ wch: Math.max(16, c.length + 2) })); XLSX.utils.book_append_sheet(wb, w3, "Movimentações manuais");
+  try { XLSX.writeFile(wb, `contingencia-estoque-${hojeISO()}.xlsx`); if(!ONLINE) toast("Planilha gerada. Na prévia do Claude o download pode ser bloqueado; na versão publicada ele baixa normalmente."); } catch(e){ toast("O navegador bloqueou o download.", true); }
+}
+function dataPlan(v){
+  if(v == null || v === "") return "";
+  if(v instanceof Date) return v.getFullYear() + "-" + String(v.getMonth()+1).padStart(2,"0") + "-" + String(v.getDate()).padStart(2,"0");
+  if(typeof v === "number"){ const d = XLSX.SSF.parse_date_code(v); return d ? `${d.y}-${String(d.m).padStart(2,"0")}-${String(d.d).padStart(2,"0")}` : ""; }
+  const m = String(v).trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/); if(m){ const y = m[3].length === 2 ? "20" + m[3] : m[3]; return `${y}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`; }
+  return /^\d{4}-\d{2}-\d{2}/.test(String(v)) ? String(v).slice(0,10) : "";
+}
+let IMP = [];
+function importar(){
+  abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead("Importar planilha de contingência", "Use o arquivo baixado em \"Planilha de contingência\", com a aba Movimentações manuais preenchida")}<div class="m-b">
+    <label class="f">Arquivo .xlsx<input type="file" id="imp_file" accept=".xlsx,.xls,.csv"></label><div id="imp_prev"></div></div>
+    <div class="m-f"><button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" id="imp_ok" data-act="impConfirmar" disabled>${ic("up",16)}Importar linhas válidas</button></div></div>`);
+  $("#imp_file").addEventListener("change", ev => { const f = ev.target.files[0]; if(!f || !xlsxOk()) return; const r = new FileReader(); r.onload = () => { try { lerImport(new Uint8Array(r.result)); } catch(e){ $("#imp_prev").innerHTML = `<div class="err">Não consegui ler o arquivo: ${esc(e.message)}</div>`; } }; r.readAsArrayBuffer(f); });
+}
+function lerImport(buf){
+  const wb = XLSX.read(buf, { type: "array", cellDates: true });
+  const nome = wb.SheetNames.find(n => norm(n).includes("moviment")) || wb.SheetNames[0];
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header: 1, defval: "" }).slice(1).filter(r => r.some(c => String(c).trim() !== ""));
+  const tipoMap = { entrada: "entrada", saida: "saida", ajuste: "ajuste", descarte: "descarte" };
+  IMP = rows.map((r, n) => {
+    const [dt, itemN, loteN, tipoT, qtd, motivo, resp, val, fab] = r; const o = { n: n + 2, raw: r, erro: "" };
+    if(norm(motivo).startsWith("exemplo")) { o.erro = "Linha de exemplo (ignorada)"; return o; }
+    const it = D.itens.find(i => norm(i.nome) === norm(itemN)) || D.itens.find(i => norm(i.descricao) === norm(itemN));
+    o.tipo = tipoMap[norm(tipoT)]; o.q = Number(String(qtd).replace(",", "."));
+    if(!it) o.erro = "Item não encontrado"; else if(!o.tipo) o.erro = "Tipo inválido"; else if(!(o.q >= 0)) o.erro = "Quantidade inválida";
+    if(it){ o.item = it; const l = it.lotes.find(x => norm(x.lote) === norm(loteN));
+      if(l) o.lote = l; else if(o.tipo === "entrada") o.novo = { lote: String(loteN || ""), validade: dataPlan(val), fabricacao: dataPlan(fab) }; else if(!o.erro) o.erro = "Lote não encontrado"; }
+    o.motivo = `[Contingência ${dataPlan(dt) ? fData(dataPlan(dt)) : String(dt)}${resp ? " · " + resp : ""}] ${motivo || ""}`.trim();
+    if(!o.erro && (o.tipo === "ajuste" || o.tipo === "descarte") && !String(motivo || "").trim()) o.erro = "Motivo obrigatório";
+    return o;
+  });
+  const ok = IMP.filter(x => !x.erro).length;
+  $("#imp_prev").innerHTML = `<div class="note ${ok ? "info" : "warn"}">${ok} de ${IMP.length} linhas prontas para importar. As linhas serão registradas em ordem e marcadas como contingência na auditoria.</div>
+  <div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px;margin-top:10px"><table><thead><tr><th>Linha</th><th>Item</th><th>Lote</th><th>Tipo</th><th class="r">Qtd.</th><th>Situação</th></tr></thead><tbody>${IMP.map(x => `<tr><td>${x.n}</td><td>${esc(x.item ? x.item.nome : x.raw[1])}</td><td>${esc(x.lote ? x.lote.lote : x.novo ? x.novo.lote + " (novo)" : x.raw[2])}</td><td>${x.tipo ? TIPO[x.tipo][0] : esc(x.raw[3])}</td><td class="r num">${esc(x.raw[4])}</td><td>${x.erro ? `<span class="pill p-crit">${esc(x.erro)}</span>` : '<span class="pill p-ok">OK</span>'}</td></tr>`).join("")}</tbody></table></div>`;
+  $("#imp_ok").disabled = !ok;
+}
+async function impConfirmar(btn){
+  btn.disabled = true; let ok = 0; const falhas = [];
+  for(const x of IMP.filter(y => !y.erro)){
+    try { await API.movimentar({ tipo: x.tipo, item_id: x.item.id, lote_id: x.lote ? x.lote.id : null, quantidade: x.q, motivo: x.motivo, origem: "contingencia", ...(x.novo || {}) }); ok++; }
+    catch(e){ falhas.push(`Linha ${x.n}: ${e.message}`); }
+    if(x.lote){ await carregar(true); }
+  }
+  fechar(); S.audit = null; await carregar(); render();
+  toast(`${ok} movimentações importadas.` + (falhas.length ? ` ${falhas.length} com erro: ${falhas.slice(0,2).join(" | ")}` : ""), !!falhas.length);
+}
+
+/* =====================================================================
+   Login por nome + PIN
+   ===================================================================== */
+let L = { u: null, pin: "", erro: "" };
+function vLogin(){
+  const us = S.usuarios.filter(u => u.ativo);
+  if(S.erroCarga && !S.offline) return `<div class="login"><div class="card lcard"><div class="brand"><span class="logo">${ic("cross",18,2.6)}</span><b>Estoque ${esc(CLINICA)}</b></div><div class="note crit">Não foi possível conectar ao servidor (${esc(S.erroCarga)}). Verifique a internet e o arquivo config.js.</div><button class="btn pri" data-act="recarregar">Tentar de novo</button></div></div>`;
+  const u = L.u && us.find(x => x.id === L.u);
+  return `<div class="login"><div class="card lcard">
+    <div class="brand"><span class="logo">${ic("cross",18,2.6)}</span><b>Estoque ${esc(CLINICA)}</b></div>
+    ${!ONLINE ? `<div class="banner demo">${ic("db",16)}<span>Demonstração: Administrador usa PIN <b>1234</b> e Enfermagem (exemplo) usa <b>1111</b>.</span></div>` : ""}
+    ${S.offline ? `<div class="banner off">${ic("wifi",16)}<span>Sem conexão. Você pode consultar a cópia salva em ${fDH(S.cacheEm)} e baixar a planilha de contingência.</span></div><button class="btn pri" data-act="consultaOffline">Consultar cópia offline</button>` : !u ? `
+      <div><h1>Quem está usando?</h1><p class="muted" style="margin:4px 0 0">Toque no seu nome</p></div>
+      <div class="ulist">${us.map(x => `<button class="ubtn" data-act="lUser" data-id="${x.id}">${av(x.nome,36)}<span><b>${esc(x.nome)}</b><small>${x.papel === "admin" ? "Administrador" : "Funcionária"}</small></span></button>`).join("") || `<div class="empty">Nenhum usuário ativo.</div>`}</div>` : `
+      <div style="display:flex;align-items:center;gap:12px"><button class="iconbtn" data-act="lVoltar" aria-label="Voltar">${ic("back")}</button>${av(u.nome,36)}<div><b>${esc(u.nome)}</b><div class="muted" style="font-size:12.5px">Digite seu PIN de 4 números</div></div></div>
+      <div class="pin-dots" aria-label="PIN digitado: ${L.pin.length} de 4">${[0,1,2,3].map(n => `<i class="${n < L.pin.length ? "f" : ""}"></i>`).join("")}</div>
+      ${L.erro ? `<div class="err" style="text-align:center" role="alert">${esc(L.erro)}</div>` : ""}
+      <div class="pad-grid">${[1,2,3,4,5,6,7,8,9].map(n => `<button data-act="lDig" data-v="${n}">${n}</button>`).join("")}<button class="ghost" data-act="lVoltar">Voltar</button><button data-act="lDig" data-v="0">0</button><button class="ghost" data-act="lApaga">Apagar</button></div>`}
+  </div></div>`;
+}
+async function lDig(v){
+  if(L.pin.length >= 4) return; L.pin += v; L.erro = ""; render();
+  if(L.pin.length === 4){
+    try { const u = await API.entrar(L.u, L.pin); S.sessao = { ...u, pin: L.pin }; store.sset("estoque_sessao", S.sessao); L = { u: null, pin: "", erro: "" }; tocar(); location.hash = "#hoje"; render(); }
+    catch(e){ L.pin = ""; L.erro = e.message; render(); }
+  }
+}
+
+/* =====================================================================
+   Renderização e eventos
+   ===================================================================== */
+const VIEWS = { hoje: vHoje, itens: vItens, movimentacoes: vMovs, validades: vValidades, compras: vCompras, backup: vBackup, auditoria: vAuditoria, usuarios: vUsuarios };
+const PARTS = { itens: listaItens, movimentacoes: listaMovs, auditoria: listaAud };
+function render(){
+  if(!S.sessao){ $("#root").innerHTML = vLogin(); return; }
+  const r = location.hash.slice(1); S.rota = VIEWS[r] ? r : "hoje";
+  if(S.rotaAnt !== S.rota){ S.f = {}; S.rotaAnt = S.rota; }
+  const y = window.scrollY;
+  $("#root").innerHTML = shell(); $("#view").innerHTML = VIEWS[S.rota]();
+  window.scrollTo(0, y);
+}
+function toast(msg, ruim){ const t = $("#toast"); t.innerHTML = `<div class="toast ${ruim ? "bad" : ""}" role="status">${ic(ruim ? "alert" : "check",18)}<span>${esc(msg)}</span></div>`; clearTimeout(toast.t); toast.t = setTimeout(() => t.innerHTML = "", ruim ? 7000 : 3800); }
+function sair(){ S.sessao = null; store.sdel("estoque_sessao"); fechar(); L = { u: null, pin: "", erro: "" }; render(); }
+let ultimoToque = Date.now(); const tocar = () => ultimoToque = Date.now();
+
+const ACT = {
+  fechar: () => fechar(), sair, recarregar: async () => { S.erroCarga = null; await carregar(); render(); },
+  novaMov: (d) => novaMov({ tipo: d.tipo, it: d.it, lote: d.lote }),
+  mTipo: (d) => { guardarCampos(); M.tipo = d.v; M.erro = ""; confirmarSemValidade = false; M.lote_id = M.item_id ? loteSugerido() : null; renderMov(); },
+  mItem: (d) => { guardarCampos(); M.item_id = d.id; M.lote_id = loteSugerido(); M.erro = ""; renderMov(); },
+  mTroca: () => { guardarCampos(); M.item_id = null; M.lote_id = null; renderMov(); },
+  mLote: (d) => { guardarCampos(); M.lote_id = d.id; M.erro = ""; renderMov(); },
+  mSalvar: (d, el) => salvarMov(el),
+  editItem: (d) => editItem(d.id), salvarItem: (d, el) => salvarItem(d.id, el),
+  editUser: (d) => editUser(d.id), salvarUser: (d, el) => salvarUser(d.id, el),
+  lUser: (d) => { L = { u: d.id, pin: "", erro: "" }; render(); }, lVoltar: () => { L = { u: null, pin: "", erro: "" }; render(); },
+  lDig: (d) => lDig(d.v), lApaga: () => { L.pin = L.pin.slice(0, -1); render(); },
+  consultaOffline: () => { S.sessao = { id: null, nome: "Consulta offline", papel: "funcionaria", pin: "" }; render(); },
+  exportItens: () => baixarXlsx(`itens-${hojeISO()}.xlsx`, [{ nome: "Itens", linhas: itensFiltrados().map(linhaItem) }]),
+  exportMovs: () => baixarXlsx(`movimentacoes-${hojeISO()}.xlsx`, [{ nome: "Movimentações", linhas: movsFiltradas().map(linhaMov) }]),
+  exportVal: () => baixarXlsx(`validades-${hojeISO()}.xlsx`, [{ nome: "Validades", linhas: linhaVal() }]),
+  exportCompras: () => baixarXlsx(`lista-de-compras-${hojeISO()}.xlsx`, [{ nome: "Lista de compras", linhas: compras().map(({i,sug}) => ({ "Item": i.nome, "Descrição": i.descricao || "", "Fornecedor": i.fornecedor || "", "Cód. fornecedor": i.cod_fornecedor || "", "Saldo": i.saldo, "Mínimo": i.min, "Comprar": sug, "Unidade": i.unidade || "", "Custo estimado": Math.round(sug * Number(i.custo_unit || 0) * 100) / 100 })) }]),
+  exportAud: () => baixarXlsx(`auditoria-${hojeISO()}.xlsx`, [{ nome: "Auditoria", linhas: S.audit.map(a => ({ "Data e hora": fDH(a.criado_em), "Quem": a.usuario_nome || "sistema", "Ação": ACAO[a.acao][0], "Tabela": TAB[a.tabela] || a.tabela, "Antes": JSON.stringify(a.antes || ""), "Depois": JSON.stringify(a.depois || "") })) }]),
+  copiarCompras: async () => { const txt = `*Lista de compras · ${CLINICA} · ${new Date().toLocaleDateString("pt-BR")}*\n` + compras().map(({i,sug}) => `• ${i.nome}: ${fNum(sug)} ${low(i.unidade)}${i.fornecedor ? " (" + i.fornecedor + ")" : ""}`).join("\n"); try { await navigator.clipboard.writeText(txt); toast("Lista copiada. Cole no WhatsApp."); } catch(e){ toast("Não consegui copiar automaticamente neste navegador.", true); } },
+  backup: (d, el) => backupCompleto(el), contingencia: () => contingencia(), importar: () => importar(), impConfirmar: (d, el) => impConfirmar(el),
+  resetDemo: async () => { if(API.resetar){ API.resetar(); await carregar(); render(); toast("Dados da planilha restaurados."); } }
+};
+
+document.addEventListener("click", e => {
+  tocar();
+  const a = e.target.closest("[data-act]");
+  if(a && !a.disabled){ e.preventDefault(); ACT[a.dataset.act] && ACT[a.dataset.act](a.dataset, a, e); return; }
+  const go = e.target.closest("[data-go]"); if(go){ location.hash = "#" + go.dataset.go; return; }
+  const it = e.target.closest("[data-item]"); if(it){ $("#gres") && ($("#gres").innerHTML = ""); abrirItem(it.dataset.item); return; }
+  if(e.target.matches("[data-ov]")) fechar();
+  if(!e.target.closest(".search") && $("#gres")) $("#gres").innerHTML = "";
+});
+document.addEventListener("input", e => {
+  tocar();
+  const t = e.target;
+  if(t.dataset.f){ S.f[t.dataset.f] = t.value; const el = $("#lista"); if(el && PARTS[S.rota]) el.innerHTML = PARTS[S.rota](); return; }
+  if(t.id === "m_busca"){ M.busca = t.value; const q = norm(t.value); const xs = D.itens.filter(x => !q || norm([x.nome, x.descricao, x.cod_fornecedor, x.codigo, ...x.lotes.map(l => l.lote)].join(" ")).includes(q)).slice(0, 30);
+    $("#m_plist").innerHTML = xs.map(x => `<button data-act="mItem" data-id="${x.id}">${av(x.categoria, 30)}<span><b>${esc(x.nome)}</b><br><small class="muted">${esc(x.local || "")} · ${fNum(x.saldo)} ${esc(low(x.unidade))}</small></span><span class="sp"></span><span class="pill ${ST[x.st][0]}">${ST[x.st][1]}</span></button>`).join("") || `<div class="empty">Nenhum item encontrado.</div>`; return; }
+  if(t.id === "gsearch"){ const q = norm(t.value); const box = $("#gres"); if(!q){ box.innerHTML = ""; return; }
+    const xs = D.itens.filter(x => norm([x.nome, x.descricao, x.cod_fornecedor, x.codigo, x.fornecedor, ...x.lotes.map(l => l.lote)].join(" ")).includes(q)).slice(0, 8);
+    box.innerHTML = `<div class="sresults">${xs.map(x => `<button data-item="${x.id}">${av(x.categoria, 28)}<span><b>${esc(x.nome)}</b><br><small class="muted">${fNum(x.saldo)} ${esc(low(x.unidade))} · ${esc(x.local || "")}</small></span></button>`).join("") || `<div class="empty">Nada encontrado.</div>`}</div>`; }
+});
+document.addEventListener("keydown", e => {
+  tocar();
+  if(e.key === "Escape" && $("#modal").innerHTML) fechar();
+  if(e.key === "/" && !/input|textarea|select/i.test(document.activeElement.tagName) && $("#gsearch")){ e.preventDefault(); $("#gsearch").focus(); }
+  if(!S.sessao && L.u && /^[0-9]$/.test(e.key)) lDig(e.key);
+  if(!S.sessao && L.u && e.key === "Backspace"){ L.pin = L.pin.slice(0, -1); render(); }
+  if(e.key === "Enter" && M && e.target.id !== "m_busca" && $("#modal [data-act=mSalvar]")){ e.preventDefault(); salvarMov($("#modal [data-act=mSalvar]")); }
+});
+window.addEventListener("hashchange", () => { fechar(); render(); window.scrollTo(0, 0); });
+
+/* relógio, sessão inativa (30 min) e atualização automática a cada 60 s */
+setInterval(() => {
+  const c = $("#clock"); if(c) c.textContent = "· " + fHora(Date.now());
+  if(S.sessao && Date.now() - ultimoToque > 30 * 60e3){ sair(); toast("Sessão encerrada por inatividade."); }
+}, 15e3);
+if(ONLINE) setInterval(async () => { if(S.sessao && !$("#modal").innerHTML && document.visibilityState === "visible"){ await carregar(true); render(); } }, 60e3);
+if(ONLINE && "serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+(async () => { await carregar(); if(S.sessao && S.sessao.id && !S.usuarios.some(u => u.id === S.sessao.id && u.ativo)) S.sessao = null; render(); })();
+</script>
+</body>
+</html>
