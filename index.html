@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#0E9AA7">
+<meta name="theme-color" content="#263B65">
 <title>Estoque UROtherap</title>
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
@@ -17,13 +17,13 @@
 <style>
 /* Layout: sidebar fixa + área de trabalho em cards; no celular vira barra inferior */
 :root{
-  --bg:#EDF3F6; --surface:#FFFFFF; --surface-2:#F6FAFB; --line:#E1E9EE; --ink:#14242F; --muted:#6C7F8B;
-  --accent:#0E9AA7; --accent-2:#0A7E8B; --accent-soft:#E2F4F6;
+  --bg:#F6F4EF; --surface:#FFFFFF; --surface-2:#FAF8F4; --line:#E9E4DA; --ink:#1F2A44; --muted:#6F7688;
+  --accent:#263B65; --accent-2:#1E3055; --accent-soft:#E9EDF5; --gold:#C1982F; --gold-2:#8C6B16; --gold-soft:#F8F1DE;
   --ok:#1E9A69; --ok-soft:#E4F5EC; --warn:#B9770E; --warn-soft:#FDF2DE; --crit:#D2463F; --crit-soft:#FCE8E6;
   --violet:#7259C4; --violet-soft:#EEEAFA; --blue:#2C77CC; --blue-soft:#E5EFFB;
-  --navy:#0F2A3B;
+  --navy:#263B65;
   --font:"Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --r:16px; --r-sm:10px; --shadow:0 1px 2px rgba(16,42,59,.04), 0 6px 20px rgba(16,42,59,.05);
+  --r:16px; --r-sm:10px; --shadow:0 1px 2px rgba(38,59,101,.04), 0 6px 20px rgba(38,59,101,.05);
   color-scheme: light;
 }
 *{box-sizing:border-box}
@@ -40,7 +40,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .app{display:grid;grid-template-columns:248px 1fr;min-height:100%}
 .side{background:var(--surface);border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:18px;position:sticky;top:0;height:100vh;overflow:auto}
 .brand{display:flex;align-items:center;gap:10px;padding:0 6px}
-.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(140deg,#16B3BF,var(--accent-2));display:grid;place-items:center;color:#fff;box-shadow:0 4px 12px rgba(14,154,167,.3)}
+.logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(140deg,#34508A,var(--accent-2));display:grid;place-items:center;color:#fff;box-shadow:0 4px 12px rgba(38,59,101,.25)}
 .brand b{font-size:19px;letter-spacing:-.01em}
 .brand-img{display:flex;flex-direction:column;align-items:center;gap:6px;padding:2px 6px 0}
 .brand-img img{width:100%;max-width:178px;height:auto;display:block}
@@ -52,16 +52,16 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .clinic{display:flex;align-items:center;gap:10px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .clinic .ci{width:30px;height:30px;border-radius:8px;background:var(--accent-soft);color:var(--accent-2);display:grid;place-items:center}
 .clinic b{display:block;font-size:13px}.clinic small{color:var(--muted);font-size:11.5px}
-.navlbl{font-size:11px;letter-spacing:.12em;color:#93A3AD;font-weight:600;padding:0 10px;margin-bottom:6px}
+.navlbl{font-size:11px;letter-spacing:.12em;color:#9A9484;font-weight:600;padding:0 10px;margin-bottom:6px}
 .nav{display:flex;flex-direction:column;gap:2px}
-.nav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:#3D5260;text-decoration:none;font-weight:500;position:relative}
+.nav a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;color:#3F4A63;text-decoration:none;font-weight:500;position:relative}
 .nav a:hover{background:var(--surface-2)}
 .nav a.on{background:var(--accent-soft);color:var(--accent-2);font-weight:600}
-.nav a.on::before{content:"";position:absolute;left:-16px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
+.nav a.on::before{content:"";position:absolute;left:-16px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--gold)}
 .nav .badge{margin-left:auto;background:var(--crit-soft);color:var(--crit);font-size:11px;font-weight:700;border-radius:999px;padding:1px 7px}
 .side-foot{margin-top:auto;display:flex;flex-direction:column;gap:12px}
-.duty{background:radial-gradient(120% 120% at 100% 0%,#1C5C70 0%,var(--navy) 55%);color:#fff;border-radius:14px;padding:14px}
-.duty small{color:#A9C3CF;font-size:11.5px}
+.duty{background:radial-gradient(120% 120% at 100% 0%,#3A5488 0%,var(--navy) 60%);color:#fff;border-radius:14px;padding:14px}
+.duty small{color:#E3CF97;font-size:11.5px}
 .duty .av-row{display:flex;margin:10px 0 8px}
 .duty .av-row .av{margin-left:-6px;border:2px solid var(--navy)}.duty .av-row .av:first-child{margin-left:0}
 .duty b{font-size:13px}
@@ -84,7 +84,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .iconbtn .dot{position:absolute;top:6px;right:6px;min-width:16px;height:16px;border-radius:99px;background:var(--crit);color:#fff;font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
 .btn{text-decoration:none;display:inline-flex;align-items:center;gap:8px;border-radius:10px;padding:10px 16px;font-weight:600;cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--ink);white-space:nowrap}
 .btn:hover{background:var(--surface-2)}
-.btn.pri{background:linear-gradient(135deg,#14AEBA,var(--accent-2));color:#fff;border:0;box-shadow:0 4px 14px rgba(14,154,167,.28)}
+.btn.pri{background:linear-gradient(135deg,#34508A,var(--accent));color:#fff;border:0;box-shadow:0 3px 10px rgba(38,59,101,.22)}
 .btn.pri:hover{filter:brightness(1.05)}
 .btn.sm{padding:7px 12px;font-size:13px}
 .btn.danger{color:var(--crit)}
@@ -109,7 +109,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .p-violet{background:var(--violet-soft);color:var(--violet)}.p-blue{background:var(--blue-soft);color:var(--blue)}.p-mute{background:#EEF2F4;color:#5D707C}.p-acc{background:var(--accent-soft);color:var(--accent-2)}
 .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:14px}
 .kpi{padding:16px 18px;display:flex;flex-direction:column;gap:10px;cursor:pointer;text-align:left;font:inherit;color:inherit}
-.kpi:hover{border-color:#CFDDE4}
+.kpi:hover{border-color:#D9D1BF}
 .kpi .kh{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
 .kpi .kic{width:30px;height:30px;border-radius:8px;display:grid;place-items:center}
 .kpi .kv{font-size:28px;font-weight:700;letter-spacing:-.02em;line-height:1}
@@ -130,7 +130,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .qty{font-weight:700;font-size:13px;text-align:right;white-space:nowrap}
 .q-pos{color:var(--ok)}.q-neg{color:var(--blue)}
 .av{width:28px;height:28px;border-radius:50%;display:inline-grid;place-items:center;font-size:11px;font-weight:700;flex:none}
-.hero{margin:4px 14px 10px;border-radius:14px;padding:16px;color:#fff;background:radial-gradient(90% 120% at 100% 100%,rgba(255,255,255,.18),transparent 60%),linear-gradient(140deg,#13A9B5,#0A6F7C);position:relative;overflow:hidden;cursor:pointer}
+.hero{margin:4px 14px 10px;border-radius:14px;padding:16px;color:#fff;background:radial-gradient(90% 120% at 100% 100%,rgba(255,255,255,.18),transparent 60%),linear-gradient(140deg,#34508A,#1E3055);position:relative;overflow:hidden;cursor:pointer}
 .hero.crit{background:radial-gradient(90% 120% at 100% 100%,rgba(255,255,255,.16),transparent 60%),linear-gradient(140deg,#E0625A,#A8322C)}
 .hero small{opacity:.85;font-size:12px}
 .hero .hv{font-size:22px;font-weight:700;margin:6px 0 2px;letter-spacing:-.01em}
@@ -145,7 +145,7 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .bars{padding:4px 18px 18px;display:flex;flex-direction:column;gap:12px}
 .bar-row{display:grid;grid-template-columns:180px 1fr 110px;gap:12px;align-items:center;font-size:13px}
 .bar{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden;border:1px solid var(--line)}
-.bar i{display:block;height:100%;background:linear-gradient(90deg,#16B3BF,var(--accent-2));border-radius:99px}
+.bar i{display:block;height:100%;background:linear-gradient(90deg,#D4AF4E,var(--gold));border-radius:99px}
 .empty{padding:28px 18px;text-align:center;color:var(--muted)}
 
 /* ---------- Tabelas e filtros ---------- */
@@ -154,9 +154,11 @@ h1,h2,h3{margin:0;text-wrap:balance}
 .field,select.field{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;min-width:0}
 .tbl-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse}
-th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#8597A2;font-weight:600;text-align:left;padding:10px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:#8C8676;font-weight:600;text-align:left;padding:10px 14px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
 td{padding:11px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
-tr.click{cursor:pointer}tr.click:hover td{background:#FAFCFD}
+th.sortable{cursor:pointer;user-select:none}th.sortable:hover{color:var(--accent)}th.sortable.on{color:var(--accent);background:var(--accent-soft)}
+th .arr{margin-left:5px;font-size:10px;opacity:.45}th.on .arr{opacity:1;color:var(--gold-2)}
+tr.click{cursor:pointer}tr.click:hover td{background:#FBF9F4}
 td .sub{display:block;color:var(--muted);font-size:12px;max-width:420px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 td.r,th.r{text-align:right}
 .level{display:flex;align-items:center;gap:8px;justify-content:flex-end}
@@ -169,8 +171,8 @@ td.r,th.r{text-align:right}
 .muted{color:var(--muted)}
 
 /* ---------- Modal ---------- */
-.ov{position:fixed;inset:0;background:rgba(15,42,59,.35);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
-.modal{background:#fff;border-radius:18px;width:min(560px,100%);max-height:calc(100% - 20px);overflow:auto;box-shadow:0 20px 60px rgba(15,42,59,.25)}
+.ov{position:fixed;inset:0;background:rgba(31,42,68,.35);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal{background:#fff;border-radius:18px;width:min(560px,100%);max-height:calc(100% - 20px);overflow:auto;box-shadow:0 20px 60px rgba(31,42,68,.25)}
 .modal.wide{width:min(860px,100%)}
 .ov.drawer{justify-content:flex-end;padding:0}
 .ov.drawer .modal{height:100%;max-height:none;border-radius:18px 0 0 18px;width:min(640px,100%)}
@@ -180,10 +182,10 @@ td.r,th.r{text-align:right}
 .m-b{padding:10px 22px 8px;display:flex;flex-direction:column;gap:14px}
 .m-f{display:flex;gap:10px;justify-content:flex-end;padding:14px 22px 20px;position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line)}
 .seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:var(--surface-2);padding:5px;border-radius:12px;border:1px solid var(--line)}
-.seg button{border:0;background:none;padding:9px 6px;border-radius:9px;font-weight:600;cursor:pointer;color:#4E6371}
-.seg button.on{background:#fff;box-shadow:0 1px 4px rgba(16,42,59,.1);color:var(--ink)}
+.seg button{border:0;background:none;padding:9px 6px;border-radius:9px;font-weight:600;cursor:pointer;color:#4A5470}
+.seg button.on{background:#fff;box-shadow:0 1px 4px rgba(38,59,101,.1);color:var(--ink)}
 .seg button.on[data-v="entrada"]{color:var(--ok)}.seg button.on[data-v="saida"]{color:var(--blue)}.seg button.on[data-v="ajuste"]{color:var(--violet)}.seg button.on[data-v="descarte"]{color:var(--crit)}
-label.f{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:600;color:#4E6371}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:12.5px;font-weight:600;color:#4A5470}
 label.f input,label.f select,label.f textarea{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-weight:400;background:#fff;width:100%}
 label.f input:focus,label.f select:focus,label.f textarea:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -206,11 +208,15 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{outline:2px soli
 .dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
 .dl div{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
 .dl small{display:block;color:var(--muted);font-size:11.5px}.dl b{font-size:13.5px;word-break:break-word}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:-6px}
+.chipbtn{border:1px solid var(--line);background:var(--surface-2);border-radius:999px;padding:5px 11px;font-size:12.5px;cursor:pointer;color:#4A5470}
+.chipbtn:hover{border-color:var(--gold);background:var(--gold-soft)}
+.chipbtn.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
 .check{display:flex;align-items:center;gap:8px;font-weight:500;color:var(--ink)}
 .check input{width:18px;height:18px;accent-color:var(--accent)}
 
 /* ---------- Login ---------- */
-.login{min-height:100%;display:grid;place-items:center;padding:24px;background:radial-gradient(60% 50% at 80% 0%,#D5EEF2,transparent),var(--bg)}
+.login{min-height:100%;display:grid;place-items:center;padding:24px;background:radial-gradient(60% 50% at 80% 0%,#F3E8C8,transparent),var(--bg)}
 .lcard{width:min(420px,100%);padding:28px;display:flex;flex-direction:column;gap:18px}
 .lcard h1{font-size:22px}
 .ulist{display:flex;flex-direction:column;gap:8px}
@@ -218,14 +224,14 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{outline:2px soli
 .ubtn:hover{border-color:var(--accent);background:var(--accent-soft)}
 .ubtn small{color:var(--muted);display:block;font-size:12px}
 .pin-dots{display:flex;gap:14px;justify-content:center;margin:6px 0}
-.pin-dots i{width:14px;height:14px;border-radius:50%;border:2px solid #B8C7CF}
+.pin-dots i{width:14px;height:14px;border-radius:50%;border:2px solid #CFC7B4}
 .pin-dots i.f{background:var(--accent);border-color:var(--accent)}
 .pad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .pad-grid button{height:56px;border-radius:14px;border:1px solid var(--line);background:#fff;font-size:20px;font-weight:600;cursor:pointer}
 .pad-grid button:active{background:var(--accent-soft)}
 .pad-grid button.ghost{border:0;background:none;font-size:14px;color:var(--muted)}
 
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(15,42,59,.3);z-index:80;display:flex;gap:10px;align-items:center;max-width:calc(100% - 32px)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(31,42,68,.3);z-index:80;display:flex;gap:10px;align-items:center;max-width:calc(100% - 32px)}
 .toast.bad{background:#8C2E2A}
 .mobnav,.fab{display:none}
 
@@ -245,7 +251,7 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{outline:2px soli
   .mobnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);z-index:30;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
   .mobnav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--muted);text-decoration:none;padding:4px 0;font-weight:600}
   .mobnav a.on{color:var(--accent-2)}
-  .fab{display:grid;place-items:center;position:fixed;right:18px;bottom:78px;width:56px;height:56px;border-radius:18px;border:0;background:linear-gradient(135deg,#14AEBA,var(--accent-2));color:#fff;box-shadow:0 8px 24px rgba(14,154,167,.4);z-index:31;cursor:pointer}
+  .fab{display:grid;place-items:center;position:fixed;right:18px;bottom:78px;width:56px;height:56px;border-radius:18px;border:0;background:linear-gradient(135deg,#34508A,var(--accent));color:#fff;box-shadow:0 8px 22px rgba(38,59,101,.35);z-index:31;cursor:pointer}
   .ov{padding:0;align-items:flex-end}
   .modal{border-radius:18px 18px 0 0;max-height:94%}
   .ov.drawer .modal{border-radius:18px 18px 0 0;height:94%}
@@ -336,7 +342,7 @@ const S = {
   usuarios: [], itens: [], lotes: [], movs: [], config: {},
   sessao: store.sget("estoque_sessao"),
   offline: false, cacheEm: null, carregadoEm: null,
-  rota: "hoje", f: {}, audit: null, busca: ""
+  rota: "hoje", f: {}, audit: null, busca: "", pac: {}
 };
 
 /* =====================================================================
@@ -344,6 +350,7 @@ const S = {
    ===================================================================== */
 const API = ONLINE ? (() => {
   const base = CFG.supabaseUrl.replace(/\/$/,"") + "/rest/v1/";
+  const MOV_COLS = "id,item_id,lote_id,tipo,quantidade,saldo_lote,motivo,usuario_id,usuario_nome,origem,criado_em";
   const H = { apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + CFG.supabaseAnonKey, "Content-Type": "application/json" };
   async function req(path, opt = {}){
     const r = await fetch(base + path, { ...opt, headers: { ...H, ...(opt.headers || {}) } });
@@ -351,7 +358,7 @@ const API = ONLINE ? (() => {
     return r.status === 204 ? null : r.json();
   }
   async function todos(tabela, ordem){
-    const out = []; for(let o = 0; ; o += 1000){ const p = await req(`${tabela}?select=*&order=${ordem}&limit=1000&offset=${o}`); out.push(...p); if(p.length < 1000) break; } return out;
+    const out = []; for(let o = 0; ; o += 1000){ const p = await req(`${tabela}?select=${tabela === "movimentacoes" ? MOV_COLS : "*"}&order=${ordem}&limit=1000&offset=${o}`); out.push(...p); if(p.length < 1000) break; } return out;
   }
   async function rpc(nome, corpo){
     const s = S.sessao || {};
@@ -363,7 +370,7 @@ const API = ONLINE ? (() => {
     async carregar(){
       const [usuarios, itens, lotes, movs, config] = await Promise.all([
         req("usuarios_publicos?select=*&order=nome"), todos("itens","nome"), todos("lotes","validade.nullslast"),
-        req("movimentacoes?select=*&order=id.desc&limit=1000"), req("config?select=*")
+        req(`movimentacoes?select=${MOV_COLS}&order=id.desc&limit=1000`), req("config?select=*")
       ]);
       return { usuarios, itens, lotes, movs, config: Object.fromEntries(config.map(c => [c.chave, c.valor])) };
     },
@@ -377,6 +384,7 @@ const API = ONLINE ? (() => {
     salvarLote: l => rpc("salvar_lote", { p_lote: l }),
     salvarUsuario: u => rpc("salvar_usuario", { p_dados: u }),
     async auditoria(){ return (await rpc("ler_auditoria", { p_limite: 3000 })).dados; },
+    async pacientes(){ return (await rpc("ler_pacientes", { p_limite: 20000 })).dados || {}; },
     registrarBackup: () => rpc("registrar_backup", {})
   };
 })() : (() => {
@@ -419,7 +427,7 @@ const API = ONLINE ? (() => {
       const delta = t === "entrada" ? q : t === "ajuste" ? q - l.quantidade : -q;
       if(l.quantidade + delta < 0) throw new Error(`Saldo insuficiente no lote (disponível: ${fNum(l.quantidade)}).`);
       const antes = { ...l }; l.quantidade = l.quantidade + delta; aud(u, "UPDATE", "lotes", antes, l);
-      const m = { id: db.seq++, item_id: d.item_id, lote_id: l.id, tipo: t, quantidade: delta, saldo_lote: l.quantidade, motivo: String(d.motivo || "").trim() || null, usuario_id: u.id, usuario_nome: u.nome, origem: d.origem || "sistema", criado_em: new Date().toISOString() };
+      const m = { id: db.seq++, item_id: d.item_id, lote_id: l.id, tipo: t, quantidade: delta, saldo_lote: l.quantidade, motivo: String(d.motivo || "").trim() || null, paciente: String(d.paciente || "").trim() || null, usuario_id: u.id, usuario_nome: u.nome, origem: d.origem || "sistema", criado_em: new Date().toISOString() };
       db.movs.unshift(m); aud(u, "INSERT", "movimentacoes", null, m); salvar(); return { ok: true, id: m.id };
     },
     async salvarItem(i){
@@ -450,6 +458,7 @@ const API = ONLINE ? (() => {
       const dep = { ...x }; if(pin) dep.pin_alterado = true; aud(u, "UPDATE", "usuarios", antes, dep); salvar(); return { ok: true };
     },
     async auditoria(){ quem(true); return db.aud; },
+    async pacientes(){ return {}; },
     async registrarBackup(){ const u = quem(false); db.config.ultimo_backup = new Date().toISOString(); db.config.ultimo_backup_por = u.nome; salvar(); return { ok: true }; },
     resetar(){ db = inicial(); salvar(); }
   };
@@ -466,8 +475,10 @@ async function carregar(silencioso){
     if(c){ Object.assign(S, { usuarios: c.usuarios, itens: c.itens, lotes: c.lotes, movs: c.movs, config: c.config || {} }); S.offline = true; S.cacheEm = c.em; }
     else if(!silencioso) { S.erroCarga = e.message || "Falha de conexão"; }
   }
+  if(S.sessao && S.sessao.id && !S.offline){ try { S.pac = await API.pacientes(); } catch(e){} }
   derivar();
 }
+const pacDe = m => m.paciente || S.pac[m.id] || "";
 let D = {};
 function derivar(){
   const porItem = {}; S.lotes.forEach(l => (porItem[l.item_id] ||= []).push(l));
@@ -615,7 +626,7 @@ function rowAlerta(a){
 function rowTL(m){
   const it = D.idx[m.item_id] || { nome: "Item removido", unidade: "" }; const l = D.lotesIdx[m.lote_id];
   return `<div class="tl-row"><span class="tl-t num">${diaLocal(m.criado_em) === hojeISO() ? fHora(m.criado_em) : fData(diaLocal(m.criado_em)).slice(0,5)}</span>
-    <span class="chip c-${m.tipo}" data-item="${m.item_id}" style="cursor:pointer"><b>${esc(it.nome)}</b><span>${TIPO[m.tipo][0]}${l ? " · lote " + esc(l.lote || "—") : ""}${m.motivo ? " · " + esc(m.motivo) : ""}</span></span>
+    <span class="chip c-${m.tipo}" data-item="${m.item_id}" style="cursor:pointer"><b>${esc(it.nome)}</b><span>${TIPO[m.tipo][0]}${l ? " · lote " + esc(l.lote || "—") : ""}${pacDe(m) ? " · pcte " + esc(pacDe(m)) : ""}${m.motivo ? " · " + esc(m.motivo) : ""}</span></span>
     <span style="display:flex;align-items:center;gap:8px"><span class="qty num ${m.quantidade >= 0 ? "q-pos" : "q-neg"}">${m.quantidade > 0 ? "+" : ""}${fNum(m.quantidade)}</span>${av(m.usuario_nome || "?")}</span></div>`;
 }
 
@@ -655,7 +666,7 @@ function vMovs(){
   return `${banners()}<div class="head"><div><h1>Movimentações</h1><p>Registros não podem ser editados nem apagados. Para corrigir, registre um ajuste.</p></div><div class="sp"></div>
     <button class="btn" data-act="exportMovs">${ic("down",16)}Exportar planilha</button><button class="btn pri" data-act="novaMov" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Nova movimentação</button></div>
   <div class="card"><div class="toolbar">
-    <div class="search">${ic("search",16)}<input data-f="q" value="${esc(f.q || "")}" placeholder="Item, lote ou motivo" aria-label="Filtrar movimentações"></div>
+    <div class="search">${ic("search",16)}<input data-f="q" value="${esc(f.q || "")}" placeholder="Item, lote, motivo ou paciente" aria-label="Filtrar movimentações"></div>
     <select class="field" data-f="per" aria-label="Período">${[["7","Últimos 7 dias"],["30","Últimos 30 dias"],["90","Últimos 90 dias"],["","Todo o período"]].map(([v,t]) => `<option value="${v}" ${(f.per ?? "30") === v ? "selected" : ""}>${t}</option>`).join("")}</select>
     <select class="field" data-f="tipo" aria-label="Tipo"><option value="">Todos os tipos</option>${Object.entries(TIPO).map(([k,[t]]) => `<option value="${k}" ${f.tipo === k ? "selected" : ""}>${t}</option>`).join("")}</select>
     <select class="field" data-f="user" aria-label="Usuário"><option value="">Todas as pessoas</option>${[...new Set(S.movs.map(m => m.usuario_nome).filter(Boolean))].sort().map(n => `<option ${f.user === n ? "selected" : ""}>${esc(n)}</option>`).join("")}</select>
@@ -665,15 +676,40 @@ function movsFiltradas(lista){
   const f = S.f; const q = norm(f.q); const per = f.per ?? "30"; const lim = per ? Date.now() - Number(per) * 864e5 : 0;
   return (lista || S.movs).filter(m => { const it = D.idx[m.item_id] || {}; const l = D.lotesIdx[m.lote_id] || {};
     return (!per || new Date(m.criado_em) >= lim) && (!f.tipo || m.tipo === f.tipo) && (!f.user || m.usuario_nome === f.user) &&
-      (!q || norm([it.nome, it.descricao, l.lote, m.motivo].join(" ")).includes(q)); });
+      (!q || norm([it.nome, it.descricao, l.lote, m.motivo, pacDe(m), m.usuario_nome].join(" ")).includes(q)); });
+}
+const COL_MOV = [
+  ["data","Data","", m => m.criado_em],
+  ["tipo","Tipo","", m => TIPO[m.tipo] ? TIPO[m.tipo][0] : m.tipo],
+  ["item","Item","", m => (D.idx[m.item_id] || {}).nome],
+  ["lote","Lote","hide-m", m => (D.lotesIdx[m.lote_id] || {}).lote],
+  ["qtd","Qtd.","r", m => Number(m.quantidade)],
+  ["saldo","Saldo lote","r hide-m", m => m.saldo_lote == null ? null : Number(m.saldo_lote)],
+  ["paciente","Paciente","hide-m", m => pacDe(m)],
+  ["motivo","Motivo","hide-m", m => m.motivo],
+  ["quem","Quem","", m => m.usuario_nome]
+];
+const coll = new Intl.Collator("pt-BR", { numeric: true, sensitivity: "base" });
+function movsOrdenadas(lista){
+  const o = S.f.ord; if(!o || !o.dir) return lista;
+  const c = COL_MOV.find(x => x[0] === o.col); if(!c) return lista;
+  const vazio = v => v == null || v === "";
+  return lista.slice().sort((a, b) => {
+    const va = c[3](a), vb = c[3](b);
+    if(vazio(va) && vazio(vb)) return 0; if(vazio(va)) return 1; if(vazio(vb)) return -1;
+    const r = typeof va === "number" && typeof vb === "number" ? va - vb : coll.compare(String(va), String(vb));
+    return o.dir === "desc" ? -r : r;
+  });
 }
 function listaMovs(){
-  const ms = movsFiltradas();
+  const ms = movsOrdenadas(movsFiltradas());
   if(!ms.length) return `<div class="empty">Nenhuma movimentação nesse período.</div>`;
-  return `<table><thead><tr><th>Data</th><th>Tipo</th><th>Item</th><th class="hide-m">Lote</th><th class="r">Qtd.</th><th class="r hide-m">Saldo lote</th><th class="hide-m">Motivo</th><th>Quem</th></tr></thead><tbody>
+  const o = S.f.ord || {};
+  const th = ([k, t, cls]) => { const on = o.col === k && o.dir; return `<th class="${cls} sortable ${on ? "on" : ""}" data-act="ordenar" data-col="${k}" title="Clique para ordenar: maior → menor, menor → maior, sem ordem" aria-sort="${on ? (o.dir === "desc" ? "descending" : "ascending") : "none"}">${t}<span class="arr">${on ? (o.dir === "desc" ? "▼" : "▲") : "↕"}</span></th>`; };
+  return `<table><thead><tr>${COL_MOV.map(th).join("")}</tr></thead><tbody>
   ${ms.slice(0, 500).map(m => { const it = D.idx[m.item_id] || { nome: "—" }; const l = D.lotesIdx[m.lote_id] || {};
     return `<tr class="click" data-item="${m.item_id}"><td class="num" style="white-space:nowrap">${fDH(m.criado_em)}</td><td><span class="pill ${TIPO[m.tipo][1]}">${TIPO[m.tipo][0]}</span></td><td><b>${esc(it.nome)}</b></td><td class="hide-m">${esc(l.lote || "—")}</td>
-    <td class="r num qty ${m.quantidade >= 0 ? "q-pos" : "q-neg"}">${m.quantidade > 0 ? "+" : ""}${fNum(m.quantidade)}</td><td class="r num hide-m">${fNum(m.saldo_lote)}</td><td class="hide-m">${esc(m.motivo || "—")}${m.origem === "contingencia" ? ' <span class="pill p-warn">contingência</span>' : ""}</td>
+    <td class="r num qty ${m.quantidade >= 0 ? "q-pos" : "q-neg"}">${m.quantidade > 0 ? "+" : ""}${fNum(m.quantidade)}</td><td class="r num hide-m">${fNum(m.saldo_lote)}</td><td class="hide-m">${esc(pacDe(m) || "—")}</td><td class="hide-m">${esc(m.motivo || "—")}${m.origem === "contingencia" ? ' <span class="pill p-warn">contingência</span>' : ""}</td>
     <td><span style="display:inline-flex;align-items:center;gap:8px">${av(m.usuario_nome || "?")}<span class="hide-m">${esc(m.usuario_nome || "—")}</span></span></td></tr>`; }).join("")}
   </tbody></table>${ms.length > 500 ? `<div class="empty">Mostrando 500 de ${ms.length}. Use a exportação para ver todas.</div>` : ""}`;
 }
@@ -718,7 +754,7 @@ function vBackup(){
     <div class="card"><div class="card-h"><span class="kic" style="width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-2)">${ic("sheet",18)}</span><h2>Backup completo</h2></div>
       <div class="pad"><p>Um arquivo .xlsx com uma aba para cada parte: estoque atual, lotes (no mesmo formato da planilha original), movimentações, usuários${isAdmin() ? " e auditoria" : ""}.</p>
       <p><b style="color:var(--ink)">Último backup:</b> ${ub ? fDH(ub) + (S.config.ultimo_backup_por ? " por " + esc(S.config.ultimo_backup_por) : "") : "nunca feito"}</p>
-      <button class="btn pri" data-act="backup">${ic("down",16)}Baixar backup completo</button></div></div>
+      <p class="note info" style="margin-top:12px">Backup automático: toda segunda-feira, uma cópia (.xlsx e .json) é salva no Google Drive do administrador, na pasta "Backup Estoque UROtherap".</p><button class="btn pri" data-act="backup">${ic("down",16)}Baixar backup completo agora</button></div></div>
     <div class="card"><div class="card-h"><span class="kic" style="width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--warn-soft);color:var(--warn)">${ic("alert",18)}</span><h2>Se o sistema cair</h2></div>
       <div class="pad"><p>Baixe a planilha de contingência: ela traz o estoque atual e uma aba para anotar as movimentações à mão. Quando o sistema voltar, o administrador importa essa aba.</p>
       ${ONLINE ? `<p><b style="color:var(--ink)">Cópia guardada neste aparelho:</b> ${cache ? fDH(cache.em) : "ainda não"}</p>` : ""}
@@ -818,7 +854,14 @@ function loteSugerido(){
   if(M.tipo === "descarte") return (i.vencidos[0] || i.comSaldo[0] || {}).id || null;
   return ((ok[0] || i.comSaldo[0] || i.lotes[0]) || {}).id || null;
 }
-function guardarCampos(){ ["q","motivo","lote","fab","val","busca"].forEach(k => { const el = $("#m_" + k); if(el) M[k] = el.value; }); }
+const MOTIVOS_PADRAO = { entrada: ["Compra","Doação","Devolução"], saida: ["Uso em procedimento","Sala 1","Sala 2","Consultório"], ajuste: ["Contagem de inventário","Erro de digitação"], descarte: ["Vencido","Avaria","Contaminado"] };
+function motivosSug(tipo){
+  const cont = {}; S.movs.forEach(m => { if(m.tipo !== tipo || m.origem !== "sistema" || !m.motivo) return; const k = String(m.motivo).trim(); if(k) cont[k] = (cont[k] || 0) + 1; });
+  const usados = Object.entries(cont).sort((a,b) => b[1] - a[1]).map(([k]) => k);
+  const out = []; [...usados, ...MOTIVOS_PADRAO[tipo]].forEach(x => { if(!out.some(y => norm(y) === norm(x))) out.push(x); });
+  return out.slice(0, 10);
+}
+function guardarCampos(){ ["q","motivo","lote","fab","val","busca","paciente"].forEach(k => { const el = $("#m_" + k); if(el) M[k] = el.value; }); }
 function renderMov(){
   const i = M.item_id && D.idx[M.item_id];
   const tit = { entrada: "Dar entrada", saida: "Registrar saída", ajuste: "Ajustar saldo (contagem)", descarte: "Registrar descarte" }[M.tipo];
@@ -831,15 +874,16 @@ function renderMov(){
     const lotesOp = M.tipo === "entrada" ? i.lotes : i.lotes.filter(l => Number(l.quantidade) > 0 || l.id === M.lote_id || M.tipo === "ajuste");
     const l = M.lote_id && M.lote_id !== "novo" ? D.lotesIdx[M.lote_id] : null;
     corpo += `<div class="picked">${av(i.categoria, 34)}<div><b>${esc(i.nome)}</b><small>${fNum(i.saldo)} ${esc(low(i.unidade))} · ${esc(i.local || "")}</small></div><span class="sp"></span><button class="btn sm" data-act="mTroca">Trocar</button></div>
-    <div><div style="font-size:12.5px;font-weight:600;color:#4E6371;margin-bottom:6px">Lote ${M.tipo === "saida" ? '<span class="muted" style="font-weight:500">· sugerido o que vence primeiro</span>' : ""}</div><div class="lots">
+    <div><div style="font-size:12.5px;font-weight:600;color:#4A5470;margin-bottom:6px">Lote ${M.tipo === "saida" ? '<span class="muted" style="font-weight:500">· sugerido o que vence primeiro</span>' : ""}</div><div class="lots">
       ${M.tipo === "entrada" ? `<button class="lot ${M.lote_id === "novo" ? "on" : ""}" data-act="mLote" data-id="novo"><input type="radio" tabindex="-1" ${M.lote_id === "novo" ? "checked" : ""}><span><b>Lote novo</b><br><small>informar número e validade</small></span><span></span></button>` : ""}
       ${lotesOp.map(x => `<button class="lot ${M.lote_id === x.id ? "on" : ""}" data-act="mLote" data-id="${x.id}"><input type="radio" tabindex="-1" ${M.lote_id === x.id ? "checked" : ""}><span><b>${esc(x.lote || "sem número")}</b><br><small>validade ${fData(x.validade)}</small></span><span style="text-align:right"><b class="num">${fNum(x.quantidade)}</b><br>${x.validade && diasAte(x.validade) < 0 ? '<span class="pill p-crit">vencido</span>' : ""}</span></button>`).join("") || (M.tipo === "entrada" ? "" : `<div class="note warn">Este item não tem lote com saldo.</div>`)}
     </div></div>
     ${M.tipo === "entrada" && M.lote_id === "novo" ? `<div class="row3"><label class="f">Número do lote<input id="m_lote" value="${esc(M.lote || "")}"></label><label class="f">Fabricação<input id="m_fab" type="date" value="${esc(M.fab || "")}"></label><label class="f">Validade<input id="m_val" type="date" value="${esc(M.val || "")}"></label></div>` : ""}
     ${l && M.tipo === "saida" && l.validade && diasAte(l.validade) < 0 ? `<div class="note crit">Este lote está vencido. Para retirar do estoque, use Descarte.</div>` : ""}
-    <div class="row2"><label class="f">${M.tipo === "ajuste" ? "Quantidade contada no lote" : "Quantidade"} (${esc(low(i.unidade) || "un.")})<input id="m_q" type="number" inputmode="decimal" min="0" step="any" value="${esc(M.q)}" autofocus></label>
-      <label class="f">Motivo ${M.tipo === "ajuste" || M.tipo === "descarte" ? "(obrigatório)" : "(opcional)"}<input id="m_motivo" list="m_motivos" value="${esc(M.motivo || "")}" placeholder="${{ entrada: "Ex.: NF 1234", saida: "Ex.: Sala 1, procedimento", ajuste: "Ex.: contagem mensal", descarte: "Ex.: vencido" }[M.tipo]}"></label></div>
-    <datalist id="m_motivos">${({ entrada: ["Compra","Doação","Devolução"], saida: ["Uso em procedimento","Sala 1","Sala 2","Consultório"], ajuste: ["Contagem de inventário","Erro de digitação"], descarte: ["Vencido","Avaria","Contaminado"] })[M.tipo].map(x => `<option value="${x}">`).join("")}</datalist>
+    ${(() => { const qtd = `<label class="f">${M.tipo === "ajuste" ? "Quantidade contada no lote" : "Quantidade"} (${esc(low(i.unidade) || "un.")})<input id="m_q" type="number" inputmode="decimal" min="0" step="any" value="${esc(M.q)}" autofocus></label>`;
+      return M.tipo === "saida" ? `<div class="row2">${qtd}<label class="f">Nome do paciente (opcional)<input id="m_paciente" value="${esc(M.paciente || "")}" placeholder="Ex.: Maria da Silva" autocomplete="off"></label></div>` : qtd; })()}
+    <label class="f">Motivo ${M.tipo === "ajuste" || M.tipo === "descarte" ? "(obrigatório)" : "(opcional)"}<input id="m_motivo" value="${esc(M.motivo || "")}" placeholder="Escreva um motivo novo ou toque numa sugestão abaixo" autocomplete="off"></label>
+    <div class="chips">${motivosSug(M.tipo).map(x => `<button type="button" class="chipbtn ${M.motivo && norm(M.motivo) === norm(x) ? "on" : ""}" data-act="mMotivo" data-v="${esc(x)}">${esc(x)}</button>`).join("")}</div>
     ${M.tipo === "ajuste" && l ? `<div class="note info">Saldo no sistema: ${fNum(l.quantidade)}. Informe quanto há fisicamente; a diferença é registrada como ajuste.</div>` : ""}`;
   }
   if(M.erro) corpo += `<div class="err" role="alert">${esc(M.erro)}</div>`;
@@ -853,7 +897,7 @@ async function salvarMov(btn){
   if(M.tipo === "entrada" && M.lote_id === "novo" && !M.val && !confirmarSemValidade){ confirmarSemValidade = true; M.erro = "Sem validade informada. Toque em Registrar de novo para confirmar mesmo assim."; return renderMov(); }
   btn.disabled = true;
   try {
-    const dados = { tipo: M.tipo, item_id: M.item_id, lote_id: M.lote_id === "novo" ? null : M.lote_id, quantidade: Number(M.q), motivo: M.motivo || "", lote: M.lote || "", fabricacao: M.fab || "", validade: M.val || "" };
+    const dados = { tipo: M.tipo, item_id: M.item_id, lote_id: M.lote_id === "novo" ? null : M.lote_id, quantidade: Number(M.q), motivo: M.motivo || "", paciente: M.tipo === "saida" ? (M.paciente || "").trim() : "", lote: M.lote || "", fabricacao: M.fab || "", validade: M.val || "" };
     await API.movimentar(dados); confirmarSemValidade = false;
     fechar(); await carregar(); const it = D.idx[dados.item_id];
     toast(`${TIPO[dados.tipo][0]} ${dados.tipo === "entrada" || dados.tipo === "saida" ? "registrada" : "registrado"}: ${it.nome}` + (it.min > 0 && it.saldo < it.min ? ` · atenção, abaixo do mínimo (${fNum(it.saldo)}/${fNum(it.min)})` : ""), it.min > 0 && it.saldo < it.min);
@@ -949,7 +993,7 @@ const linhaItem = i => ({ "Item": i.nome, "Descrição": i.descricao || "", "Cat
 function linhasLotes(soComSaldo){
   const out = []; D.itens.forEach(i => i.lotes.filter(l => !soComSaldo || Number(l.quantidade) > 0).forEach(l => out.push({ "CODIGO": i.codigo || "", "ITEM / DESCRIÇÃO": i.descricao || "", "NOME": i.nome, "CATEGORIA": i.categoria, "UNIDADE": i.unidade || "", "QUANTIDADE": Number(l.quantidade), "LOCAL PADRÃO": i.local || "", "CODIGO FORNECEDOR": i.cod_fornecedor || "", "FORNECEDOR": i.fornecedor || "", "CUSTO UNITARIO": i.custo_unit ?? "", "FABRICADO": fData(l.fabricacao), "VALIDADE": fData(l.validade), "LOTE": l.lote || "" }))); return out;
 }
-const linhaMov = m => { const it = D.idx[m.item_id] || {}; const l = D.lotesIdx[m.lote_id] || {}; return { "Data e hora": fDH(m.criado_em), "Tipo": TIPO[m.tipo] ? TIPO[m.tipo][0] : m.tipo, "Item": it.nome || "", "Lote": l.lote || "", "Quantidade": Number(m.quantidade), "Saldo do lote": m.saldo_lote ?? "", "Motivo": m.motivo || "", "Responsável": m.usuario_nome || "", "Origem": m.origem || "" }; };
+const linhaMov = m => { const it = D.idx[m.item_id] || {}; const l = D.lotesIdx[m.lote_id] || {}; return { "Data e hora": fDH(m.criado_em), "Tipo": TIPO[m.tipo] ? TIPO[m.tipo][0] : m.tipo, "Item": it.nome || "", "Lote": l.lote || "", "Quantidade": Number(m.quantidade), "Saldo do lote": m.saldo_lote ?? "", "Motivo": m.motivo || "", "Paciente": pacDe(m), "Responsável": m.usuario_nome || "", "Origem": m.origem || "" }; };
 const linhaVal = () => { const out = []; D.itens.forEach(i => i.comSaldo.forEach(l => out.push({ "Item": i.nome, "Lote": l.lote || "", "Validade": fData(l.validade), "Dias para vencer": diasAte(l.validade) ?? "", "Quantidade": Number(l.quantidade), "Local": i.local || "" }))); return out.sort((a,b) => (a["Dias para vencer"] === "" ? 1e9 : a["Dias para vencer"]) - (b["Dias para vencer"] === "" ? 1e9 : b["Dias para vencer"])); };
 async function backupCompleto(btn){
   if(!xlsxOk()) return; btn.disabled = true;
@@ -962,15 +1006,15 @@ async function backupCompleto(btn){
   } catch(e){ toast(e.message, true); }
   btn.disabled = false;
 }
-const CONT_CAB = ["Data (dd/mm/aaaa)","Item (nome exato)","Lote","Tipo (entrada/saída/ajuste/descarte)","Quantidade","Motivo","Responsável","Validade (só lote novo)","Fabricação (só lote novo)"];
+const CONT_CAB = ["Data (dd/mm/aaaa)","Item (nome exato)","Lote","Tipo (entrada/saída/ajuste/descarte)","Quantidade","Motivo","Responsável","Validade (só lote novo)","Fabricação (só lote novo)","Paciente (só saída)"];
 function contingencia(){
   const ex = D.itens[0] && D.itens[0].comSaldo[0] ? D.itens[0] : null;
-  const instr = [["Como usar esta planilha"],[""],["1. Enquanto o sistema estiver fora do ar, anote cada movimentação na aba \"Movimentações manuais\", uma por linha."],["2. Copie o nome do item e o lote exatamente como aparecem na aba \"Estoque atual\"."],["3. Tipo: entrada, saída, ajuste ou descarte. No ajuste, a quantidade é o total contado no lote."],["4. Para lote novo (entrada), preencha também validade e fabricação."],["5. Quando o sistema voltar, o administrador importa o arquivo em Relatórios e backup > Importar contingência."],["6. Apague a linha de exemplo antes de importar."]];
+  const instr = [["Como usar esta planilha"],[""],["1. Enquanto o sistema estiver fora do ar, anote cada movimentação na aba \"Movimentações manuais\", uma por linha."],["2. Copie o nome do item e o lote exatamente como aparecem na aba \"Estoque atual\"."],["3. Tipo: entrada, saída, ajuste ou descarte. No ajuste, a quantidade é o total contado no lote."],["4. Para lote novo (entrada), preencha também validade e fabricação. Na saída, o nome do paciente é opcional (última coluna)."],["5. Quando o sistema voltar, o administrador importa o arquivo em Relatórios e backup > Importar contingência."],["6. Apague a linha de exemplo antes de importar."]];
   if(!xlsxOk()) return;
   const wb = XLSX.utils.book_new();
   const w1 = XLSX.utils.aoa_to_sheet(instr); w1["!cols"] = [{ wch: 110 }]; XLSX.utils.book_append_sheet(wb, w1, "Instruções");
   const lin = linhasLotes(true); const w2 = XLSX.utils.json_to_sheet(lin); w2["!cols"] = Object.keys(lin[0] || { a: 1 }).map(() => ({ wch: 22 })); XLSX.utils.book_append_sheet(wb, w2, "Estoque atual");
-  const rows = [CONT_CAB]; if(ex) rows.push([new Date().toLocaleDateString("pt-BR"), ex.nome, ex.comSaldo[0].lote || "", "saída", 1, "EXEMPLO - apagar esta linha", S.sessao.nome, "", ""]);
+  const rows = [CONT_CAB]; if(ex) rows.push([new Date().toLocaleDateString("pt-BR"), ex.nome, ex.comSaldo[0].lote || "", "saída", 1, "EXEMPLO - apagar esta linha", S.sessao.nome, "", "", ""]);
   const w3 = XLSX.utils.aoa_to_sheet(rows); w3["!cols"] = CONT_CAB.map(c => ({ wch: Math.max(16, c.length + 2) })); XLSX.utils.book_append_sheet(wb, w3, "Movimentações manuais");
   try { XLSX.writeFile(wb, `contingencia-estoque-${hojeISO()}.xlsx`); if(!ONLINE) toast("Planilha gerada. Na prévia do Claude o download pode ser bloqueado; na versão publicada ele baixa normalmente."); } catch(e){ toast("O navegador bloqueou o download.", true); }
 }
@@ -994,10 +1038,10 @@ function lerImport(buf){
   const rows = XLSX.utils.sheet_to_json(wb.Sheets[nome], { header: 1, defval: "" }).slice(1).filter(r => r.some(c => String(c).trim() !== ""));
   const tipoMap = { entrada: "entrada", saida: "saida", ajuste: "ajuste", descarte: "descarte" };
   IMP = rows.map((r, n) => {
-    const [dt, itemN, loteN, tipoT, qtd, motivo, resp, val, fab] = r; const o = { n: n + 2, raw: r, erro: "" };
+    const [dt, itemN, loteN, tipoT, qtd, motivo, resp, val, fab, pac] = r; const o = { n: n + 2, raw: r, erro: "" };
     if(norm(motivo).startsWith("exemplo")) { o.erro = "Linha de exemplo (ignorada)"; return o; }
     const it = D.itens.find(i => norm(i.nome) === norm(itemN)) || D.itens.find(i => norm(i.descricao) === norm(itemN));
-    o.tipo = tipoMap[norm(tipoT)]; o.q = Number(String(qtd).replace(",", "."));
+    o.tipo = tipoMap[norm(tipoT)]; o.pac = String(pac || "").trim(); o.q = Number(String(qtd).replace(",", "."));
     if(!it) o.erro = "Item não encontrado"; else if(!o.tipo) o.erro = "Tipo inválido"; else if(!(o.q >= 0)) o.erro = "Quantidade inválida";
     if(it){ o.item = it; const l = it.lotes.find(x => norm(x.lote) === norm(loteN));
       if(l) o.lote = l; else if(o.tipo === "entrada") o.novo = { lote: String(loteN || ""), validade: dataPlan(val), fabricacao: dataPlan(fab) }; else if(!o.erro) o.erro = "Lote não encontrado"; }
@@ -1013,7 +1057,7 @@ function lerImport(buf){
 async function impConfirmar(btn){
   btn.disabled = true; let ok = 0; const falhas = [];
   for(const x of IMP.filter(y => !y.erro)){
-    try { await API.movimentar({ tipo: x.tipo, item_id: x.item.id, lote_id: x.lote ? x.lote.id : null, quantidade: x.q, motivo: x.motivo, origem: "contingencia", ...(x.novo || {}) }); ok++; }
+    try { await API.movimentar({ tipo: x.tipo, item_id: x.item.id, lote_id: x.lote ? x.lote.id : null, quantidade: x.q, motivo: x.motivo, paciente: x.tipo === "saida" ? x.pac : "", origem: "contingencia", ...(x.novo || {}) }); ok++; }
     catch(e){ falhas.push(`Linha ${x.n}: ${e.message}`); }
     if(x.lote){ await carregar(true); }
   }
@@ -1044,7 +1088,7 @@ function vLogin(){
 async function lDig(v){
   if(L.pin.length >= 4) return; L.pin += v; L.erro = ""; render();
   if(L.pin.length === 4){
-    try { const u = await API.entrar(L.u, L.pin); S.sessao = { ...u, pin: L.pin }; store.sset("estoque_sessao", S.sessao); L = { u: null, pin: "", erro: "" }; tocar(); location.hash = "#hoje"; render(); }
+    try { const u = await API.entrar(L.u, L.pin); S.sessao = { ...u, pin: L.pin }; store.sset("estoque_sessao", S.sessao); L = { u: null, pin: "", erro: "" }; tocar(); try { S.pac = await API.pacientes(); } catch(e){} location.hash = "#hoje"; render(); }
     catch(e){ L.pin = ""; L.erro = e.message; render(); }
   }
 }
@@ -1063,7 +1107,7 @@ function render(){
   window.scrollTo(0, y);
 }
 function toast(msg, ruim){ const t = $("#toast"); t.innerHTML = `<div class="toast ${ruim ? "bad" : ""}" role="status">${ic(ruim ? "alert" : "check",18)}<span>${esc(msg)}</span></div>`; clearTimeout(toast.t); toast.t = setTimeout(() => t.innerHTML = "", ruim ? 7000 : 3800); }
-function sair(){ S.sessao = null; store.sdel("estoque_sessao"); fechar(); L = { u: null, pin: "", erro: "" }; render(); }
+function sair(){ S.sessao = null; S.pac = {}; store.sdel("estoque_sessao"); fechar(); L = { u: null, pin: "", erro: "" }; render(); }
 let ultimoToque = Date.now(); const tocar = () => ultimoToque = Date.now();
 
 const ACT = {
@@ -1072,6 +1116,8 @@ const ACT = {
   mTipo: (d) => { guardarCampos(); M.tipo = d.v; M.erro = ""; confirmarSemValidade = false; M.lote_id = M.item_id ? loteSugerido() : null; renderMov(); },
   mItem: (d) => { guardarCampos(); M.item_id = d.id; M.lote_id = loteSugerido(); M.erro = ""; renderMov(); },
   mTroca: () => { guardarCampos(); M.item_id = null; M.lote_id = null; renderMov(); },
+  ordenar: (d) => { const o = S.f.ord && S.f.ord.col === d.col ? S.f.ord : { col: d.col, dir: null }; const prox = { null: "desc", desc: "asc", asc: null }[o.dir]; S.f.ord = prox ? { col: d.col, dir: prox } : null; const el = $("#lista"); if(el) el.innerHTML = listaMovs(); },
+  mMotivo: (d) => { guardarCampos(); M.motivo = d.v; M.erro = ""; renderMov(); const el = $("#m_motivo"); if(el) el.focus(); },
   mLote: (d) => { guardarCampos(); M.lote_id = d.id; M.erro = ""; renderMov(); },
   mSalvar: (d, el) => salvarMov(el),
   editItem: (d) => editItem(d.id), salvarItem: (d, el) => salvarItem(d.id, el),
@@ -1081,7 +1127,7 @@ const ACT = {
   lDig: (d) => lDig(d.v), lApaga: () => { L.pin = L.pin.slice(0, -1); render(); },
   consultaOffline: () => { S.sessao = { id: null, nome: "Consulta offline", papel: "funcionaria", pin: "" }; render(); },
   exportItens: () => baixarXlsx(`itens-${hojeISO()}.xlsx`, [{ nome: "Itens", linhas: itensFiltrados().map(linhaItem) }]),
-  exportMovs: () => baixarXlsx(`movimentacoes-${hojeISO()}.xlsx`, [{ nome: "Movimentações", linhas: movsFiltradas().map(linhaMov) }]),
+  exportMovs: () => baixarXlsx(`movimentacoes-${hojeISO()}.xlsx`, [{ nome: "Movimentações", linhas: movsOrdenadas(movsFiltradas()).map(linhaMov) }]),
   exportVal: () => baixarXlsx(`validades-${hojeISO()}.xlsx`, [{ nome: "Validades", linhas: linhaVal() }]),
   exportCompras: () => baixarXlsx(`lista-de-compras-${hojeISO()}.xlsx`, [{ nome: "Lista de compras", linhas: compras().map(({i,sug}) => ({ "Item": i.nome, "Descrição": i.descricao || "", "Fornecedor": i.fornecedor || "", "Cód. fornecedor": i.cod_fornecedor || "", "Saldo": i.saldo, "Mínimo": i.min, "Comprar": sug, "Unidade": i.unidade || "", "Custo estimado": Math.round(sug * Number(i.custo_unit || 0) * 100) / 100 })) }]),
   exportAud: () => baixarXlsx(`auditoria-${hojeISO()}.xlsx`, [{ nome: "Auditoria", linhas: S.audit.map(a => ({ "Data e hora": fDH(a.criado_em), "Quem": a.usuario_nome || "sistema", "Ação": ACAO[a.acao][0], "Tabela": TAB[a.tabela] || a.tabela, "Antes": JSON.stringify(a.antes || ""), "Depois": JSON.stringify(a.depois || "") })) }]),
