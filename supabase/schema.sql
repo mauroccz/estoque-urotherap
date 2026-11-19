@@ -297,6 +297,27 @@ revoke execute on function _checar(uuid, text, boolean) from public, anon, authe
 grant execute on function entrar(uuid, text), movimentar(uuid, text, jsonb), salvar_item(uuid, text, jsonb),
   salvar_usuario(uuid, text, jsonb), ler_auditoria(uuid, text, int), registrar_backup(uuid, text) to anon, authenticated;
 
+-- Corrige número, fabricação e validade de um lote (só administrador)
+create or replace function salvar_lote(p_usuario uuid, p_pin text, p_lote jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v jsonb;
+  v_id  uuid := nullif(p_lote->>'id', '')::uuid;
+  v_fab date := nullif(p_lote->>'fabricacao', '')::date;
+  v_val date := nullif(p_lote->>'validade', '')::date;
+begin
+  v := _checar(p_usuario, p_pin, true); if v is not null then return v; end if;
+  if v_id is null or not exists (select 1 from lotes where id = v_id) then
+    return jsonb_build_object('ok', false, 'erro', 'Lote não encontrado.'); end if;
+  if v_fab is not null and v_val is not null and v_val < v_fab then
+    return jsonb_build_object('ok', false, 'erro', 'A validade não pode ser anterior à fabricação.'); end if;
+  update lotes set lote = nullif(trim(coalesce(p_lote->>'lote', '')), ''), fabricacao = v_fab, validade = v_val
+  where id = v_id;
+  return jsonb_build_object('ok', true, 'id', v_id);
+end $$;
+
+grant execute on function salvar_lote(uuid, text, jsonb) to anon, authenticated;
+
 -- ---------------------------------------------------------------------
 -- 4. Primeiro acesso: administrador com PIN 1234 (troque no primeiro uso!)
 -- ---------------------------------------------------------------------
