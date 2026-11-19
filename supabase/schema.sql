@@ -318,6 +318,114 @@ end $$;
 
 grant execute on function salvar_lote(uuid, text, jsonb) to anon, authenticated;
 
+-- ATUALIZAÇÃO 02: nome do paciente na saída.
+alter table movimentacoes add column if not exists paciente text;
+
+-- leitura pública só das colunas sem dado de paciente
+revoke select on movimentacoes from anon, authenticated;
+grant select (id, item_id, lote_id, tipo, quantidade, saldo_lote, motivo, usuario_id, usuario_nome, origem, criado_em)
+  on movimentacoes to anon, authenticated;
+
+create or replace function movimentar(p_usuario uuid, p_pin text, p_dados jsonb) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare
+  v jsonb; l lotes;
+  v_tipo text := p_dados->>'tipo';
+  v_item uuid := (p_dados->>'item_id')::uuid;
+  v_qtd numeric := nullif(p_dados->>'quantidade', '')::numeric;
+  v_motivo text := nullif(trim(coalesce(p_dados->>'motivo', '')), '');
+  v_pac text := nullif(trim(coalesce(p_dados->>'paciente', '')), '');
+  v_delta numeric; v_id bigint;
+begin
+  v := _checar(p_usuario, p_pin); if v is not null then return v; end if;
+  if v_tipo not in ('entrada','saida','ajuste','descarte') then
+    return jsonb_build_object('ok', false, 'erro', 'Tipo de movimentação inválido.'); end if;
+  if v_qtd is null or v_qtd < 0 or (v_tipo <> 'ajuste' and v_qtd = 0) then
+    return jsonb_build_object('ok', false, 'erro', 'Informe uma quantidade válida.'); end if;
+  if v_tipo in ('ajuste','descarte') and v_motivo is null then
+    return jsonb_build_object('ok', false, 'erro', 'Informe o motivo do ajuste ou descarte.'); end if;
+  if v_tipo <> 'saida' then v_pac := null; end if;
+
+  if v_tipo = 'entrada' and nullif(p_dados->>'lote_id', '') is null then
+    insert into lotes (item_id, lote, fabricacao, validade, quantidade)
+    values (v_item, nullif(p_dados->>'lote', ''), nullif(p_dados->>'fabricacao', '')::date,
+            nullif(p_dados->>'validade', '')::date, 0)
+    returning * into l;
+  else
+    select * into l from lotes where id = (p_dados->>'lote_id')::uuid and item_id = v_item for update;
+    if not found then return jsonb_build_object('ok', false, 'erro', 'Lote não encontrado.'); end if;
+  end if;
+
+  v_delta := case v_tipo when 'entrada' then v_qtd when 'ajuste' then v_qtd - l.quantidade else -v_qtd end;
+  if l.quantidade + v_delta < 0 then
+    return jsonb_build_object('ok', false, 'erro', 'Saldo insuficiente no lote (disponível: ' || l.quantidade || ').'); end if;
+
+  update lotes set quantidade = quantidade + v_delta where id = l.id;
+  insert into movimentacoes (item_id, lote_id, tipo, quantidade, saldo_lote, motivo, paciente, usuario_id, usuario_nome, origem)
+  values (v_item, l.id, v_tipo, v_delta, l.quantidade + v_delta, v_motivo, v_pac, p_usuario,
+          current_setting('app.usuario_nome', true), coalesce(nullif(p_dados->>'origem', ''), 'sistema'))
+  returning id into v_id;
+  return jsonb_build_object('ok', true, 'id', v_id);
+end $$;
+
+-- nomes de pacientes: só para quem entrou com nome + PIN
+create or replace function ler_pacientes(p_usuario uuid, p_pin text, p_limite int default 20000) returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare v jsonb;
+begin
+  v := _checar(p_usuario, p_pin); if v is not null then return v; end if;
+  return jsonb_build_object('ok', true, 'dados', coalesce((
+    select jsonb_object_agg(id::text, paciente) from (
+      select id, paciente from movimentacoes where paciente is not null order by id desc limit p_limite) x), '{}'::jsonb));
+end $$;
+
+grant execute on function ler_pacientes(uuid, text, int) to anon, authenticated;
+
+-- ATUALIZAÇÃO 03: backup automático semanal (Google Drive).
+create table if not exists backup_token (
+  id         int primary key default 1 check (id = 1),
+  token_hash text not null,
+  criado_em  timestamptz not null default now()
+);
+alter table backup_token enable row level security;
+revoke all on backup_token from anon, authenticated;
+
+-- Registra o token na primeira configuração (só funciona se ainda não houver um)
+create or replace function registrar_token_backup(p_token text) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+begin
+  if length(coalesce(p_token, '')) < 40 then
+    return jsonb_build_object('ok', false, 'erro', 'Token inválido.'); end if;
+  if exists (select 1 from backup_token) then
+    return jsonb_build_object('ok', false, 'erro', 'Já existe um backup automático registrado. Para trocar, apague a linha da tabela backup_token no Supabase.'); end if;
+  insert into backup_token (token_hash) values (crypt(p_token, gen_salt('bf')));
+  return jsonb_build_object('ok', true);
+end $$;
+
+-- Devolve uma cópia completa do banco (sem os PINs) e registra a data do backup
+create or replace function backup_completo(p_token text) returns jsonb
+language plpgsql security definer set search_path = public, extensions as $$
+declare t text;
+begin
+  select token_hash into t from backup_token where id = 1;
+  if t is null or t <> crypt(coalesce(p_token, ''), t) then
+    return jsonb_build_object('ok', false, 'erro', 'Token de backup inválido.'); end if;
+  insert into config (chave, valor) values ('ultimo_backup', now()::text)
+    on conflict (chave) do update set valor = excluded.valor;
+  insert into config (chave, valor) values ('ultimo_backup_por', 'Backup automático (Google Drive)')
+    on conflict (chave) do update set valor = excluded.valor;
+  return jsonb_build_object('ok', true, 'gerado_em', now(),
+    'itens',         (select coalesce(jsonb_agg(x order by x.nome), '[]'::jsonb) from itens x),
+    'lotes',         (select coalesce(jsonb_agg(x order by x.item_id, x.validade), '[]'::jsonb) from lotes x),
+    'movimentacoes', (select coalesce(jsonb_agg(x order by x.id), '[]'::jsonb) from movimentacoes x),
+    'usuarios',      (select coalesce(jsonb_agg(jsonb_build_object('id', u.id, 'nome', u.nome, 'papel', u.papel, 'ativo', u.ativo, 'criado_em', u.criado_em) order by u.nome), '[]'::jsonb) from usuarios u),
+    'auditoria',     (select coalesce(jsonb_agg(x order by x.id), '[]'::jsonb) from auditoria x),
+    'config',        (select coalesce(jsonb_agg(x), '[]'::jsonb) from config x));
+end $$;
+
+revoke execute on function registrar_token_backup(text), backup_completo(text) from public;
+grant execute on function registrar_token_backup(text), backup_completo(text) to anon, authenticated;
+
 -- ---------------------------------------------------------------------
 -- 4. Primeiro acesso: administrador com PIN 1234 (troque no primeiro uso!)
 -- ---------------------------------------------------------------------
