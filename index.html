@@ -240,6 +240,23 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{outline:2px soli
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 18px;border-radius:12px;box-shadow:0 10px 30px rgba(31,42,68,.3);z-index:80;display:flex;gap:10px;align-items:center;max-width:calc(100% - 32px)}
 .toast.bad{background:#8C2E2A}
 .mobnav,.fab{display:none}
+.iconbtn.show-m{display:none}
+.code{display:inline-block;font:600 10.5px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--gold-soft);color:var(--gold-2);border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:1px;letter-spacing:.02em;white-space:nowrap}
+tr.grp td{background:var(--surface-2)}
+tr.sub-row td{font-size:13px}tr.sub-row td:first-child{padding-left:28px}
+.tm{display:flex;gap:6px;align-items:center}.tm input{flex:1;min-width:0}
+.chk{display:flex;flex-direction:column;gap:6px}
+.chk-row{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:12px;padding:8px 10px;background:#fff}
+.chk-row.on{border-color:#9ED3B8;background:var(--ok-soft)}
+.chk-box{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
+.chk-box input{width:22px;height:22px;accent-color:var(--ok);flex:none}
+.chk-box b{display:block;font-size:13.5px}.chk-box small{color:var(--muted);font-size:12px}
+.chk-row .field{width:78px;text-align:right;padding:7px 8px}
+.mais-row{display:flex;gap:14px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;text-decoration:none;color:var(--ink);background:#fff;font:inherit;text-align:left;cursor:pointer;width:100%}
+.mais-row b{display:block}.mais-row small{color:var(--muted);font-size:12px}.mais-row.sair{color:var(--crit)}
+.pin-dots i.opt{border-style:dashed}
+.pad-grid button.go{background:linear-gradient(135deg,#34508A,var(--accent));color:#fff;border:0;font-size:16px}
+.pad-grid button.go:disabled{opacity:.6}
 
 /* ---------- Responsivo ---------- */
 @media (max-width:1180px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-home{grid-template-columns:1fr}}
@@ -254,9 +271,12 @@ label.f input:focus,label.f select:focus,label.f textarea:focus{outline:2px soli
   .kpi .kv{font-size:24px}
   .cards2,.row3,.dl{grid-template-columns:1fr}
   .bar-row{grid-template-columns:110px 1fr 90px}
-  .mobnav{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);z-index:30;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  .mobnav{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);z-index:30;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
   .mobnav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--muted);text-decoration:none;padding:4px 0;font-weight:600}
-  .mobnav a.on{color:var(--accent-2)}
+  .mobnav a{border-radius:12px;margin:0 2px;position:relative}
+  .mobnav a.on{color:var(--accent);background:var(--accent-soft);font-weight:700}
+  .mobnav a.on::before{content:"";position:absolute;top:-6px;left:26%;right:26%;height:3px;border-radius:0 0 3px 3px;background:var(--gold)}
+  .iconbtn.show-m{display:grid}
   .fab{display:grid;place-items:center;position:fixed;right:18px;bottom:78px;width:56px;height:56px;border-radius:18px;border:0;background:linear-gradient(135deg,#34508A,var(--accent));color:#fff;box-shadow:0 8px 22px rgba(38,59,101,.35);z-index:31;cursor:pointer}
   .ov{padding:0;align-items:flex-end}
   .modal{border-radius:18px 18px 0 0;max-height:94%}
@@ -312,6 +332,23 @@ const AVC = [["#FDE7DA","#B4532A"],["#DDF3EA","#1C7A55"],["#E4E7FB","#4A55B5"],[
 function av(nome, size){ let h = 0; for(const c of String(nome)) h = (h*31 + c.charCodeAt(0)) >>> 0; const [bg,fg] = AVC[h % AVC.length]; const s = size ? `width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;` : ""; return `<span class="av" style="background:${bg};color:${fg};${s}" title="${esc(nome)}">${esc(iniciais(nome))}</span>`; }
 function saudacao(){ const h = new Date().getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; }
 
+/* ---------- código interno do produto ---------- */
+const CODIGOS_INICIAIS = { F08662: "MAT-COMPRESSA-25X28", F08445: "MAT-CURATIVO-10X15", F08446: "MAT-CURATIVO-15X30", FP0148: "EPI-MASCARA", F08386: "MAT-AVENTAL", F08218: "MAT-CAMPO-FENEST", F08365: "MAT-KIT-UGP", F08273: "MAT-KIT-UNIV", F00208: "MAT-CAMPO-MESA", "70001232": "MED-ROPIVACAINA-075", "70000070": "MED-PROPOFOL-1", "70000105": "MED-LIDOCAINA-2CV", "70000106": "MED-LIDOCAINA-2SV", "70000088": "MED-LIDOCAINA-GEL2" };
+function sugerirCodigo(nome, categoria){
+  const c = norm(categoria); const pre = c.startsWith("medica") ? "MED" : c.startsWith("epi") ? "EPI" : c.startsWith("material") ? "MAT" : (c.replace(/[^a-z]/g, "").slice(0, 3).toUpperCase() || "ITM");
+  const stop = new Set(["DE","DA","DO","DAS","DOS","E","C","COM","EM","PARA","P","S","SEM","A","O","EST","ESTERIL","DESC"]);
+  const ws = norm(nome).toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+  const main = (ws.find(w => !/\d/.test(w) && !stop.has(w) && w.length > 1) || ws[0] || "ITEM").slice(0, 12);
+  const det = ws.filter(w => /\d/.test(w)).join("").slice(0, 8);
+  return pre + "-" + main + (det ? "-" + det : "");
+}
+const codigosExistentes = () => [...new Set(D.itens.map(i => i.codigo).filter(Boolean))].sort().map(c => `<option value="${esc(c)}">`).join("");
+function infoCodigo(){
+  const el = $("#e_codinfo"); if(!el) return; const c = norm(($("#e_codigo") || {}).value); const b = $("[data-act=salvarItem]"); const id = b ? b.dataset.id : "";
+  const outros = c ? D.itens.filter(i => norm(i.codigo) === c && i.id !== id) : [];
+  el.innerHTML = outros.length ? `Mesmo código de: <b>${outros.map(i => esc(i.nome) + (i.fornecedor ? " (" + esc(i.fornecedor) + ")" : "")).join(", ")}</b>. O saldo será somado e o alerta de mínimo vale para o total.` : c ? "Código novo: este produto terá saldo próprio." : "Se ficar vazio, o sistema cria um código automaticamente.";
+}
+
 const IC = {
   grid:'<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>',
   box:'<path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/>',
@@ -339,13 +376,15 @@ const IC = {
   building:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 7h1M14 7h1M9 11h1M14 11h1M9 15h1M14 15h1M10 21v-3h4v3"/>',
   sheet:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16M10 3v18"/>',
   db:'<ellipse cx="12" cy="5.5" rx="8" ry="2.8"/><path d="M4 5.5v13c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8v-13"/><path d="M4 12c0 1.5 3.6 2.8 8 2.8s8-1.3 8-2.8"/>',
-  back:'<path d="M5 12h14M11 6l-6 6 6 6"/>'
+  back:'<path d="M5 12h14M11 6l-6 6 6 6"/>',
+  clip:'<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h4"/>',
+  menu:'<path d="M4 7h16M4 12h16M4 17h16"/>'
 };
 const ic = (n, s = 18, w = 1.8) => `<svg class="ic" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${IC[n]}</svg>`;
 
 /* ---------- estado ---------- */
 const S = {
-  usuarios: [], itens: [], lotes: [], movs: [], config: {},
+  usuarios: [], itens: [], lotes: [], movs: [], config: {}, listas: [], listaItens: [], procs: [],
   sessao: store.sget("estoque_sessao"),
   offline: false, cacheEm: null, carregadoEm: null,
   rota: "hoje", f: {}, audit: null, busca: "", pac: {}
@@ -357,6 +396,7 @@ const S = {
 const API = ONLINE ? (() => {
   const base = CFG.supabaseUrl.replace(/\/$/,"") + "/rest/v1/";
   const MOV_COLS = "id,item_id,lote_id,tipo,quantidade,saldo_lote,motivo,usuario_id,usuario_nome,origem,criado_em";
+  const ITEM_COLS = "id,codigo,nome,descricao,categoria,unidade,local,cod_fornecedor,fornecedor,estoque_minimo,estoque_ideal,controlado,ativo,criado_em";
   const H = { apikey: CFG.supabaseAnonKey, Authorization: "Bearer " + CFG.supabaseAnonKey, "Content-Type": "application/json" };
   async function req(path, opt = {}){
     const r = await fetch(base + path, { ...opt, headers: { ...H, ...(opt.headers || {}) } });
@@ -364,7 +404,7 @@ const API = ONLINE ? (() => {
     return r.status === 204 ? null : r.json();
   }
   async function todos(tabela, ordem){
-    const out = []; for(let o = 0; ; o += 1000){ const p = await req(`${tabela}?select=${tabela === "movimentacoes" ? MOV_COLS : "*"}&order=${ordem}&limit=1000&offset=${o}`); out.push(...p); if(p.length < 1000) break; } return out;
+    const out = []; for(let o = 0; ; o += 1000){ const p = await req(`${tabela}?select=${tabela === "movimentacoes" ? MOV_COLS : tabela === "itens" ? ITEM_COLS : "*"}&order=${ordem}&limit=1000&offset=${o}`); out.push(...p); if(p.length < 1000) break; } return out;
   }
   async function rpc(nome, corpo){
     const s = S.sessao || {};
@@ -374,17 +414,30 @@ const API = ONLINE ? (() => {
   }
   return {
     async carregar(){
-      const [usuarios, itens, lotes, movs, config] = await Promise.all([
-        req("usuarios_publicos?select=*&order=nome"), todos("itens","nome"), todos("lotes","validade.nullslast"),
-        req(`movimentacoes?select=${MOV_COLS}&order=id.desc&limit=1000`), req("config?select=*")
+      const [itens, lotes, movs, config, listas, listaItens] = await Promise.all([
+        todos("itens","nome"), todos("lotes","validade.nullslast"),
+        req(`movimentacoes?select=${MOV_COLS}&order=id.desc&limit=1000`), req("config?select=*"),
+        req("listas?select=*&ativo=eq.true&order=nome").catch(() => []), req("lista_itens?select=*&order=ordem").catch(() => [])
       ]);
-      return { usuarios, itens, lotes, movs, config: Object.fromEntries(config.map(c => [c.chave, c.valor])) };
+      return { itens, lotes, movs, listas, listaItens, config: Object.fromEntries(config.map(c => [c.chave, c.valor])) };
     },
     async todasMovs(){ return todos("movimentacoes","id.desc"); },
     async entrar(id, pin){
       const r = await req("rpc/entrar", { method: "POST", body: JSON.stringify({ p_usuario: id, p_pin: pin }) });
       if(!r.ok) throw new Error(r.erro); return r.usuario;
     },
+    async entrarNome(nome, pin){
+      const r = await req("rpc/entrar_nome", { method: "POST", body: JSON.stringify({ p_nome: nome, p_pin: pin }) });
+      if(!r.ok) throw new Error(r.erro); return r.usuario;
+    },
+    async usuarios(){ return (await rpc("listar_usuarios", {})).dados || []; },
+    async custos(){ return (await rpc("ler_custos", {})).dados || {}; },
+    async procs(){ return (await rpc("ler_procedimentos", { p_limite: 300 })).dados || []; },
+    salvarLista: d => rpc("salvar_lista", { p_dados: d }),
+    excluirLista: id => rpc("excluir_lista", { p_id: id }),
+    salvarProc: d => rpc("salvar_procedimento", { p_dados: d }),
+    confirmarProc: id => rpc("confirmar_procedimento", { p_id: id }),
+    cancelarProc: id => rpc("cancelar_procedimento", { p_id: id }),
     movimentar: d => rpc("movimentar", { p_dados: d }),
     salvarItem: i => rpc("salvar_item", { p_item: i }),
     salvarLote: l => rpc("salvar_lote", { p_lote: l }),
@@ -406,6 +459,8 @@ const API = ONLINE ? (() => {
     return db;
   }
   let db = store.get(KEY) || inicial();
+  (function migrar(){ db.listas ||= []; db.listaItens ||= []; db.procs ||= [];
+    db.itens.forEach(i => { if(!i.codigo) i.codigo = CODIGOS_INICIAIS[i.cod_fornecedor] || sugerirCodigo(i.nome, i.categoria); if(!Number(i.estoque_minimo)) i.estoque_minimo = 15; }); })();
   const salvar = () => store.set(KEY, db);
   function quem(admin){
     const s = S.sessao; const u = s && db.usuarios.find(x => x.id === s.id);
@@ -419,7 +474,45 @@ const API = ONLINE ? (() => {
   }
   const pub = u => ({ id: u.id, nome: u.nome, papel: u.papel, ativo: u.ativo });
   return {
-    async carregar(){ return { usuarios: db.usuarios.map(pub).sort((a,b) => a.nome.localeCompare(b.nome)), itens: db.itens, lotes: db.lotes, movs: db.movs.slice(0,1000), config: db.config }; },
+    async carregar(){ return { itens: db.itens, lotes: db.lotes, movs: db.movs.slice(0,1000), config: db.config, listas: db.listas.filter(l => l.ativo !== false), listaItens: db.listaItens }; },
+    async entrarNome(nome, pin){ const u = db.usuarios.find(x => x.ativo && norm(x.nome) === norm(nome)); if(!u || u.pin !== pin) throw new Error("Nome ou PIN incorreto."); return pub(u); },
+    async usuarios(){ quem(false); return db.usuarios.map(pub).sort((a,b) => a.nome.localeCompare(b.nome)); },
+    async custos(){ quem(true); return Object.fromEntries(db.itens.filter(i => i.custo_unit != null).map(i => [i.id, i.custo_unit])); },
+    async procs(){ quem(false); return db.procs.slice().sort((a,b) => (b.data + b.criado_em).localeCompare(a.data + a.criado_em)).map(p => ({ ...p, itens: p.itens.map(x => ({ ...x })) })); },
+    async salvarLista(d){
+      const u = quem(false); if(!String(d.nome || "").trim()) throw new Error("Dê um nome para a lista."); if(!(d.itens || []).length) throw new Error("Adicione pelo menos um item.");
+      let l = d.id && db.listas.find(x => x.id === d.id && x.ativo !== false);
+      if(d.id && !l) throw new Error("Lista não encontrada."); if(l && l.criado_por !== u.id) throw new Error('Só quem criou a lista pode alterá-la. Use "Duplicar" para fazer a sua versão.');
+      if(!l){ l = { id: novoId(), criado_por: u.id, criado_por_nome: u.nome, ativo: true, criado_em: new Date().toISOString() }; db.listas.push(l); }
+      const antes = { ...l }; l.nome = d.nome.trim(); l.descricao = d.descricao || null; l.atualizado_em = new Date().toISOString();
+      db.listaItens = db.listaItens.filter(x => x.lista_id !== l.id).concat(d.itens.map((x, k) => ({ id: db.seq++, lista_id: l.id, item_id: x.item_id, quantidade: Number(x.quantidade), ordem: k + 1 })));
+      aud(u, d.id ? "UPDATE" : "INSERT", "listas", d.id ? antes : null, l); salvar(); return { ok: true, id: l.id };
+    },
+    async excluirLista(id){ const u = quem(false); const l = db.listas.find(x => x.id === id); if(!l) throw new Error("Lista não encontrada."); if(l.criado_por !== u.id) throw new Error("Só quem criou a lista pode excluí-la."); const antes = { ...l }; l.ativo = false; aud(u, "UPDATE", "listas", antes, l); salvar(); return { ok: true }; },
+    async salvarProc(d){
+      const u = quem(false); if(!String(d.nome || "").trim()) throw new Error("Informe o nome do procedimento.");
+      let p = d.id && db.procs.find(x => x.id === d.id);
+      if(d.id && !p) throw new Error("Procedimento não encontrado."); if(p && p.status !== "aberto") throw new Error("Este procedimento já foi " + p.status + " e não pode ser alterado.");
+      if(!p){ p = { id: novoId(), status: "aberto", criado_por: u.id, criado_por_nome: u.nome, criado_em: new Date().toISOString() }; db.procs.push(p); }
+      Object.assign(p, { lista_id: d.lista_id || null, nome: d.nome.trim(), medicos: d.medicos || null, anestesistas: d.anestesistas || null, data: d.data || hojeISO(), hora_inicio: d.hora_inicio || null, hora_fim: d.hora_fim || null, observacoes: d.observacoes || null,
+        itens: (d.itens || []).map((x, k) => ({ id: db.seq++, item_id: x.item_id, quantidade: Number(x.quantidade) || 0, usado: !!x.usado, da_lista: !!x.da_lista, ordem: k + 1 })) });
+      salvar(); return { ok: true, id: p.id };
+    },
+    async confirmarProc(id){
+      const u = quem(false); const p = db.procs.find(x => x.id === id); if(!p) throw new Error("Procedimento não encontrado.");
+      if(p.status !== "aberto") throw new Error("Este procedimento já foi " + p.status + "."); if(!p.hora_fim) throw new Error("Informe o horário de término antes de confirmar.");
+      const us = p.itens.filter(x => x.usado && x.quantidade > 0); if(!us.length) throw new Error("Nenhum item marcado como usado.");
+      const ok = l => l.quantidade > 0 && !(l.validade && diasAte(l.validade) < 0);
+      us.forEach(x => { const disp = db.lotes.filter(l => l.item_id === x.item_id && ok(l)).reduce((a, l) => a + l.quantidade, 0); if(disp < x.quantidade) throw new Error(`Estoque insuficiente de ${(db.itens.find(i => i.id === x.item_id) || {}).nome} (disponível sem contar lotes vencidos: ${fNum(disp)}; necessário: ${fNum(x.quantidade)}).`); });
+      const motivo = "Procedimento: " + p.nome + " · " + fData(p.data);
+      us.forEach(x => { let falta = x.quantidade; x.lotes_usados = [];
+        db.lotes.filter(l => l.item_id === x.item_id && ok(l)).sort((a, b) => (a.validade || "9999").localeCompare(b.validade || "9999")).forEach(l => {
+          if(falta <= 0) return; const t = Math.min(falta, l.quantidade); const antes = { ...l }; l.quantidade -= t; aud(u, "UPDATE", "lotes", antes, l);
+          const m = { id: db.seq++, item_id: x.item_id, lote_id: l.id, tipo: "saida", quantidade: -t, saldo_lote: l.quantidade, motivo, paciente: null, usuario_id: u.id, usuario_nome: u.nome, origem: "procedimento", criado_em: new Date().toISOString() };
+          db.movs.unshift(m); aud(u, "INSERT", "movimentacoes", null, m); x.lotes_usados.push({ lote: l.lote, validade: l.validade, quantidade: t }); falta -= t; }); });
+      p.status = "confirmado"; p.confirmado_por_nome = u.nome; p.confirmado_em = new Date().toISOString(); salvar(); return { ok: true };
+    },
+    async cancelarProc(id){ quem(false); const p = db.procs.find(x => x.id === id); if(!p || p.status !== "aberto") throw new Error("Só procedimentos em andamento podem ser cancelados."); p.status = "cancelado"; salvar(); return { ok: true }; },
     async todasMovs(){ return db.movs; },
     async entrar(id, pin){ const u = db.usuarios.find(x => x.id === id); if(!u || !u.ativo) throw new Error("Usuário inválido ou inativo."); if(u.pin !== pin) throw new Error("PIN incorreto."); return pub(u); },
     async movimentar(d){
@@ -440,7 +533,8 @@ const API = ONLINE ? (() => {
       const u = quem(true);
       if(!String(i.nome||"").trim() || !String(i.categoria||"").trim()) throw new Error("Nome e categoria são obrigatórios.");
       const campos = ["codigo","nome","descricao","categoria","unidade","local","cod_fornecedor","fornecedor"];
-      const num = k => i[k] === "" || i[k] == null ? (k === "custo_unit" ? null : 0) : Number(i[k]);
+      const num = k => i[k] === "" || i[k] == null ? (k === "custo_unit" ? null : k === "estoque_minimo" ? 15 : 0) : Number(i[k]);
+      i = { ...i, codigo: String(i.codigo || "").trim().toUpperCase() || sugerirCodigo(i.nome, i.categoria) };
       if(!i.id){ const n = { id: novoId(), ativo: true }; campos.forEach(k => n[k] = i[k] || null); n.custo_unit = num("custo_unit"); n.estoque_minimo = num("estoque_minimo"); n.estoque_ideal = num("estoque_ideal"); n.controlado = !!i.controlado; db.itens.push(n); aud(u, "INSERT", "itens", null, n); salvar(); return { ok: true, id: n.id }; }
       const it = db.itens.find(x => x.id === i.id); const antes = { ...it };
       campos.forEach(k => it[k] = i[k] || null); it.custo_unit = num("custo_unit"); it.estoque_minimo = num("estoque_minimo"); it.estoque_ideal = num("estoque_ideal"); it.controlado = !!i.controlado; it.ativo = i.ativo !== false;
@@ -454,10 +548,10 @@ const API = ONLINE ? (() => {
     },
     async salvarUsuario(d){
       const u = quem(true); const pin = String(d.pin || "");
-      if(pin && !/^\d{4}$/.test(pin)) throw new Error("O PIN deve ter 4 números.");
+      if(pin && !/^\d{4,6}$/.test(pin)) throw new Error("O PIN deve ter de 4 a 6 números.");
       const nome = String(d.nome || "").trim(); if(!nome) throw new Error("Informe o nome.");
       if(db.usuarios.some(x => norm(x.nome) === norm(nome) && x.id !== d.id)) throw new Error("Já existe um usuário com esse nome.");
-      if(!d.id){ if(!pin) throw new Error("Defina um PIN de 4 números."); const n = { id: novoId(), nome, papel: d.papel || "funcionaria", ativo: true, pin }; db.usuarios.push(n); aud(u, "INSERT", "usuarios", null, n); salvar(); return { ok: true }; }
+      if(!d.id){ if(!pin) throw new Error("Defina um PIN de 4 a 6 números."); const n = { id: novoId(), nome, papel: d.papel || "funcionaria", ativo: true, pin }; db.usuarios.push(n); aud(u, "INSERT", "usuarios", null, n); salvar(); return { ok: true }; }
       if(d.id === u.id && (d.ativo === false || d.papel !== "admin")) throw new Error("Você não pode desativar nem rebaixar o próprio acesso.");
       const x = db.usuarios.find(y => y.id === d.id); const antes = { ...x };
       x.nome = nome; x.papel = d.papel; x.ativo = d.ativo !== false; if(pin) x.pin = pin;
@@ -478,13 +572,19 @@ async function carregar(silencioso){
     if(ONLINE) store.set("estoque_cache", { em: S.carregadoEm, ...d });
   } catch(e){
     const c = ONLINE && store.get("estoque_cache");
-    if(c){ Object.assign(S, { usuarios: c.usuarios, itens: c.itens, lotes: c.lotes, movs: c.movs, config: c.config || {} }); S.offline = true; S.cacheEm = c.em; }
+    if(c){ Object.assign(S, { itens: c.itens, lotes: c.lotes, movs: c.movs, config: c.config || {}, listas: c.listas || [], listaItens: c.listaItens || [] }); S.offline = true; S.cacheEm = c.em; }
     else if(!silencioso) { S.erroCarga = e.message || "Falha de conexão"; }
   }
-  if(S.sessao && S.sessao.id && !S.offline){ try { S.pac = await API.pacientes(); } catch(e){} }
+  if(S.sessao && S.sessao.id && !S.offline) await carregarPrivado();
   derivar();
 }
 const pacDe = m => m.paciente || S.pac[m.id] || "";
+async function carregarPrivado(){
+  const tenta = async f => { try { return await f(); } catch(e){ return null; } };
+  const [pac, procs, us, custos] = await Promise.all([tenta(() => API.pacientes()), tenta(() => API.procs()), tenta(() => API.usuarios()), isAdmin() ? tenta(() => API.custos()) : null]);
+  if(pac) S.pac = pac; if(procs) S.procs = procs; if(us) S.usuarios = us;
+  if(custos && ONLINE) S.itens = S.itens.map(i => ({ ...i, custo_unit: custos[i.id] ?? null }));
+}
 let D = {};
 function derivar(){
   const porItem = {}; S.lotes.forEach(l => (porItem[l.item_id] ||= []).push(l));
@@ -501,6 +601,15 @@ function derivar(){
     if(saldo <= 0) st = "zerado"; else if(vencidos.length) st = "vencido"; else if(min > 0 && saldo < min) st = "baixo"; else if(dProx != null && dProx <= 90) st = "vencendo";
     return { ...i, lotes: ls, comSaldo, saldo, prox, dProx, vencidos, min, st, valor: saldo * Number(i.custo_unit || 0) };
   });
+  const grpMap = new Map();
+  itens.forEach(i => { const k = i.codigo ? "c:" + norm(i.codigo) : "i:" + i.id; let g = grpMap.get(k);
+    if(!g){ g = { key: k, codigo: i.codigo || "", itens: [], saldo: 0, min: 0, ideal: 0 }; grpMap.set(k, g); }
+    g.itens.push(i); g.saldo += i.saldo; g.min = Math.max(g.min, i.min); g.ideal = Math.max(g.ideal, Number(i.estoque_ideal || 0)); i.grupo = g; });
+  grpMap.forEach(g => { g.nome = g.itens[0].nome; g.fornecedores = [...new Set(g.itens.map(i => i.fornecedor).filter(Boolean))];
+    g.prox = g.itens.map(i => i.prox).filter(Boolean).sort()[0] || null; g.unidades = [...new Set(g.itens.map(i => norm(i.unidade)).filter(Boolean))];
+    const d = diasAte(g.prox); g.st = g.saldo <= 0 ? "zerado" : g.itens.some(i => i.vencidos.length) ? "vencido" : g.min > 0 && g.saldo < g.min ? "baixo" : d != null && d <= 90 ? "vencendo" : "ok"; });
+  itens.forEach(i => { const g = i.grupo; i.st = i.saldo <= 0 ? (g.saldo > 0 ? "semsaldo" : "zerado") : i.vencidos.length ? "vencido" : g.min > 0 && g.saldo < g.min ? "baixo" : i.dProx != null && i.dProx <= 90 ? "vencendo" : "ok"; });
+  const grupos = [...grpMap.values()];
   const idx = Object.fromEntries(itens.map(i => [i.id, i]));
   S.itens.filter(i => i.ativo === false).forEach(i => idx[i.id] = { ...i, inativo: true, lotes: [], saldo: 0 });
   const lotesIdx = Object.fromEntries(S.lotes.map(l => [l.id, l]));
@@ -510,16 +619,17 @@ function derivar(){
       if(d < 0) alertas.push({ sev: 0, tipo: "vencido", item: i, lote: l, d });
       else if(d <= 30) alertas.push({ sev: 1, tipo: "vence30", item: i, lote: l, d });
       else if(d <= 90) alertas.push({ sev: 3, tipo: "vence90", item: i, lote: l, d }); });
-    if(i.saldo <= 0) alertas.push({ sev: 1, tipo: "zerado", item: i });
-    else if(i.min > 0 && i.saldo < i.min) alertas.push({ sev: 2, tipo: "baixo", item: i });
   });
+  grupos.forEach(g => { const rep = g.itens.slice().sort((a, b) => b.saldo - a.saldo)[0];
+    if(g.saldo <= 0) alertas.push({ sev: 1, tipo: "zerado", item: rep, grupo: g });
+    else if(g.min > 0 && g.saldo < g.min) alertas.push({ sev: 2, tipo: "baixo", item: rep, grupo: g }); });
   alertas.sort((a,b) => a.sev - b.sev || (a.d ?? 0) - (b.d ?? 0));
   const cats = [...new Set(itens.map(i => i.categoria).filter(Boolean))].sort();
   const locais = [...new Set(itens.map(i => i.local).filter(Boolean))].sort();
-  D = { itens, idx, lotesIdx, alertas, cats, locais };
+  D = { itens, idx, lotesIdx, alertas, cats, locais, grupos };
 }
 const ST = {
-  ok: ["p-ok","Em dia"], vencendo: ["p-warn","Vencendo"], baixo: ["p-warn","Abaixo do mínimo"], vencido: ["p-crit","Lote vencido"], zerado: ["p-crit","Zerado"]
+  ok: ["p-ok","Em dia"], vencendo: ["p-warn","Vencendo"], baixo: ["p-warn","Abaixo do mínimo"], vencido: ["p-crit","Lote vencido"], zerado: ["p-crit","Zerado"], semsaldo: ["p-mute","Sem saldo (outro fornecedor tem)"]
 };
 const TIPO = { entrada: ["Entrada","p-ok"], saida: ["Saída","p-blue"], ajuste: ["Ajuste","p-violet"], descarte: ["Descarte","p-crit"] };
 function pillValidade(v){ const d = diasAte(v); if(d == null) return '<span class="pill p-mute">Sem validade</span>'; if(d < 0) return `<span class="pill p-crit">Vencido há ${-d} d</span>`; if(d <= 30) return `<span class="pill p-crit">Vence em ${d} d</span>`; if(d <= 90) return `<span class="pill p-warn">Vence em ${d} d</span>`; return `<span class="pill p-ok">${fData(v)}</span>`; }
@@ -529,7 +639,7 @@ const isAdmin = () => S.sessao && S.sessao.papel === "admin";
    Telas
    ===================================================================== */
 const NAV = [
-  ["hoje","Hoje","grid"],["itens","Itens","box"],["movimentacoes","Movimentações","swap"],["validades","Validades","cal"],["compras","Lista de compras","cart"],["backup","Relatórios e backup","chart"]
+  ["hoje","Hoje","grid"],["itens","Itens","box"],["cirurgias","Cirurgias","clip"],["movimentacoes","Movimentações","swap"],["validades","Validades","cal"],["compras","Lista de compras","cart"],["backup","Relatórios e backup","chart"]
 ];
 const NAV_ADMIN = [["auditoria","Auditoria","shield"],["usuarios","Usuários","users"]];
 
@@ -558,11 +668,12 @@ function shell(){
       <div class="sp"></div>
       <div class="when">${ic("cal",16)}<b>${new Date().toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"short"})}</b><span id="clock">· ${fHora(Date.now())}</span></div>
       <a class="iconbtn" href="#validades" title="Alertas" aria-label="Alertas">${ic("bell")}${venc ? `<span class="dot">${venc}</span>` : ""}</a>
+      <button class="iconbtn show-m" data-act="sair" title="Sair do app" aria-label="Sair do app">${ic("out")}</button>
       <button class="btn pri hide-m" data-act="novaMov" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Nova movimentação</button>
     </header>
     <section class="content" id="view"></section>
   </div>
-  <nav class="mobnav">${[["hoje","Hoje","grid"],["itens","Itens","box"],["movimentacoes","Registros","swap"],["validades","Validades","cal"],["mais","Mais","chart"]].map(([r,t,i]) => `<a href="#${r === "mais" ? "backup" : r}" class="${S.rota === r || (r === "mais" && ["backup","compras","auditoria","usuarios"].includes(S.rota)) ? "on" : ""}">${ic(i,20)}${t}</a>`).join("")}</nav>
+  <nav class="mobnav">${[["hoje","Hoje","grid"],["itens","Itens","box"],["cirurgias","Cirurgias","clip"],["movimentacoes","Registros","swap"],["validades","Validades","cal"],["mais","Mais","menu"]].map(([r,t,i]) => { const on = S.rota === r || (r === "mais" && ["mais","backup","compras","auditoria","usuarios"].includes(S.rota)); return `<a href="#${r}" class="${on ? "on" : ""}" ${on ? 'aria-current="page"' : ""}>${ic(i,20)}${t}</a>`; }).join("")}</nav>
   <button class="fab" data-act="novaMov" aria-label="Nova movimentação" ${S.offline ? "disabled" : ""}>${ic("plus",26,2.2)}</button>
 </div>`;
 }
@@ -580,8 +691,8 @@ function banners(){
 function vHoje(){
   const its = D.itens; const hoje = hojeISO();
   const lotesAtivos = its.reduce((a,i) => a + i.comSaldo.length, 0);
-  const baixo = its.filter(i => i.st === "baixo" || i.st === "zerado").length;
-  const semMin = its.filter(i => !i.min).length;
+  const baixo = D.grupos.filter(g => g.st === "baixo" || g.st === "zerado").length;
+  const semMin = D.grupos.filter(g => !g.min).length;
   const venc90 = D.alertas.filter(a => a.tipo === "vence30" || a.tipo === "vence90");
   const vencidos = D.alertas.filter(a => a.tipo === "vencido");
   const unVenc = vencidos.reduce((a,x) => a + Number(x.lote.quantidade), 0);
@@ -600,17 +711,17 @@ function vHoje(){
     ${k("cart","warn","Abaixo do mínimo", baixo, semMin ? `${semMin} sem mínimo definido` : "mínimos definidos", "compras")}
     ${k("clock","warn","Vencendo em 90 dias", venc90.length, venc90.length ? `${venc90.filter(a => a.d <= 30).length} em até 30 dias` : "nenhum lote", "validades")}
     ${k("alert","crit","Vencidos", vencidos.length, vencidos.length ? `${fNum(unVenc)} unidades a descartar` : "nenhum lote vencido", "validades")}
-    ${k("coin","ok","Valor em estoque", `<span style="font-size:.78em">${fBRL(valor)}</span>`, `${movHoje} movimentações hoje`, "backup")}
+    ${isAdmin() ? k("coin","ok","Valor em estoque", `<span style="font-size:.78em">${fBRL(valor)}</span>`, `${movHoje} movimentações hoje`, "backup") : k("swap","ok","Movimentações hoje", movHoje, "registros de hoje", "movimentacoes")}
   </div>
   <div class="grid-home">
     <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
       <div class="card"><div class="card-h"><h2>Movimentações recentes</h2><span class="pill p-mute">${recentes.length ? "últimas " + recentes.length : "nenhuma"}</span><div class="sp"></div><a class="btn sm" href="#movimentacoes">Ver todas</a></div>
         <div class="tl">${recentes.length ? recentes.map(rowTL).join("") : `<div class="empty">Nenhuma movimentação registrada.</div>`}</div></div>
-      <div class="card"><div class="card-h"><h2>Valor em estoque por categoria</h2><div class="sp"></div><span class="muted" style="font-size:12px">custo unitário × saldo</span></div>
-        <div class="bars">${porCat.map(x => `<div class="bar-row"><span>${esc(x.c)} <span class="muted">· ${x.n}</span></span><div class="bar"><i style="width:${Math.max(2, x.v / maxCat * 100)}%"></i></div><b class="num" style="text-align:right">${fBRL(x.v)}</b></div>`).join("")}</div></div>
+      ${!isAdmin() ? "" : `<div class="card"><div class="card-h"><h2>Valor em estoque por categoria</h2><div class="sp"></div><span class="muted" style="font-size:12px">custo unitário × saldo</span></div>
+        <div class="bars">${porCat.map(x => `<div class="bar-row"><span>${esc(x.c)} <span class="muted">· ${x.n}</span></span><div class="bar"><i style="width:${Math.max(2, x.v / maxCat * 100)}%"></i></div><b class="num" style="text-align:right">${fBRL(x.v)}</b></div>`).join("")}</div></div>`}
     </div>
     <div class="card"><div class="card-h"><h2>Alertas</h2><div class="sp"></div>${D.alertas.length ? `<span class="pill p-warn">${D.alertas.length} ${D.alertas.length === 1 ? "pendente" : "pendentes"}</span>` : `<span class="pill p-ok">tudo em dia</span>`}</div>
-      ${top ? `<div class="hero ${top.sev === 0 ? "crit" : ""}" data-item="${top.item.id}"><small>Mais urgente · ${esc(top.item.local || "sem local")}</small><div class="hv">${esc(top.item.nome)}</div><div class="hs"><span>${alertaTexto(top)}</span><span class="tag">${top.lote ? "Lote " + esc(top.lote.lote || "—") : fNum(top.item.saldo) + " " + esc(low(top.item.unidade))}</span></div></div>` : `<div class="empty">Nenhum lote vencendo e nenhum item abaixo do mínimo.</div>`}
+      ${top ? `<div class="hero ${top.sev === 0 ? "crit" : ""}" data-item="${top.item.id}"><small>Mais urgente · ${esc(top.item.local || "sem local")}</small><div class="hv">${esc(top.item.nome)}</div><div class="hs"><span>${alertaTexto(top)}</span><span class="tag">${top.lote ? "Lote " + esc(top.lote.lote || "—") : fNum((top.grupo || top.item).saldo) + " " + esc(low(top.item.unidade))}</span></div></div>` : `<div class="empty">Nenhum lote vencendo e nenhum item abaixo do mínimo.</div>`}
       <div class="al">${D.alertas.slice(1, 9).map(rowAlerta).join("")}</div>
       ${D.alertas.length > 9 ? `<div style="padding:0 18px 16px"><a class="btn sm" href="#validades">Ver todos os alertas</a></div>` : ""}
     </div>
@@ -621,12 +732,13 @@ function alertaTexto(a){
   if(a.tipo === "vencido") return `Venceu em ${fData(a.lote.validade)}`;
   if(a.tipo === "vence30" || a.tipo === "vence90") return `Vence em ${a.d} dias (${fData(a.lote.validade)})`;
   if(a.tipo === "zerado") return "Sem saldo em estoque";
-  return `Saldo ${fNum(a.item.saldo)} · mínimo ${fNum(a.item.min)}`;
+  const g = a.grupo || { saldo: a.item.saldo, min: a.item.min, itens: [a.item] };
+  return `Saldo ${fNum(g.saldo)} · mínimo ${fNum(g.min)}${g.itens.length > 1 ? ` · soma de ${g.itens.length} itens (${esc(g.codigo)})` : ""}`;
 }
 function rowAlerta(a){
   const map = { vencido: ["VNC","crit"], vence30: ["30d","crit"], vence90: ["90d","warn"], zerado: ["0","crit"], baixo: ["MIN","warn"] };
   const [code, cor] = map[a.tipo];
-  const dir = a.lote ? `<b class="num">${fNum(a.lote.quantidade)}</b><br>${esc(low(a.item.unidade))}` : `<b class="num">${fNum(a.item.saldo)}</b><br>em estoque`;
+  const dir = a.lote ? `<b class="num">${fNum(a.lote.quantidade)}</b><br>${esc(low(a.item.unidade))}` : `<b class="num">${fNum((a.grupo || a.item).saldo)}</b><br>em estoque`;
   return `<button class="al-row" data-item="${a.item.id}"><span class="al-code" style="background:var(--${cor}-soft);color:var(--${cor})">${code}</span><span style="min-width:0"><b>${esc(a.item.nome)}</b><small>${alertaTexto(a)}</small></span><span class="al-r">${dir}</span></button>`;
 }
 function rowTL(m){
@@ -645,6 +757,7 @@ function vItens(){
     <div class="search">${ic("search",16)}<input data-f="q" value="${esc(f.q || "")}" placeholder="Nome, descrição, código ou fornecedor" aria-label="Filtrar itens"></div>
     <select class="field" data-f="cat" aria-label="Categoria"><option value="">Todas as categorias</option>${D.cats.map(c => `<option ${f.cat === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>
     <select class="field" data-f="local" aria-label="Local"><option value="">Todos os locais</option>${D.locais.map(c => `<option ${f.local === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>
+    <button class="btn ${S.f.grp ? "pri" : ""}" data-act="toggleGrp" title="Mostra o saldo total de cada código, somando fornecedores e lotes">${ic("box",16)}Somar por código</button>
     <select class="field" data-f="st" aria-label="Situação"><option value="">Todas as situações</option>${Object.entries(ST).map(([k,[,t]]) => `<option value="${k}" ${f.st === k ? "selected" : ""}>${t}</option>`).join("")}</select>
   </div><div id="lista" class="tbl-wrap">${listaItens()}</div></div>`;
 }
@@ -653,7 +766,7 @@ function itensFiltrados(){
   return D.itens.filter(i => (!f.cat || i.categoria === f.cat) && (!f.local || i.local === f.local) && (!f.st || i.st === f.st) &&
     (!q || norm([i.nome, i.descricao, i.codigo, i.cod_fornecedor, i.fornecedor, ...i.lotes.map(l => l.lote)].join(" ")).includes(q)));
 }
-const GRAV = { vencido: 4, zerado: 3, baixo: 2, vencendo: 1, ok: 0 };
+const GRAV = { vencido: 4, zerado: 3, baixo: 2, vencendo: 1, semsaldo: 0.5, ok: 0 };
 const COL_ITENS = [
   ["item","Item","", i => i.nome],
   ["cat","Categoria","hide-m", i => i.categoria],
@@ -663,12 +776,25 @@ const COL_ITENS = [
   ["val","Próx. validade","", i => i.prox],
   ["st","Situação","", i => GRAV[i.st] ?? 0]
 ];
+const COL_GRP = [
+  ["cod","Código","", g => g.codigo], ["prod","Produto","", g => g.nome], ["forn","Fornecedores","hide-m", g => g.fornecedores.join(", ")],
+  ["saldo","Saldo total","r", g => g.saldo], ["min","Mínimo","r hide-m", g => g.min || null], ["val","Próx. validade","", g => g.prox], ["st","Situação","", g => GRAV[g.st] ?? 0]
+];
+function listaGrupos(){
+  const ids = new Set(itensFiltrados().map(i => i.id));
+  const gs = ordenarPor(D.grupos.filter(g => g.itens.some(i => ids.has(i.id))), COL_GRP);
+  if(!gs.length) return `<div class="empty">Nenhum produto encontrado com esses filtros.</div>`;
+  return `<table><thead><tr>${COL_GRP.map(thOrd).join("")}</tr></thead><tbody>${gs.map(g => { const multi = g.itens.length > 1, u = g.itens[0];
+    return `<tr class="${multi ? "grp" : "click"}" ${multi ? "" : `data-item="${u.id}"`}><td><span class="code" style="margin:0">${esc(g.codigo || "sem código")}</span></td><td><b>${esc(g.nome)}</b>${multi ? ` <span class="pill p-acc">${g.itens.length} itens</span>` : ""}${g.unidades.length > 1 ? ' <span class="pill p-warn" title="Os itens deste código usam unidades diferentes; confira antes de somar">unidades diferentes</span>' : ""}</td><td class="hide-m">${esc(g.fornecedores.join(", ") || "—")}</td><td class="r"><b class="num">${fNum(g.saldo)}</b> <span class="muted">${esc(low(u.unidade))}</span></td><td class="r num hide-m">${g.min ? fNum(g.min) : "—"}</td><td>${g.prox ? pillValidade(g.prox) : '<span class="muted">—</span>'}</td><td><span class="pill ${ST[g.st][0]}">${ST[g.st][1]}</span></td></tr>`
+      + (multi ? g.itens.map(i => `<tr class="click sub-row" data-item="${i.id}"><td colspan="2"><span class="muted">↳</span> ${esc(i.nome)} <span class="muted">· ${esc(i.fornecedor || "—")}</span></td><td class="hide-m">${esc(i.cod_fornecedor || "")}</td><td class="r num">${fNum(i.saldo)}</td><td class="hide-m"></td><td>${i.prox ? pillValidade(i.prox) : ""}</td><td></td></tr>`).join("") : ""); }).join("")}</tbody></table>`;
+}
 function listaItens(){
+  if(S.f.grp) return listaGrupos();
   const its = ordenarPor(itensFiltrados(), COL_ITENS);
   if(!its.length) return `<div class="empty">Nenhum item encontrado com esses filtros.</div>`;
   return `<table><thead><tr>${COL_ITENS.map(thOrd).join("")}</tr></thead><tbody>
   ${its.map(i => { const ref = i.min > 0 ? i.saldo / (i.estoque_ideal > 0 ? i.estoque_ideal : i.min * 2) : null; const cls = i.min > 0 && i.saldo < i.min ? "low" : ref != null && ref < .75 ? "mid" : "";
-    return `<tr class="click" data-item="${i.id}"><td><b>${esc(i.nome)}</b>${i.controlado ? ' <span class="pill p-violet">Controlado</span>' : ""}<span class="sub">${esc(i.descricao || "")}</span></td>
+    return `<tr class="click" data-item="${i.id}"><td><b>${esc(i.nome)}</b>${i.codigo ? `<span class="code">${esc(i.codigo)}</span>` : ""}${i.controlado ? ' <span class="pill p-violet">Controlado</span>' : ""}<span class="sub">${esc(i.descricao || "")}</span></td>
     <td class="hide-m">${esc(i.categoria)}</td><td class="hide-m">${esc(i.local || "—")}</td>
     <td class="r"><div class="level">${ref != null ? `<span class="bar hide-m"><i class="${cls}" style="width:${Math.min(100, ref * 100)}%"></i></span>` : ""}<b class="num">${fNum(i.saldo)}</b> <span class="muted">${esc(low(i.unidade))}</span></div></td>
     <td class="r num hide-m">${i.min ? fNum(i.min) : '<span class="muted">—</span>'}</td>
@@ -756,16 +882,19 @@ function vValidades(){
 
 /* ---- Lista de compras ---- */
 function compras(){
-  return D.itens.filter(i => i.min > 0 && i.saldo < i.min).map(i => { const alvo = i.estoque_ideal > 0 ? i.estoque_ideal : i.min * 2; return { i, sug: Math.max(0, Math.ceil(alvo - i.saldo)) }; });
+  return D.grupos.filter(g => g.min > 0 && g.saldo < g.min).map(g => {
+    const rep = g.itens.slice().sort((a, b) => (b.custo_unit != null) - (a.custo_unit != null) || b.saldo - a.saldo)[0]; const alvo = g.ideal > 0 ? g.ideal : g.min * 2;
+    return { i: { ...rep, saldo: g.saldo, min: g.min, codigo: g.codigo, fornecedor: g.fornecedores.join(", ") || rep.fornecedor, nome: rep.nome + (g.itens.length > 1 ? ` (+${g.itens.length - 1} do mesmo código)` : "") }, sug: Math.max(0, Math.ceil(alvo - g.saldo)) };
+  });
 }
 function vCompras(){
   const cs = compras(); const semMin = D.itens.filter(i => !i.min);
   const total = cs.reduce((a,x) => a + x.sug * Number(x.i.custo_unit || 0), 0);
-  return `${banners()}<div class="head"><div><h1>Lista de compras</h1><p>Itens com saldo abaixo do mínimo. Sugestão = estoque ideal (ou 2× o mínimo) menos o saldo atual.</p></div><div class="sp"></div>
+  return `${banners()}<div class="head"><div><h1>Lista de compras</h1><p>Produtos abaixo do mínimo, somando todos os fornecedores e lotes do mesmo código. Sugestão = estoque ideal (ou 2× o mínimo) menos o saldo atual.</p></div><div class="sp"></div>
     <button class="btn" data-act="copiarCompras" ${cs.length ? "" : "disabled"}>${ic("copy",16)}Copiar para WhatsApp</button><button class="btn" data-act="exportCompras" ${cs.length ? "" : "disabled"}>${ic("down",16)}Exportar planilha</button></div>
-  <div class="card">${cs.length ? `<div class="tbl-wrap"><table><thead><tr><th>Item</th><th class="hide-m">Fornecedor</th><th class="r">Saldo</th><th class="r">Mínimo</th><th class="r">Comprar</th><th class="r hide-m">Custo estimado</th></tr></thead><tbody>
-    ${cs.map(({i,sug}) => `<tr class="click" data-item="${i.id}"><td><b>${esc(i.nome)}</b><span class="sub">${esc(i.cod_fornecedor || "")} ${esc(i.descricao || "")}</span></td><td class="hide-m">${esc(i.fornecedor || "—")}</td><td class="r num">${fNum(i.saldo)}</td><td class="r num">${fNum(i.min)}</td><td class="r num"><b>${fNum(sug)}</b> <span class="muted">${esc(low(i.unidade))}</span></td><td class="r num hide-m">${fBRL(sug * Number(i.custo_unit || 0))}</td></tr>`).join("")}
-    <tr><td colspan="5" class="r hide-m"><b>Total estimado</b></td><td class="r num hide-m"><b>${fBRL(total)}</b></td></tr></tbody></table></div>` : `<div class="empty">Nenhum item abaixo do mínimo.</div>`}</div>
+  <div class="card">${cs.length ? `<div class="tbl-wrap"><table><thead><tr><th>Item</th><th class="hide-m">Fornecedor</th><th class="r">Saldo</th><th class="r">Mínimo</th><th class="r">Comprar</th>${isAdmin() ? '<th class="r hide-m">Custo estimado</th>' : ""}</tr></thead><tbody>
+    ${cs.map(({i,sug}) => `<tr class="click" data-item="${i.id}"><td><b>${esc(i.nome)}</b><span class="sub">${esc(i.codigo || "")} · ${esc(i.descricao || "")}</span></td><td class="hide-m">${esc(i.fornecedor || "—")}</td><td class="r num">${fNum(i.saldo)}</td><td class="r num">${fNum(i.min)}</td><td class="r num"><b>${fNum(sug)}</b> <span class="muted">${esc(low(i.unidade))}</span></td>${isAdmin() ? `<td class="r num hide-m">${fBRL(sug * Number(i.custo_unit || 0))}</td>` : ""}</tr>`).join("")}
+    ${isAdmin() ? `<tr><td colspan="5" class="r hide-m"><b>Total estimado</b></td><td class="r num hide-m"><b>${fBRL(total)}</b></td></tr>` : ""}</tbody></table></div>` : `<div class="empty">Nenhum item abaixo do mínimo.</div>`}</div>
   ${semMin.length ? `<div class="card"><div class="card-h"><h2>Itens sem estoque mínimo definido</h2><span class="pill p-warn">${semMin.length}</span></div><div class="pad"><p>Sem o mínimo, o sistema não consegue avisar quando comprar. ${isAdmin() ? "Clique no item e use Editar para definir." : "Peça ao administrador para definir."}</p>
     <div style="display:flex;flex-wrap:wrap;gap:8px">${semMin.map(i => `<button class="btn sm" data-item="${i.id}">${esc(i.nome)}</button>`).join("")}</div></div></div>` : ""}`;
 }
@@ -793,8 +922,8 @@ function vBackup(){
     <div class="card"><div class="card-h"><h2>Mais usados nos últimos 30 dias</h2></div>
       ${rank.length ? `<div class="bars">${rank.map(x => `<div class="bar-row"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.i.nome)}</span><div class="bar"><i style="width:${x.q / mx * 100}%"></i></div><b class="num" style="text-align:right">${fNum(x.q)} ${esc(low(x.i.unidade))}</b></div>`).join("")}</div>` : `<div class="empty">Ainda não há saídas registradas nos últimos 30 dias.</div>`}</div>
     <div class="card"><div class="card-h"><h2>Resumo</h2></div><div class="pad"><div class="dl" style="grid-template-columns:1fr 1fr">
-      <div><small>Valor em estoque</small><b class="num">${fBRL(D.itens.reduce((a,i) => a + i.valor, 0))}</b></div>
-      <div><small>Perdas por descarte</small><b class="num">${fBRL(perdas)}</b></div>
+      ${isAdmin() ? `<div><small>Valor em estoque</small><b class="num">${fBRL(D.itens.reduce((a,i) => a + i.valor, 0))}</b></div>
+      <div><small>Perdas por descarte</small><b class="num">${fBRL(perdas)}</b></div>` : ""}
       <div><small>Itens ativos</small><b class="num">${D.itens.length}</b></div>
       <div><small>Movimentações carregadas</small><b class="num">${S.movs.length}</b></div></div>
       ${!ONLINE ? `<p style="margin-top:14px">Na demonstração, você pode voltar aos dados originais da planilha.</p><button class="btn sm" data-act="resetDemo">Restaurar dados da planilha</button>` : ""}</div></div>
@@ -811,7 +940,7 @@ function vAuditoria(){
     <select class="field" data-f="tab" aria-label="Tabela"><option value="">Tudo</option>${[["movimentacoes","Movimentações"],["lotes","Lotes"],["itens","Itens"],["usuarios","Usuários"]].map(([v,t]) => `<option value="${v}" ${f.tab === v ? "selected" : ""}>${t}</option>`).join("")}</select></div>
   <div id="lista" class="tbl-wrap">${listaAud()}</div></div>`;
 }
-const TAB = { movimentacoes: "Movimentação", lotes: "Lote", itens: "Item", usuarios: "Usuário" };
+const TAB = { listas: "Lista padrão", procedimentos: "Procedimento", movimentacoes: "Movimentação", lotes: "Lote", itens: "Item", usuarios: "Usuário" };
 const ACAO = { INSERT: ["Criou","p-ok"], UPDATE: ["Alterou","p-blue"], DELETE: ["Removeu","p-crit"] };
 function resumoAud(a){
   const ign = ["criado_em","id","item_id","lote_id","usuario_id"];
@@ -834,7 +963,7 @@ function listaAud(){
 /* ---- Usuários ---- */
 function vUsuarios(){
   if(!isAdmin()) return `<div class="empty">Acesso restrito ao administrador.</div>`;
-  return `${banners()}<div class="head"><div><h1>Usuários</h1><p>Cada pessoa entra com o próprio nome e um PIN de 4 números. Assim o sistema sabe quem fez cada registro.</p></div><div class="sp"></div><button class="btn pri" data-act="editUser" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Novo usuário</button></div>
+  return `${banners()}<div class="head"><div><h1>Usuários</h1><p>Cada pessoa entra digitando o próprio nome de login e um PIN de 4 a 6 números (recomendado: 6). Assim o sistema sabe quem fez cada registro.</p></div><div class="sp"></div><button class="btn pri" data-act="editUser" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Novo usuário</button></div>
   <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Nome</th><th>Perfil</th><th>Situação</th><th></th></tr></thead><tbody>${S.usuarios.map(u => `<tr><td><span style="display:inline-flex;align-items:center;gap:10px">${av(u.nome)}<b>${esc(u.nome)}</b></span></td><td>${u.papel === "admin" ? '<span class="pill p-acc">Administrador</span>' : '<span class="pill p-mute">Funcionária</span>'}</td><td>${u.ativo ? '<span class="pill p-ok">Ativo</span>' : '<span class="pill p-crit">Inativo</span>'}</td><td class="r"><button class="btn sm" data-act="editUser" data-id="${u.id}" ${S.offline ? "disabled" : ""}>${ic("edit",14)}Editar</button></td></tr>`).join("")}</tbody></table></div></div>`;
 }
 
@@ -842,7 +971,7 @@ function vUsuarios(){
    Modais
    ===================================================================== */
 function abrir(html, cls = ""){ $("#modal").innerHTML = `<div class="ov ${cls}" data-ov>${html}</div>`; const el = $("#modal [autofocus]"); if(el) setTimeout(() => el.focus(), 30); }
-function fechar(){ $("#modal").innerHTML = ""; M = null; }
+function fechar(){ $("#modal").innerHTML = ""; M = null; PR = null; LE = null; }
 const mHead = (t, p) => `<div class="m-h"><div><h2>${t}</h2>${p ? `<p>${p}</p>` : ""}</div><div class="sp"></div><button class="iconbtn" data-act="fechar" aria-label="Fechar">${ic("x")}</button></div>`;
 
 /* ---- ficha do item ---- */
@@ -851,14 +980,15 @@ function abrirItem(id){
   const ms = S.movs.filter(m => m.item_id === id).slice(0, 40);
   abrir(`<div class="modal" role="dialog" aria-modal="true">${mHead(esc(i.nome), esc(i.descricao || ""))}
   <div class="m-b">
-    <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill ${ST[i.st] ? ST[i.st][0] : "p-mute"}">${ST[i.st] ? ST[i.st][1] : "Inativo"}</span><span class="pill p-mute">${esc(i.categoria)}</span>${i.controlado ? '<span class="pill p-violet">Controlado</span>' : ""}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="pill ${ST[i.st] ? ST[i.st][0] : "p-mute"}">${ST[i.st] ? ST[i.st][1] : "Inativo"}</span>${i.codigo ? `<span class="code" style="margin:0;font-size:12px">${esc(i.codigo)}</span>` : ""}<span class="pill p-mute">${esc(i.categoria)}</span>${i.controlado ? '<span class="pill p-violet">Controlado</span>' : ""}</div>
+    ${i.grupo && i.grupo.itens.length > 1 ? `<div class="note info">Código ${esc(i.codigo)}: <b>${fNum(i.grupo.saldo)} ${esc(low(i.unidade))}</b> no total, somando ${i.grupo.itens.length} itens (${esc(i.grupo.fornecedores.join(", ") || "—")}). Mínimo do código: ${fNum(i.grupo.min)}.</div>` : ""}
     <div class="dl">
       <div><small>Saldo</small><b class="num">${fNum(i.saldo)} ${esc(low(i.unidade))}</b></div>
       <div><small>Mínimo / ideal</small><b class="num">${i.min ? fNum(i.min) : "—"} / ${i.estoque_ideal ? fNum(i.estoque_ideal) : "—"}</b></div>
       <div><small>Local</small><b>${esc(i.local || "—")}</b></div>
       <div><small>Fornecedor</small><b>${esc(i.fornecedor || "—")}</b></div>
       <div><small>Cód. fornecedor</small><b>${esc(i.cod_fornecedor || "—")}</b></div>
-      <div><small>Custo unitário</small><b class="num">${i.custo_unit != null ? fBRL(i.custo_unit) : "—"}</b></div>
+      ${isAdmin() ? `<div><small>Custo unitário</small><b class="num">${i.custo_unit != null ? fBRL(i.custo_unit) : "—"}</b></div>` : `<div><small>Código interno</small><b>${esc(i.codigo || "—")}</b></div>`}
     </div>
     <h3 style="font-size:14px">Lotes</h3>
     ${i.lotes.length ? `<div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Lote</th><th class="hide-m">Fabricação</th><th>Validade</th><th class="r">Qtd.</th><th></th></tr></thead><tbody>${i.lotes.map(l => `<tr><td>${esc(l.lote || "—")}</td><td class="hide-m num">${fData(l.fabricacao)}</td><td>${Number(l.quantidade) > 0 ? pillValidade(l.validade) : `<span class="muted">${fData(l.validade)}</span>`}</td><td class="r num"><b>${fNum(l.quantidade)}</b></td><td class="r" style="white-space:nowrap">${S.offline ? "" : `${isAdmin() ? `<button class="btn sm" data-act="editLote" data-id="${l.id}" title="Corrigir número, fabricação ou validade">${ic("edit",14)}Corrigir</button> ` : ""}<button class="btn sm" data-act="novaMov" data-it="${i.id}" data-lote="${l.id}" data-tipo="${Number(l.quantidade) > 0 ? "saida" : "entrada"}">Movimentar</button>`}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">Nenhum lote.</div>`}
@@ -937,19 +1067,21 @@ let confirmarSemValidade = false;
 
 /* ---- editar item ---- */
 function editItem(id){
-  const i = id ? S.itens.find(x => x.id === id) : { categoria: D.cats[0] || "", unidade: "UNIDADE" };
+  const i = id ? S.itens.find(x => x.id === id) : { categoria: D.cats[0] || "", unidade: "UNIDADE", estoque_minimo: 15 };
   const inp = (k, t, tipo = "text", extra = "") => `<label class="f">${t}<input id="e_${k}" type="${tipo}" value="${esc(i[k] ?? "")}" ${extra}></label>`;
   abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead(id ? "Editar item" : "Novo item", "Alterações ficam registradas na auditoria")}<div class="m-b">
-    <div class="row2">${inp("nome","Nome curto","text","autofocus")}${inp("codigo","Código interno")}</div>
+    <div class="row2">${inp("nome","Nome curto","text","autofocus")}<label class="f">Código interno <span class="muted" style="font-weight:400">(igual para produtos equivalentes)</span><span class="tm"><input id="e_codigo" list="e_cods" value="${esc(i.codigo || "")}" style="text-transform:uppercase" autocomplete="off"><button class="btn sm" data-act="sugCod">Sugerir</button></span></label></div>
+    <datalist id="e_cods">${codigosExistentes()}</datalist><div class="muted" id="e_codinfo" style="font-size:12.5px;margin-top:-6px"></div>
     ${inp("descricao","Descrição completa")}
     <div class="row3"><label class="f">Categoria<input id="e_categoria" list="e_cats" value="${esc(i.categoria || "")}"></label>${inp("unidade","Unidade")}<label class="f">Local<input id="e_local" list="e_locs" value="${esc(i.local || "")}"></label></div>
     <datalist id="e_cats">${D.cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist><datalist id="e_locs">${D.locais.map(c => `<option value="${esc(c)}">`).join("")}</datalist>
     <div class="row3">${inp("fornecedor","Fornecedor")}${inp("cod_fornecedor","Cód. fornecedor")}${inp("custo_unit","Custo unitário (R$)","number",'step="any" min="0"')}</div>
-    <div class="row2">${inp("estoque_minimo","Estoque mínimo","number",'step="any" min="0"')}${inp("estoque_ideal","Estoque ideal","number",'step="any" min="0"')}</div>
+    <div class="row2">${inp("estoque_minimo","Estoque mínimo (padrão 15)","number",'step="any" min="0" placeholder="15"')}${inp("estoque_ideal","Estoque ideal","number",'step="any" min="0"')}</div>
     <label class="check"><input type="checkbox" id="e_controlado" ${i.controlado ? "checked" : ""}>Medicamento controlado (Portaria 344)</label>
     ${id ? `<label class="check"><input type="checkbox" id="e_ativo" ${i.ativo !== false ? "checked" : ""}>Item ativo (desmarque para tirar das listas sem apagar o histórico)</label>` : ""}
     <div class="err" id="e_err" role="alert"></div></div>
     <div class="m-f"><button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" data-act="salvarItem" data-id="${id || ""}">${ic("check",16,2.2)}Salvar</button></div></div>`);
+  infoCodigo();
 }
 async function salvarItem(id, btn){
   const g = k => ($("#e_" + k) || {}).value ?? "";
@@ -982,9 +1114,9 @@ async function salvarLote(id, btn){
 function editUser(id){
   const u = id ? S.usuarios.find(x => x.id === id) : { papel: "funcionaria", ativo: true };
   abrir(`<div class="modal" role="dialog" aria-modal="true">${mHead(id ? "Editar usuário" : "Novo usuário", id ? "Deixe o PIN em branco para manter o atual" : "Combine o PIN pessoalmente com a funcionária")}<div class="m-b">
-    <label class="f">Nome que aparece nos registros<input id="u_nome" value="${esc(u.nome || "")}" autofocus></label>
+    <label class="f">Nome de login (é o que a pessoa digita para entrar)<input id="u_nome" value="${esc(u.nome || "")}" autofocus></label>
     <div class="row2"><label class="f">Perfil<select id="u_papel"><option value="funcionaria" ${u.papel === "funcionaria" ? "selected" : ""}>Funcionária</option><option value="admin" ${u.papel === "admin" ? "selected" : ""}>Administrador</option></select></label>
-    <label class="f">${id ? "Novo PIN (opcional)" : "PIN de 4 números"}<input id="u_pin" inputmode="numeric" maxlength="4" pattern="[0-9]*" autocomplete="off"></label></div>
+    <label class="f">${id ? "Novo PIN (opcional)" : "PIN de 4 a 6 números"}<input id="u_pin" inputmode="numeric" maxlength="6" pattern="[0-9]*" autocomplete="off"></label></div>
     ${id ? `<label class="check"><input type="checkbox" id="u_ativo" ${u.ativo ? "checked" : ""}>Acesso ativo</label>` : ""}
     <div class="note info">Funcionária: registra entradas, saídas, ajustes e descartes. Administrador: também cadastra itens, usuários e vê a auditoria.</div>
     <div class="err" id="u_err" role="alert"></div></div>
@@ -1018,7 +1150,7 @@ function baixarXlsx(nome, abas){
   return true;
 }
 const stamp = () => { const d = new Date(); return hojeISO() + "-" + String(d.getHours()).padStart(2,"0") + "h" + String(d.getMinutes()).padStart(2,"0"); };
-const linhaItem = i => ({ "Item": i.nome, "Descrição": i.descricao || "", "Categoria": i.categoria, "Unidade": i.unidade || "", "Local": i.local || "", "Saldo": i.saldo, "Estoque mínimo": i.min || "", "Estoque ideal": i.estoque_ideal || "", "Próxima validade": i.prox ? fData(i.prox) : "", "Situação": ST[i.st] ? ST[i.st][1] : "Inativo", "Fornecedor": i.fornecedor || "", "Cód. fornecedor": i.cod_fornecedor || "", "Custo unitário": i.custo_unit ?? "", "Valor em estoque": Math.round(i.valor * 100) / 100, "Controlado": i.controlado ? "Sim" : "Não" });
+const linhaItem = i => ({ "Código": i.codigo || "", "Item": i.nome, "Descrição": i.descricao || "", "Categoria": i.categoria, "Unidade": i.unidade || "", "Local": i.local || "", "Saldo": i.saldo, "Estoque mínimo": i.min || "", "Estoque ideal": i.estoque_ideal || "", "Próxima validade": i.prox ? fData(i.prox) : "", "Situação": ST[i.st] ? ST[i.st][1] : "Inativo", "Fornecedor": i.fornecedor || "", "Cód. fornecedor": i.cod_fornecedor || "", ...(isAdmin() ? { "Custo unitário": i.custo_unit ?? "", "Valor em estoque": Math.round(i.valor * 100) / 100 } : {}), "Controlado": i.controlado ? "Sim" : "Não" });
 function linhasLotes(soComSaldo){
   const out = []; D.itens.forEach(i => i.lotes.filter(l => !soComSaldo || Number(l.quantidade) > 0).forEach(l => out.push({ "CODIGO": i.codigo || "", "ITEM / DESCRIÇÃO": i.descricao || "", "NOME": i.nome, "CATEGORIA": i.categoria, "UNIDADE": i.unidade || "", "QUANTIDADE": Number(l.quantidade), "LOCAL PADRÃO": i.local || "", "CODIGO FORNECEDOR": i.cod_fornecedor || "", "FORNECEDOR": i.fornecedor || "", "CUSTO UNITARIO": i.custo_unit ?? "", "FABRICADO": fData(l.fabricacao), "VALIDADE": fData(l.validade), "LOTE": l.lote || "" }))); return out;
 }
@@ -1180,8 +1312,7 @@ function casarItemNF(l, forn){
   const nf = norm(forn); const cod = norm(l.cod), ds = norm(l.desc);
   const fornOk = i => !i.fornecedor || !nf || nf.includes(norm(i.fornecedor)) || norm(i.fornecedor).includes(nf);
   return D.itens.find(i => cod && i.cod_fornecedor && norm(i.cod_fornecedor) === cod && fornOk(i))
-    || D.itens.find(i => l.ean && i.codigo && norm(i.codigo) === norm(l.ean))
-    || D.itens.find(i => ds && (norm(i.descricao) === ds || norm(i.nome) === ds)) || null;
+        || D.itens.find(i => ds && (norm(i.descricao) === ds || norm(i.nome) === ds)) || null;
 }
 function prepararNF(nf){
   const catPadrao = med => { const want = med ? "MEDICAÇÃO" : "MATERIAL MÉDICO-HOSPITALAR"; return D.cats.find(c => norm(c) === norm(want)) || (med ? want : D.cats[0] || ""); };
@@ -1189,7 +1320,7 @@ function prepararNF(nf){
   nf.linhas = nf.linhas.map(l => {
     const it = casarItemNF(l, nf.fornecedor);
     return { ...l, incluir: true, auto: !!it, item_id: it ? it.id : "novo", fator: 1, qtdFinal: l.qtd, custo: l.custoNF, atualizarCusto: true,
-      novo: { nome: l.desc.toUpperCase().slice(0, 45), categoria: catPadrao(l.med), local: localPadrao, unidade: UNID_NF[norm(l.un).toUpperCase()] || String(l.un || "").toUpperCase() } };
+      novo: { codigo: sugerirCodigo(l.desc, catPadrao(l.med)), nome: l.desc.toUpperCase().slice(0, 45), categoria: catPadrao(l.med), local: localPadrao, unidade: UNID_NF[norm(l.un).toUpperCase()] || String(l.un || "").toUpperCase() } };
   });
   const ref = nf.numero ? norm("NF " + nf.numero) : null; const f1 = norm(String(nf.fornecedor || "").split(" ")[0]);
   nf.duplicada = !!ref && S.movs.some(m => m.motivo && norm(m.motivo).includes(ref) && (!f1 || norm(m.motivo).includes(f1)));
@@ -1226,7 +1357,7 @@ function renderNF(manterScroll){
       ${l.incluir ? `<div class="nfl-b">
         <label class="f">Item no estoque<select data-nf="${k}" data-nfk="item_id">${opts(l.item_id)}</select></label>
         ${l.item_id === "novo" ? `<div class="row2"><label class="f">Nome curto do item novo<input data-nf="${k}" data-nfk="novo.nome" value="${esc(l.novo.nome)}"></label><label class="f">Categoria<input data-nf="${k}" data-nfk="novo.categoria" list="nf_cats" value="${esc(l.novo.categoria)}"></label></div>
-          <div class="row2"><label class="f">Local<input data-nf="${k}" data-nfk="novo.local" list="nf_locs" value="${esc(l.novo.local)}"></label><label class="f">Unidade de controle<input data-nf="${k}" data-nfk="novo.unidade" value="${esc(l.novo.unidade)}"></label></div>` : ""}
+          <div class="row3"><label class="f">Código interno<input data-nf="${k}" data-nfk="novo.codigo" list="nf_cods" value="${esc(l.novo.codigo)}" style="text-transform:uppercase"></label><label class="f">Local<input data-nf="${k}" data-nfk="novo.local" list="nf_locs" value="${esc(l.novo.local)}"></label><label class="f">Unidade de controle<input data-nf="${k}" data-nfk="novo.unidade" value="${esc(l.novo.unidade)}"></label></div>` : ""}
         <div class="row3"><label class="f">Lote<input data-nf="${k}" data-nfk="lote" value="${esc(l.lote)}"></label><label class="f">Fabricação<input type="date" data-nf="${k}" data-nfk="fab" value="${esc(l.fab)}"></label><label class="f">Validade<input type="date" data-nf="${k}" data-nfk="val" value="${esc(l.val)}"></label></div>
         <div class="row3"><label class="f">Itens por embalagem <span class="muted" style="font-weight:400">(ex.: caixa com 100)</span><input type="number" min="1" step="any" data-nf="${k}" data-nfk="fator" value="${esc(l.fator)}"></label>
           <label class="f">Quantidade que entra${it ? ` (${esc(low(it.unidade))})` : ""}<input type="number" min="0" step="any" data-nf="${k}" data-nfk="qtdFinal" value="${esc(l.qtdFinal ?? "")}"></label>
@@ -1238,9 +1369,9 @@ function renderNF(manterScroll){
     <label class="f">Fornecedor<input id="nf_forn" value="${esc(n.fornecedor || "")}" placeholder="Nome do fornecedor"></label>
     ${n.duplicada ? `<div class="note crit">Parece que esta nota já foi lançada: há movimentações com "NF ${esc(n.numero)}" deste fornecedor. Confira antes de importar de novo.</div>` : ""}
     ${n.origem === "PDF" ? `<div class="note warn">Leitura de PDF: confira código, quantidade, lote e validade de cada produto. Se algo vier errado, prefira o XML da nota.</div>` : ""}
-    <div class="note info">Confira cada produto. Itens encontrados no estoque recebem um lote novo (ou somam no lote de mesmo número e validade). Itens não encontrados são criados. Desmarque o que não quiser lançar.</div>
+    <div class="note info">Confira cada produto. Itens encontrados no estoque recebem um lote novo (ou somam no lote de mesmo número e validade). Itens não encontrados são criados com o código interno sugerido (mínimo padrão: 15). Desmarque o que não quiser lançar.</div>
     <div class="nfls">${n.linhas.map(card).join("")}</div>
-    <datalist id="nf_cats">${D.cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist><datalist id="nf_locs">${D.locais.map(c => `<option value="${esc(c)}">`).join("")}</datalist>
+    <datalist id="nf_cods">${codigosExistentes()}</datalist><datalist id="nf_cats">${D.cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist><datalist id="nf_locs">${D.locais.map(c => `<option value="${esc(c)}">`).join("")}</datalist>
     <div class="err" id="nf_err" role="alert"></div></div>
     <div class="m-f"><span class="muted" style="margin-right:auto;align-self:center">${inc.length} de ${n.linhas.length} produtos selecionados</span><button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" data-act="nfImportar" ${inc.length ? "" : "disabled"}>${ic("check",16,2.2)}Lançar entrada de ${inc.length}</button></div></div>`);
   if(sc) $("#modal .modal").scrollTop = sc;
@@ -1275,7 +1406,7 @@ async function nfImportar(btn){
       let itemId = l.item_id; const custo = l.custo === "" || l.custo == null ? null : Number(l.custo);
       if(itemId === "novo"){
         if(criados[l.chaveItem]) itemId = criados[l.chaveItem];
-        else { const r = await API.salvarItem({ nome: l.novo.nome.trim(), descricao: l.desc, categoria: l.novo.categoria.trim(), unidade: l.novo.unidade, local: l.novo.local, fornecedor: n.fornecedor, cod_fornecedor: l.cod, codigo: l.ean || "", custo_unit: custo ?? "", estoque_minimo: "", estoque_ideal: "", controlado: false, ativo: true });
+        else { const r = await API.salvarItem({ nome: l.novo.nome.trim(), descricao: l.desc, categoria: l.novo.categoria.trim(), unidade: l.novo.unidade, local: l.novo.local, fornecedor: n.fornecedor, cod_fornecedor: l.cod, codigo: String(l.novo.codigo || "").trim().toUpperCase(), custo_unit: custo ?? "", estoque_minimo: "", estoque_ideal: "", controlado: false, ativo: true });
           itemId = criados[l.chaveItem] = r.id; novos++; }
       } else if(l.atualizarCusto && custo != null && !custoFeito[itemId]){
         const it = S.itens.find(x => x.id === itemId);
@@ -1296,37 +1427,253 @@ async function nfImportar(btn){
 }
 
 /* =====================================================================
-   Login por nome + PIN
+   Cirurgias: listas padrão e procedimentos
    ===================================================================== */
-let L = { u: null, pin: "", erro: "" };
-function vLogin(){
-  const us = S.usuarios.filter(u => u.ativo);
-  if(S.erroCarga && !S.offline) return `<div class="login"><div class="card lcard"><div class="login-logo"><img src="img/logo.png" alt="${esc(CLINICA)}"><small>Controle de estoque</small></div><div class="note crit">Não foi possível conectar ao servidor (${esc(S.erroCarga)}). Verifique a internet e o arquivo config.js.</div><button class="btn pri" data-act="recarregar">Tentar de novo</button></div></div>`;
-  const u = L.u && us.find(x => x.id === L.u);
-  return `<div class="login"><div class="card lcard">
-    <div class="login-logo"><img src="img/logo.png" alt="${esc(CLINICA)}"><small>Controle de estoque</small></div>
-    ${!ONLINE ? `<div class="banner demo">${ic("db",16)}<span>Demonstração: Administrador usa PIN <b>1234</b> e Enfermagem (exemplo) usa <b>1111</b>.</span></div>` : ""}
-    ${S.offline ? `<div class="banner off">${ic("wifi",16)}<span>Sem conexão. Você pode consultar a cópia salva em ${fDH(S.cacheEm)} e baixar a planilha de contingência.</span></div><button class="btn pri" data-act="consultaOffline">Consultar cópia offline</button>` : !u ? `
-      <div><h1>Quem está usando?</h1><p class="muted" style="margin:4px 0 0">Toque no seu nome</p></div>
-      <div class="ulist">${us.map(x => `<button class="ubtn" data-act="lUser" data-id="${x.id}">${av(x.nome,36)}<span><b>${esc(x.nome)}</b><small>${x.papel === "admin" ? "Administrador" : "Funcionária"}</small></span></button>`).join("") || `<div class="empty">Nenhum usuário ativo.</div>`}</div>` : `
-      <div style="display:flex;align-items:center;gap:12px"><button class="iconbtn" data-act="lVoltar" aria-label="Voltar">${ic("back")}</button>${av(u.nome,36)}<div><b>${esc(u.nome)}</b><div class="muted" style="font-size:12.5px">Digite seu PIN de 4 números</div></div></div>
-      <div class="pin-dots" aria-label="PIN digitado: ${L.pin.length} de 4">${[0,1,2,3].map(n => `<i class="${n < L.pin.length ? "f" : ""}"></i>`).join("")}</div>
-      ${L.erro ? `<div class="err" style="text-align:center" role="alert">${esc(L.erro)}</div>` : ""}
-      <div class="pad-grid">${[1,2,3,4,5,6,7,8,9].map(n => `<button data-act="lDig" data-v="${n}">${n}</button>`).join("")}<button class="ghost" data-act="lVoltar">Voltar</button><button data-act="lDig" data-v="0">0</button><button class="ghost" data-act="lApaga">Apagar</button></div>`}
+let LE = null, PR = null, prTimer = null;
+const custoItem = id => { const i = D.idx[id]; return i && i.custo_unit != null ? Number(i.custo_unit) : null; };
+const itensDaLista = id => S.listaItens.filter(x => x.lista_id === id).sort((a, b) => a.ordem - b.ordem);
+function custoLista(itens){ let t = 0, falta = false; itens.forEach(x => { const c = custoItem(x.item_id); if(c == null) falta = true; else t += c * Number(x.quantidade || 0); }); return { t, falta }; }
+const nomeItem = id => { const i = D.idx[id]; return i ? i.nome + (i.inativo ? " (inativo)" : "") : "Item removido"; };
+const codItem = id => (D.idx[id] || {}).codigo || "";
+const ehMinha = l => S.sessao && l.criado_por === S.sessao.id;
+const horaAgora = () => new Date().toTimeString().slice(0, 5);
+const hhmm = t => t ? String(t).slice(0, 5) : "—";
+const PST = { aberto: ["p-warn","Em andamento"], confirmado: ["p-ok","Confirmado"], cancelado: ["p-mute","Cancelado"] };
+
+function vCirurgias(){
+  const aba = S.f.aba || "proc";
+  const tabs = `<div class="seg" style="grid-template-columns:repeat(2,1fr);max-width:420px"><button data-act="cirAba" data-v="proc" class="${aba === "proc" ? "on" : ""}">Procedimentos</button><button data-act="cirAba" data-v="listas" class="${aba === "listas" ? "on" : ""}">Listas padrão</button></div>`;
+  const head = `${banners()}<div class="head"><div><h1>Cirurgias e procedimentos</h1><p>Listas padrão de materiais por cirurgia e o registro do que foi realmente usado em cada procedimento.</p></div><div class="sp"></div>
+    ${aba === "proc" ? `<button class="btn pri" data-act="procNovo" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Novo procedimento</button>` : `<button class="btn pri" data-act="listaNova" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Nova lista</button>`}</div>${tabs}`;
+  return head + (aba === "proc" ? vProcs() : vListas());
+}
+function vListas(){
+  const ls = S.listas.slice().sort((a, b) => coll.compare(a.nome, b.nome));
+  if(!ls.length) return `<div class="card"><div class="empty">Nenhuma lista criada ainda. Crie uma lista para cada tipo de cirurgia com os materiais que ela costuma usar.</div></div>`;
+  return `<div class="card"><div class="tbl-wrap"><table><thead><tr><th>Lista</th><th class="hide-m">Criada por</th><th class="r">Itens</th>${isAdmin() ? '<th class="r">Custo total</th>' : ""}<th></th></tr></thead><tbody>
+    ${ls.map(l => { const its = itensDaLista(l.id); const c = custoLista(its);
+      return `<tr class="click" data-act="listaAbrir" data-id="${l.id}"><td><b>${esc(l.nome)}</b>${ehMinha(l) ? ' <span class="pill p-acc">minha</span>' : ""}<span class="sub">${esc(l.descricao || "")}</span></td><td class="hide-m">${esc(l.criado_por_nome || "—")}</td><td class="r num">${its.length}</td>
+      ${isAdmin() ? `<td class="r num"><b>${fBRL(c.t)}</b>${c.falta ? ' <span class="pill p-warn" title="Há itens sem custo cadastrado">parcial</span>' : ""}</td>` : ""}
+      <td class="r" style="white-space:nowrap"><button class="btn sm" data-act="procDaLista" data-id="${l.id}" ${S.offline ? "disabled" : ""}>Usar em procedimento</button></td></tr>`; }).join("")}
+  </tbody></table></div></div>`;
+}
+function vProcs(){
+  const abertos = S.procs.filter(p => p.status === "aberto"), hist = S.procs.filter(p => p.status !== "aberto");
+  const custoProc = p => p.itens.filter(x => x.usado).reduce((a, x) => a + (custoItem(x.item_id) || 0) * Number(x.quantidade || 0), 0);
+  return `${abertos.length ? `<div class="card"><div class="card-h"><h2>Em andamento</h2><span class="pill p-warn">${abertos.length}</span></div><div class="pad" style="display:grid;gap:10px">
+    ${abertos.map(p => `<div class="picked"><div style="min-width:0"><b>${esc(p.nome)}</b><small>${fData(p.data)} · início ${hhmm(p.hora_inicio)}${p.medicos ? " · " + esc(p.medicos) : ""} · ${p.itens.filter(x => x.usado).length} de ${p.itens.length} itens checados</small></div><span class="sp"></span><button class="btn pri sm" data-act="procAbrir" data-id="${p.id}">Continuar</button></div>`).join("")}</div></div>` : ""}
+  <div class="card"><div class="card-h"><h2>Histórico</h2></div>${hist.length ? `<div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Procedimento</th><th class="hide-m">Médicos</th><th class="hide-m">Horário</th><th class="r">Itens usados</th>${isAdmin() ? '<th class="r hide-m">Custo</th>' : ""}<th>Situação</th><th></th></tr></thead><tbody>
+    ${hist.map(p => `<tr class="click" data-act="procVer" data-id="${p.id}"><td class="num">${fData(p.data)}</td><td><b>${esc(p.nome)}</b></td><td class="hide-m">${esc(p.medicos || "—")}</td><td class="hide-m num">${hhmm(p.hora_inicio)}–${hhmm(p.hora_fim)}</td><td class="r num">${p.itens.filter(x => x.usado).length}</td>
+      ${isAdmin() ? `<td class="r num hide-m">${fBRL(custoProc(p))}</td>` : ""}<td><span class="pill ${PST[p.status][0]}">${PST[p.status][1]}</span></td>
+      <td class="r">${p.status === "confirmado" ? `<button class="btn sm" data-act="procImprimir" data-id="${p.id}">Imprimir</button>` : ""}</td></tr>`).join("")}
+  </tbody></table></div>` : `<div class="empty">Nenhum procedimento finalizado ainda.</div>`}</div>`;
+}
+
+/* ---- editor de lista padrão ---- */
+function abrirLista(id, dup){
+  const l = id ? S.listas.find(x => x.id === id) : null;
+  LE = { id: l && !dup ? l.id : null, nome: l ? (dup ? l.nome + " (cópia)" : l.nome) : "", descricao: l ? l.descricao || "" : "",
+    itens: l ? itensDaLista(l.id).map(x => ({ item_id: x.item_id, quantidade: x.quantidade })) : [], busca: "",
+    leitura: !!(l && !dup && !ehMinha(l)), dono: l ? l.criado_por_nome : "" };
+  renderLista();
+}
+function buscaItens(q){ const ws = norm(q).split(/\s+/).filter(Boolean); return D.itens.filter(x => { const h = norm([x.nome, x.descricao, x.codigo, x.cod_fornecedor, x.fornecedor].join(" ")); return ws.every(w => h.includes(w)); }).slice(0, 12); }
+function resBusca(prefixo, q){ const xs = buscaItens(q); return xs.map(x => `<button data-act="${prefixo}Add" data-id="${x.id}">${av(x.categoria, 28)}<span><b>${esc(x.nome)}</b><br><small class="muted">${esc(x.codigo || "")} · ${fNum(x.saldo)} ${esc(low(x.unidade))}</small></span></button>`).join("") || `<div class="empty">Nenhum item encontrado.</div>`; }
+function renderLista(manter){
+  const sc = manter && $("#modal .modal") ? $("#modal .modal").scrollTop : 0;
+  const L2 = LE, ro = L2.leitura, adm = isAdmin(); const c = custoLista(L2.itens);
+  abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead(L2.id ? (ro ? "Lista padrão" : "Editar lista") : "Nova lista padrão", ro ? `Criada por ${esc(L2.dono || "—")}. Só quem criou pode alterar.` : "Itens e quantidades que este procedimento costuma usar")}<div class="m-b">
+    <div class="row2"><label class="f">Nome da lista<input id="le_nome" value="${esc(L2.nome)}" placeholder="Ex.: Cistoscopia, RTU de próstata" ${ro ? "disabled" : "autofocus"}></label><label class="f">Descrição (opcional)<input id="le_desc" value="${esc(L2.descricao)}" ${ro ? "disabled" : ""}></label></div>
+    <div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Item</th><th class="r" style="width:110px">Qtd.</th>${adm ? '<th class="r hide-m">Custo unit.</th><th class="r">Subtotal</th>' : ""}${ro ? "" : "<th></th>"}</tr></thead><tbody>
+      ${L2.itens.map((x, k) => { const cu = custoItem(x.item_id); return `<tr><td><b>${esc(nomeItem(x.item_id))}</b><span class="sub">${esc(codItem(x.item_id))}</span></td>
+        <td class="r">${ro ? `<b class="num">${fNum(x.quantidade)}</b>` : `<input class="field num" style="width:90px;text-align:right" type="number" min="0" step="any" data-le="${k}" value="${esc(x.quantidade)}">`} <span class="muted">${esc(low((D.idx[x.item_id] || {}).unidade))}</span></td>
+        ${adm ? `<td class="r num hide-m">${cu != null ? fBRL(cu) : "—"}</td><td class="r num">${cu != null ? fBRL(cu * Number(x.quantidade || 0)) : "—"}</td>` : ""}
+        ${ro ? "" : `<td class="r"><button class="iconbtn" style="width:32px;height:32px" data-act="leDel" data-k="${k}" aria-label="Remover">${ic("x",14)}</button></td>`}</tr>`; }).join("") || `<tr><td colspan="5"><div class="empty">Nenhum item. Busque abaixo para adicionar.</div></td></tr>`}
+      ${adm && L2.itens.length ? `<tr><td colspan="${ro ? 3 : 3}" class="r"><b>Custo total da lista</b>${c.falta ? ' <span class="pill p-warn">há itens sem custo</span>' : ""}</td><td class="r num"><b>${fBRL(c.t)}</b></td>${ro ? "" : "<td></td>"}</tr>` : ""}
+    </tbody></table></div>
+    ${ro ? "" : `<label class="f">Adicionar item<input id="le_busca" value="${esc(L2.busca)}" placeholder="Digite nome, código ou código do fornecedor" autocomplete="off"></label><div class="plist" id="le_res">${resBusca("le", L2.busca)}</div>`}
+    <div class="err" id="le_err" role="alert"></div></div>
+    <div class="m-f">${L2.id && !ro ? `<button class="btn danger" data-act="listaExcluir" style="margin-right:auto">Excluir lista</button>` : ""}
+      ${L2.id ? `<button class="btn" data-act="listaDup" data-id="${L2.id}">Duplicar</button>` : ""}
+      ${ro ? `<button class="btn pri" data-act="procDaLista" data-id="${L2.id}">Usar em procedimento</button>` : `<button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" data-act="listaSalvar">${ic("check",16,2.2)}Salvar lista</button>`}</div></div>`);
+  if(sc) $("#modal .modal").scrollTop = sc;
+}
+function leCampos(){ const n = $("#le_nome"), d = $("#le_desc"); if(n) LE.nome = n.value; if(d) LE.descricao = d.value; }
+async function salvarLista(btn){
+  leCampos(); const itens = LE.itens.filter(x => Number(x.quantidade) > 0);
+  if(!LE.nome.trim()){ $("#le_err").textContent = "Dê um nome para a lista."; return; }
+  if(!itens.length){ $("#le_err").textContent = "Adicione pelo menos um item com quantidade."; return; }
+  btn.disabled = true;
+  try { await API.salvarLista({ id: LE.id, nome: LE.nome.trim(), descricao: LE.descricao, itens }); fechar(); LE = null; S.f.aba = "listas"; await carregar(); toast("Lista salva."); render(); }
+  catch(e){ $("#le_err").textContent = e.message; btn.disabled = false; }
+}
+
+/* ---- procedimento ---- */
+function novoProc(listaId){
+  const l = listaId ? S.listas.find(x => x.id === listaId) : null;
+  PR = { id: null, lista_id: l ? l.id : "", nome: l ? l.nome : "", medicos: "", anestesistas: "", data: hojeISO(), hora_inicio: horaAgora(), hora_fim: "", observacoes: "",
+    itens: l ? itensDaLista(l.id).map(x => ({ item_id: x.item_id, quantidade: x.quantidade, usado: false, da_lista: true })) : [], busca: "", etapa: "edit", status: "aberto" };
+  renderProc();
+}
+function abrirProc(id){
+  const p = S.procs.find(x => x.id === id); if(!p) return;
+  PR = { id: p.id, lista_id: p.lista_id || "", nome: p.nome, medicos: p.medicos || "", anestesistas: p.anestesistas || "", data: String(p.data).slice(0, 10),
+    hora_inicio: hhmm(p.hora_inicio).replace("—", ""), hora_fim: hhmm(p.hora_fim).replace("—", ""), observacoes: p.observacoes || "",
+    itens: p.itens.map(x => ({ item_id: x.item_id, quantidade: x.quantidade, usado: x.usado, da_lista: x.da_lista, lotes_usados: x.lotes_usados })),
+    busca: "", etapa: p.status === "aberto" ? "edit" : "ver", status: p.status, confirmado_por_nome: p.confirmado_por_nome, confirmado_em: p.confirmado_em };
+  renderProc();
+}
+function prCampos(){ ["nome","medicos","anestesistas","data","hora_inicio","hora_fim","observacoes"].forEach(k => { const el = $("#pr_" + k); if(el) PR[k] = el.value; }); }
+function prevLotes(itemId, qtd){
+  const i = D.idx[itemId]; if(!i || !i.comSaldo) return { lotes: [], falta: qtd };
+  let falta = Number(qtd); const out = [];
+  i.comSaldo.filter(l => !(l.validade && diasAte(l.validade) < 0)).forEach(l => { if(falta <= 0) return; const t = Math.min(falta, Number(l.quantidade)); out.push({ lote: l.lote, validade: l.validade, quantidade: t }); falta -= t; });
+  return { lotes: out, falta: Math.max(0, falta) };
+}
+function renderProc(manter){
+  const sc = manter && $("#modal .modal") ? $("#modal .modal").scrollTop : 0;
+  const P = PR, ver = P.etapa === "ver", rev = P.etapa === "revisao";
+  const usados = P.itens.filter(x => x.usado && Number(x.quantidade) > 0);
+  const info = `<div class="dl"><div><small>Procedimento</small><b>${esc(P.nome || "—")}</b></div><div><small>Data</small><b>${fData(P.data)}</b></div><div><small>Horário</small><b>${hhmm(P.hora_inicio)} – ${hhmm(P.hora_fim)}</b></div><div><small>Médico(s)</small><b>${esc(P.medicos || "—")}</b></div><div><small>Anestesista(s)</small><b>${esc(P.anestesistas || "—")}</b></div><div><small>Situação</small><b>${PST[P.status][1]}</b></div></div>`;
+  let corpo, rodape, titulo, sub;
+  if(ver){
+    titulo = "Procedimento"; sub = P.status === "confirmado" ? `Confirmado por ${esc(P.confirmado_por_nome || "—")} em ${fDH(P.confirmado_em)}` : "Procedimento cancelado";
+    corpo = info + `<div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Item</th><th>Lote(s)</th><th class="r">Qtd.</th></tr></thead><tbody>
+      ${usados.map(x => `<tr><td><b>${esc(nomeItem(x.item_id))}</b><span class="sub">${esc(codItem(x.item_id))}</span></td><td>${(x.lotes_usados || []).map(l => `${esc(l.lote || "s/n")} <span class="muted">(val. ${fData(l.validade)}${(x.lotes_usados || []).length > 1 ? ", " + fNum(l.quantidade) : ""})</span>`).join("<br>") || "—"}</td><td class="r num"><b>${fNum(x.quantidade)}</b></td></tr>`).join("") || `<tr><td colspan="3"><div class="empty">Nenhum item usado.</div></td></tr>`}</tbody></table></div>
+      ${P.observacoes ? `<div class="note info">${esc(P.observacoes)}</div>` : ""}`;
+    rodape = `<button class="btn" data-act="fechar">Fechar</button>${P.status === "confirmado" ? `<button class="btn pri" data-act="procImprimir" data-id="${P.id}">${ic("sheet",16)}Imprimir</button>` : ""}`;
+  } else if(rev){
+    titulo = "Revisar e confirmar"; sub = "Confira os itens realmente usados. Ao confirmar, a saída é registrada no estoque.";
+    const linhas = usados.map(x => { const pv = prevLotes(x.item_id, x.quantidade); return { x, pv }; });
+    const faltas = linhas.filter(l => l.pv.falta > 0);
+    corpo = `<div class="row3"><label class="f">Data<input type="date" id="pr_data" value="${esc(P.data)}"></label><label class="f">Início<input type="time" id="pr_hora_inicio" value="${esc(P.hora_inicio)}"></label><label class="f">Término<input type="time" id="pr_hora_fim" value="${esc(P.hora_fim || horaAgora())}"></label></div>
+      ${info.replace(/<div><small>Data<\/small>.*?<\/div><div><small>Horário<\/small>.*?<\/div>/, "")}
+      <div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Item usado</th><th>Sairá do lote</th><th class="r">Qtd.</th></tr></thead><tbody>
+      ${linhas.map(({ x, pv }) => `<tr><td><b>${esc(nomeItem(x.item_id))}</b><span class="sub">${esc(codItem(x.item_id))}</span></td><td>${pv.lotes.map(l => `${esc(l.lote || "s/n")} <span class="muted">(val. ${fData(l.validade)}${pv.lotes.length > 1 ? ", " + fNum(l.quantidade) : ""})</span>`).join("<br>") || "—"}${pv.falta > 0 ? `<br><span class="pill p-crit">faltam ${fNum(pv.falta)} em estoque</span>` : ""}</td><td class="r num"><b>${fNum(x.quantidade)}</b> <span class="muted">${esc(low((D.idx[x.item_id] || {}).unidade))}</span></td></tr>`).join("") || `<tr><td colspan="3"><div class="empty">Nenhum item marcado como usado.</div></td></tr>`}</tbody></table></div>
+      ${P.itens.length > usados.length ? `<p class="muted" style="margin:0">${P.itens.length - usados.length} ${P.itens.length - usados.length === 1 ? "item da lista não foi marcado e não sairá" : "itens da lista não foram marcados e não sairão"} do estoque.</p>` : ""}
+      ${faltas.length ? `<div class="note crit">Há itens sem saldo suficiente (sem contar lotes vencidos). Ajuste as quantidades ou dê entrada antes de confirmar.</div>` : `<div class="note info">A saída usa sempre o lote que vence primeiro. Depois de confirmado, o procedimento não pode mais ser alterado.</div>`}
+      <div class="err" id="pr_err" role="alert"></div>`;
+    rodape = `<button class="btn" data-act="prEtapa" data-v="edit" style="margin-right:auto">${ic("back",16)}Voltar e ajustar</button><button class="btn pri" data-act="procConfirmar" ${!usados.length || faltas.length ? "disabled" : ""}>${ic("check",16,2.2)}Confirmar e dar saída</button>`;
+  } else {
+    titulo = P.id ? "Procedimento em andamento" : "Novo procedimento"; sub = "Marque cada item conforme for usado. Tudo é salvo neste procedimento até a confirmação final.";
+    const marcados = P.itens.filter(x => x.usado).length;
+    corpo = `<label class="f">Lista padrão<select id="pr_lista"><option value="">Sem lista (adicionar itens manualmente)</option>${S.listas.slice().sort((a,b) => coll.compare(a.nome, b.nome)).map(l => `<option value="${l.id}" ${P.lista_id === l.id ? "selected" : ""}>${esc(l.nome)}</option>`).join("")}</select></label>
+      <label class="f">Nome do procedimento<input id="pr_nome" value="${esc(P.nome)}" placeholder="Ex.: Cistoscopia diagnóstica"></label>
+      <div class="row2"><label class="f">Médico(s)<input id="pr_medicos" value="${esc(P.medicos)}" placeholder="Separe por vírgula"></label><label class="f">Anestesista(s)<input id="pr_anestesistas" value="${esc(P.anestesistas)}" placeholder="Separe por vírgula"></label></div>
+      <div class="row3"><label class="f">Data<input type="date" id="pr_data" value="${esc(P.data)}"></label>
+        <label class="f">Início<span class="tm"><input type="time" id="pr_hora_inicio" value="${esc(P.hora_inicio)}"><button class="btn sm" data-act="prAgora" data-k="hora_inicio">Agora</button></span></label>
+        <label class="f">Término<span class="tm"><input type="time" id="pr_hora_fim" value="${esc(P.hora_fim)}"><button class="btn sm" data-act="prAgora" data-k="hora_fim">Agora</button></span></label></div>
+      <div class="card-h" style="padding:6px 0 0"><h2>Materiais</h2><span class="pill ${marcados ? "p-ok" : "p-mute"}">${marcados} de ${P.itens.length} usados</span></div>
+      <div class="chk">${P.itens.map((x, k) => { const i = D.idx[x.item_id] || {}; return `<div class="chk-row ${x.usado ? "on" : ""}">
+          <label class="chk-box"><input type="checkbox" data-pr="${k}" data-prk="usado" ${x.usado ? "checked" : ""}><span><b>${esc(nomeItem(x.item_id))}</b><small>${esc(i.codigo || "")}${x.da_lista ? "" : " · fora da lista"} · em estoque: ${fNum(i.saldo)}</small></span></label>
+          <input class="field num" type="number" min="0" step="any" data-pr="${k}" data-prk="quantidade" value="${esc(x.quantidade)}" aria-label="Quantidade"><span class="muted" style="font-size:12px;min-width:44px">${esc(low(i.unidade))}</span>
+          <button class="iconbtn" style="width:32px;height:32px" data-act="prDel" data-k="${k}" aria-label="Remover">${ic("x",14)}</button></div>`; }).join("") || `<div class="empty">Escolha uma lista padrão ou adicione itens abaixo.</div>`}</div>
+      <label class="f">Adicionar outro item usado<input id="pr_busca" value="${esc(P.busca)}" placeholder="Digite nome ou código" autocomplete="off"></label><div class="plist" id="pr_res" style="max-height:200px">${resBusca("pr", P.busca)}</div>
+      <label class="f">Observações (opcional)<input id="pr_observacoes" value="${esc(P.observacoes)}"></label>
+      <div class="err" id="pr_err" role="alert"></div>`;
+    rodape = `${P.id ? `<button class="btn danger" data-act="procCancelar" style="margin-right:auto">Cancelar procedimento</button>` : ""}<button class="btn" data-act="procSalvarFechar">Salvar e fechar</button><button class="btn pri" data-act="prEtapa" data-v="revisao">Finalizar e revisar ${ic("check",16,2.2)}</button>`;
+  }
+  abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead(titulo, sub)}<div class="m-b">${corpo}</div><div class="m-f">${rodape}</div></div>`);
+  if(sc) $("#modal .modal").scrollTop = sc;
+}
+const dadosProc = (P = PR) => ({ id: P.id, lista_id: P.lista_id || "", nome: P.nome.trim(), medicos: P.medicos, anestesistas: P.anestesistas, data: P.data, hora_inicio: P.hora_inicio, hora_fim: P.hora_fim, observacoes: P.observacoes,
+  itens: P.itens.map(x => ({ item_id: x.item_id, quantidade: Number(x.quantidade) || 0, usado: !!x.usado, da_lista: !!x.da_lista })) });
+async function salvarProc(silencioso){
+  prCampos(); if(!PR.nome.trim()){ if(!silencioso){ const e = $("#pr_err"); if(e) e.textContent = "Informe o nome do procedimento."; } return false; }
+  const P = PR; while(P._salvando) await P._salvando;
+  P._salvando = API.salvarProc(dadosProc(P)).then(r => { if(r && r.id) P.id = r.id; }).finally(() => { P._salvando = null; });
+  await P._salvando; return true;
+}
+function autoSalvarProc(){ clearTimeout(prTimer); prTimer = setTimeout(async () => { if(!PR || PR.etapa !== "edit" || !PR.nome.trim()) return; try { await salvarProc(true); } catch(e){ toast("Não consegui salvar automaticamente: " + e.message, true); } }, 700); }
+async function confirmarProc(btn){
+  prCampos(); if(!PR.hora_fim){ $("#pr_err").textContent = "Informe o horário de término."; return; }
+  btn.disabled = true; btn.innerHTML = "Confirmando…";
+  try {
+    await salvarProc(); await API.confirmarProc(PR.id); const id = PR.id;
+    await carregar(); fechar(); PR = null; render();
+    abrir(`<div class="modal" role="dialog" aria-modal="true">${mHead("Procedimento confirmado", "A saída dos materiais foi registrada no estoque.")}<div class="m-b"><div class="note info">Você pode imprimir a lista agora ou depois, em Cirurgias → Histórico.</div></div>
+      <div class="m-f"><button class="btn" data-act="fechar">Fechar</button><button class="btn pri" data-act="procImprimir" data-id="${id}">${ic("sheet",16)}Imprimir lista</button></div></div>`);
+  } catch(e){ $("#pr_err").textContent = e.message; btn.disabled = false; btn.innerHTML = "Confirmar e dar saída"; }
+}
+function imprimirProc(id){
+  const p = S.procs.find(x => x.id === id); if(!p) return toast("Procedimento não encontrado.", true);
+  const logo = new URL("img/logo.png", location.href).href; const us = p.itens.filter(x => x.usado && Number(x.quantidade) > 0);
+  const linhas = us.map((x, k) => { const i = D.idx[x.item_id] || {}; const ls = x.lotes_usados || [];
+    return `<tr><td>${k + 1}</td><td>${esc(i.codigo || "")}</td><td>${esc(nomeItem(x.item_id))}</td><td>${ls.map(l => esc(l.lote || "s/n")).join("<br>") || "—"}</td><td>${ls.map(l => fData(l.validade)).join("<br>") || "—"}</td><td class="r">${fNum(x.quantidade)}</td><td>${esc(low(i.unidade))}</td></tr>`; }).join("");
+  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(p.nome)} · ${fData(p.data)}</title><style>
+    *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#1F2A44;margin:28px;font-size:12.5px}
+    .top{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #C1982F;padding-bottom:12px;margin-bottom:16px}
+    .top img{height:70px}.top h1{font-size:17px;margin:0;color:#263B65;text-align:right}.top p{margin:4px 0 0;color:#6F7688;text-align:right}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-bottom:14px}.grid div{border-bottom:1px solid #E9E4DA;padding:5px 0}.grid b{color:#263B65}
+    .pac{border:1.5px solid #263B65;border-radius:6px;padding:14px 12px;margin:10px 0 16px;font-size:14px}.pac span{display:inline-block;border-bottom:1px solid #1F2A44;width:72%;margin-left:6px}
+    table{width:100%;border-collapse:collapse;margin-top:6px}th{background:#E9EDF5;color:#263B65;text-align:left;padding:7px;font-size:11.5px;border:1px solid #CCD3E2}td{padding:7px;border:1px solid #DDD;vertical-align:top}.r{text-align:right}
+    .ass{display:flex;gap:40px;margin-top:46px}.ass div{flex:1;border-top:1px solid #1F2A44;padding-top:5px;text-align:center;color:#6F7688}
+    .rod{margin-top:22px;color:#6F7688;font-size:11px}@media print{body{margin:12mm}button{display:none}}
+  </style></head><body>
+  <div class="top"><img src="${logo}" alt="UROtherap"><div><h1>Registro de materiais utilizados</h1><p>${esc(CLINICA)}</p></div></div>
+  <div class="grid"><div><b>Procedimento:</b> ${esc(p.nome)}</div><div><b>Data:</b> ${fData(p.data)}</div>
+    <div><b>Médico(s):</b> ${esc(p.medicos || "—")}</div><div><b>Horário:</b> início ${hhmm(p.hora_inicio)} · término ${hhmm(p.hora_fim)}</div>
+    <div><b>Anestesista(s):</b> ${esc(p.anestesistas || "—")}</div><div><b>Conferido por:</b> ${esc(p.confirmado_por_nome || "—")}</div></div>
+  <div class="pac"><b>Nome do paciente:</b><span>&nbsp;</span></div>
+  <table><thead><tr><th>#</th><th>Código</th><th>Material</th><th>Lote</th><th>Validade</th><th class="r">Qtd.</th><th>Unid.</th></tr></thead><tbody>${linhas || '<tr><td colspan="7">Nenhum item.</td></tr>'}</tbody></table>
+  ${p.observacoes ? `<p><b>Observações:</b> ${esc(p.observacoes)}</p>` : ""}
+  <div class="ass"><div>Responsável pela conferência</div><div>Médico responsável</div></div>
+  <div class="rod">Confirmado no sistema em ${fDH(p.confirmado_em)} · ${us.length} ${us.length === 1 ? "item" : "itens"}</div>
+  <script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>`;
+  const w = window.open("", "_blank");
+  if(!w){ toast("O navegador bloqueou a janela de impressão. Permita pop-ups para este site.", true); return; }
+  w.document.open(); w.document.write(html); w.document.close();
+}
+
+/* ---- página "Mais" (celular) ---- */
+function vMais(){
+  const l = (r, t, i, d) => `<a class="mais-row" href="#${r}">${ic(i,20)}<span><b>${t}</b><small>${d}</small></span></a>`;
+  return `${banners()}<div class="head"><div><h1>Mais opções</h1><p>Conectado como ${esc(S.sessao.nome)} · ${S.sessao.papel === "admin" ? "Administrador" : "Funcionária"}</p></div></div>
+  <div class="card"><div class="pad" style="padding-top:12px;display:grid;gap:8px">
+    ${l("compras","Lista de compras","cart","Itens abaixo do mínimo")}${l("backup","Relatórios e backup","chart","Planilhas, backup e contingência")}
+    ${isAdmin() ? l("auditoria","Auditoria","shield","Histórico de alterações") + l("usuarios","Usuários","users","Logins e PINs da equipe") : ""}
+    <button class="mais-row sair" data-act="sair">${ic("out",20)}<span><b>Sair do app</b><small>Encerra a sua sessão neste aparelho</small></span></button>
   </div></div>`;
 }
-async function lDig(v){
-  if(L.pin.length >= 4) return; L.pin += v; L.erro = ""; render();
-  if(L.pin.length === 4){
-    try { const u = await API.entrar(L.u, L.pin); S.sessao = { ...u, pin: L.pin }; store.sset("estoque_sessao", S.sessao); L = { u: null, pin: "", erro: "" }; tocar(); try { S.pac = await API.pacientes(); } catch(e){} location.hash = "#hoje"; render(); }
-    catch(e){ L.pin = ""; L.erro = e.message; render(); }
-  }
+
+/* =====================================================================
+   Login por nome + PIN
+   ===================================================================== */
+let L = { nome: store.get("estoque_login_nome") || "", pin: "", erro: "", lembrar: true, enviando: false };
+function vLogin(){
+  if(S.erroCarga && !S.offline) return `<div class="login"><div class="card lcard"><div class="login-logo"><img src="img/logo.png" alt="${esc(CLINICA)}"><small>Controle de estoque</small></div><div class="note crit">Não foi possível conectar ao servidor (${esc(S.erroCarga)}). Verifique a internet e o arquivo config.js.</div><button class="btn pri" data-act="recarregar">Tentar de novo</button></div></div>`;
+  return `<div class="login"><div class="card lcard">
+    <div class="login-logo"><img src="img/logo.png" alt="${esc(CLINICA)}"><small>Controle de estoque</small></div>
+    ${!ONLINE ? `<div class="banner demo">${ic("db",16)}<span>Demonstração: entre como <b>Administrador</b> (PIN 1234) ou <b>Enfermagem (exemplo)</b> (PIN 1111).</span></div>` : ""}
+    ${S.offline ? `<div class="banner off">${ic("wifi",16)}<span>Sem conexão. Você pode consultar a cópia salva em ${fDH(S.cacheEm)} e baixar a planilha de contingência.</span></div><button class="btn pri" data-act="consultaOffline">Consultar cópia offline</button>` : `
+      <div><h1>Entrar</h1><p class="muted" style="margin:4px 0 0">Digite seu nome de login e seu PIN</p></div>
+      <label class="f">Nome de login<input id="l_nome" value="${esc(L.nome)}" autocomplete="username" autocapitalize="words" spellcheck="false" placeholder="Seu nome de login"></label>
+      <div><div style="font-size:12.5px;font-weight:600;color:#4A5470;margin-bottom:4px">PIN</div>
+      <div class="pin-dots" aria-label="PIN digitado: ${L.pin.length} números">${[0,1,2,3,4,5].map(n => `<i class="${n < L.pin.length ? "f" : ""} ${n > 3 ? "opt" : ""}"></i>`).join("")}</div></div>
+      ${L.erro ? `<div class="err" style="text-align:center" role="alert">${esc(L.erro)}</div>` : ""}
+      <div class="pad-grid">${[1,2,3,4,5,6,7,8,9].map(n => `<button data-act="lDig" data-v="${n}">${n}</button>`).join("")}<button class="ghost" data-act="lApaga">Apagar</button><button data-act="lDig" data-v="0">0</button><button class="go" data-act="lEntrar" ${L.enviando ? "disabled" : ""}>Entrar</button></div>
+      <label class="check" style="font-size:13px"><input type="checkbox" id="l_lembrar" ${L.lembrar ? "checked" : ""}>Lembrar meu nome neste aparelho</label>`}
+  </div></div>`;
+}
+function lSync(){ const n = $("#l_nome"), c = $("#l_lembrar"); if(n) L.nome = n.value; if(c) L.lembrar = c.checked; }
+function lDig(v){ lSync(); if(L.pin.length >= 6) return; L.pin += v; L.erro = ""; render(); }
+async function entrar(){
+  lSync(); if(L.enviando) return;
+  if(!L.nome.trim()){ L.erro = "Digite seu nome de login."; return render(); }
+  if(L.pin.length < 4){ L.erro = "O PIN tem de 4 a 6 números."; return render(); }
+  L.enviando = true; render();
+  try {
+    const u = await API.entrarNome(L.nome.trim(), L.pin); S.sessao = { ...u, pin: L.pin }; store.sset("estoque_sessao", S.sessao);
+    if(L.lembrar) store.set("estoque_login_nome", u.nome); else store.del("estoque_login_nome");
+    L = { nome: L.lembrar ? u.nome : "", pin: "", erro: "", lembrar: L.lembrar, enviando: false }; tocar();
+    await carregarPrivado(); derivar(); location.hash = "#hoje"; render();
+  } catch(e){ L.pin = ""; L.erro = e.message; L.enviando = false; render(); }
 }
 
 /* =====================================================================
    Renderização e eventos
    ===================================================================== */
-const VIEWS = { hoje: vHoje, itens: vItens, movimentacoes: vMovs, validades: vValidades, compras: vCompras, backup: vBackup, auditoria: vAuditoria, usuarios: vUsuarios };
+const VIEWS = { hoje: vHoje, itens: vItens, cirurgias: vCirurgias, mais: vMais, movimentacoes: vMovs, validades: vValidades, compras: vCompras, backup: vBackup, auditoria: vAuditoria, usuarios: vUsuarios };
 const PARTS = { itens: listaItens, movimentacoes: listaMovs, auditoria: listaAud };
 function render(){
   if(!S.sessao){ $("#root").innerHTML = vLogin(); return; }
@@ -1337,7 +1684,7 @@ function render(){
   window.scrollTo(0, y);
 }
 function toast(msg, ruim){ const t = $("#toast"); t.innerHTML = `<div class="toast ${ruim ? "bad" : ""}" role="status">${ic(ruim ? "alert" : "check",18)}<span>${esc(msg)}</span></div>`; clearTimeout(toast.t); toast.t = setTimeout(() => t.innerHTML = "", ruim ? 7000 : 3800); }
-function sair(){ S.sessao = null; S.pac = {}; store.sdel("estoque_sessao"); fechar(); L = { u: null, pin: "", erro: "" }; render(); }
+function sair(){ S.sessao = null; S.pac = {}; S.procs = []; S.usuarios = []; if(ONLINE) S.itens = S.itens.map(i => ({ ...i, custo_unit: null })); store.sdel("estoque_sessao"); fechar(); L = { nome: store.get("estoque_login_nome") || "", pin: "", erro: "", lembrar: true, enviando: false }; derivar(); location.hash = ""; render(); }
 let ultimoToque = Date.now(); const tocar = () => ultimoToque = Date.now();
 
 const ACT = {
@@ -1352,15 +1699,33 @@ const ACT = {
   mSalvar: (d, el) => salvarMov(el),
   editItem: (d) => editItem(d.id), salvarItem: (d, el) => salvarItem(d.id, el),
   importNF: () => abrirImportNF(), nfImportar: (d, el) => nfImportar(el), nfVerMovs: () => { fechar(); location.hash = "#movimentacoes"; },
-  editLote: (d) => editLote(d.id), salvarLote: (d, el) => salvarLote(d.id, el), voltarItem: (d) => abrirItem(d.id),
+  editLote: (d) => editLote(d.id),
+  toggleGrp: () => { S.f.grp = !S.f.grp; render(); },
+  sugCod: () => { $("#e_codigo").value = sugerirCodigo($("#e_nome").value, $("#e_categoria").value); infoCodigo(); },
+  cirAba: (d) => { S.f.aba = d.v; render(); },
+  listaNova: () => abrirLista(null), listaAbrir: (d) => abrirLista(d.id), listaDup: (d) => { fechar(); abrirLista(d.id, true); },
+  leAdd: (d) => { leCampos(); if(!LE.itens.some(x => x.item_id === d.id)) LE.itens.push({ item_id: d.id, quantidade: 1 }); LE.busca = ""; renderLista(true); },
+  leDel: (d) => { leCampos(); LE.itens.splice(Number(d.k), 1); renderLista(true); },
+  listaSalvar: (d, el) => salvarLista(el),
+  listaExcluir: async (d, el) => { if(!LE.confExcluir){ LE.confExcluir = true; el.textContent = "Clique de novo para excluir"; return; }
+    try { await API.excluirLista(LE.id); fechar(); await carregar(); render(); toast("Lista excluída."); } catch(e){ $("#le_err").textContent = e.message; } },
+  procNovo: () => novoProc(null), procDaLista: (d) => { fechar(); S.f.aba = "proc"; novoProc(d.id); },
+  procAbrir: (d) => abrirProc(d.id), procVer: (d) => abrirProc(d.id), procImprimir: (d) => imprimirProc(d.id),
+  prAdd: (d) => { prCampos(); const ex = PR.itens.find(x => x.item_id === d.id); if(ex) ex.usado = true; else PR.itens.push({ item_id: d.id, quantidade: 1, usado: true, da_lista: false }); PR.busca = ""; renderProc(true); autoSalvarProc(); },
+  prDel: (d) => { prCampos(); PR.itens.splice(Number(d.k), 1); renderProc(true); autoSalvarProc(); },
+  prAgora: (d) => { prCampos(); PR[d.k] = horaAgora(); renderProc(true); autoSalvarProc(); },
+  prEtapa: (d) => { prCampos(); if(d.v === "revisao"){ if(!PR.nome.trim()){ $("#pr_err").textContent = "Informe o nome do procedimento."; return; } if(!PR.itens.some(x => x.usado)){ $("#pr_err").textContent = "Marque os itens que foram usados."; return; } if(!PR.hora_fim) PR.hora_fim = horaAgora(); } PR.etapa = d.v; renderProc(); },
+  procSalvarFechar: async (d, el) => { el.disabled = true; try { if(!(await salvarProc())){ el.disabled = false; return; } fechar(); S.f.aba = "proc"; await carregar(); render(); toast("Procedimento salvo. Continue depois em Cirurgias."); } catch(e){ $("#pr_err").textContent = e.message; el.disabled = false; } },
+  procConfirmar: (d, el) => confirmarProc(el),
+  procCancelar: async (d, el) => { if(!PR.cc){ PR.cc = true; el.textContent = "Clique de novo para cancelar"; return; }
+    try { clearTimeout(prTimer); await API.cancelarProc(PR.id); fechar(); await carregar(); render(); toast("Procedimento cancelado. Nada saiu do estoque."); } catch(e){ toast(e.message, true); } }, salvarLote: (d, el) => salvarLote(d.id, el), voltarItem: (d) => abrirItem(d.id),
   editUser: (d) => editUser(d.id), salvarUser: (d, el) => salvarUser(d.id, el),
-  lUser: (d) => { L = { u: d.id, pin: "", erro: "" }; render(); }, lVoltar: () => { L = { u: null, pin: "", erro: "" }; render(); },
-  lDig: (d) => lDig(d.v), lApaga: () => { L.pin = L.pin.slice(0, -1); render(); },
+  lDig: (d) => lDig(d.v), lApaga: () => { lSync(); L.pin = L.pin.slice(0, -1); render(); }, lEntrar: () => entrar(),
   consultaOffline: () => { S.sessao = { id: null, nome: "Consulta offline", papel: "funcionaria", pin: "" }; render(); },
   exportItens: () => baixarXlsx(`itens-${hojeISO()}.xlsx`, [{ nome: "Itens", linhas: ordenarPor(itensFiltrados(), COL_ITENS).map(linhaItem) }]),
   exportMovs: () => baixarXlsx(`movimentacoes-${hojeISO()}.xlsx`, [{ nome: "Movimentações", linhas: movsOrdenadas(movsFiltradas()).map(linhaMov) }]),
   exportVal: () => baixarXlsx(`validades-${hojeISO()}.xlsx`, [{ nome: "Validades", linhas: linhaVal() }]),
-  exportCompras: () => baixarXlsx(`lista-de-compras-${hojeISO()}.xlsx`, [{ nome: "Lista de compras", linhas: compras().map(({i,sug}) => ({ "Item": i.nome, "Descrição": i.descricao || "", "Fornecedor": i.fornecedor || "", "Cód. fornecedor": i.cod_fornecedor || "", "Saldo": i.saldo, "Mínimo": i.min, "Comprar": sug, "Unidade": i.unidade || "", "Custo estimado": Math.round(sug * Number(i.custo_unit || 0) * 100) / 100 })) }]),
+  exportCompras: () => baixarXlsx(`lista-de-compras-${hojeISO()}.xlsx`, [{ nome: "Lista de compras", linhas: compras().map(({i,sug}) => ({ "Código": i.codigo || "", "Item": i.nome, "Descrição": i.descricao || "", "Fornecedor": i.fornecedor || "", "Cód. fornecedor": i.cod_fornecedor || "", "Saldo": i.saldo, "Mínimo": i.min, "Comprar": sug, "Unidade": i.unidade || "", ...(isAdmin() ? { "Custo estimado": Math.round(sug * Number(i.custo_unit || 0) * 100) / 100 } : {}) })) }]),
   exportAud: () => baixarXlsx(`auditoria-${hojeISO()}.xlsx`, [{ nome: "Auditoria", linhas: S.audit.map(a => ({ "Data e hora": fDH(a.criado_em), "Quem": a.usuario_nome || "sistema", "Ação": ACAO[a.acao][0], "Tabela": TAB[a.tabela] || a.tabela, "Antes": JSON.stringify(a.antes || ""), "Depois": JSON.stringify(a.depois || "") })) }]),
   copiarCompras: async () => { const txt = `*Lista de compras · ${CLINICA} · ${new Date().toLocaleDateString("pt-BR")}*\n` + compras().map(({i,sug}) => `• ${i.nome}: ${fNum(sug)} ${low(i.unidade)}${i.fornecedor ? " (" + i.fornecedor + ")" : ""}`).join("\n"); try { await navigator.clipboard.writeText(txt); toast("Lista copiada. Cole no WhatsApp."); } catch(e){ toast("Não consegui copiar automaticamente neste navegador.", true); } },
   backup: (d, el) => backupCompleto(el), contingencia: () => contingencia(), importar: () => importar(), impConfirmar: (d, el) => impConfirmar(el),
@@ -1373,12 +1738,21 @@ document.addEventListener("click", e => {
   if(a && !a.disabled){ e.preventDefault(); ACT[a.dataset.act] && ACT[a.dataset.act](a.dataset, a, e); return; }
   const go = e.target.closest("[data-go]"); if(go){ location.hash = "#" + go.dataset.go; return; }
   const it = e.target.closest("[data-item]"); if(it){ $("#gres") && ($("#gres").innerHTML = ""); abrirItem(it.dataset.item); return; }
-  if(e.target.matches("[data-ov]")) fechar();
+  if(e.target.matches("[data-ov]") && !PR && !LE) fechar();
   if(!e.target.closest(".search") && $("#gres")) $("#gres").innerHTML = "";
 });
 document.addEventListener("input", e => {
   tocar();
   const t = e.target;
+  if(t.dataset.le !== undefined && LE){ const x = LE.itens[Number(t.dataset.le)]; if(x) x.quantidade = t.value; return; }
+  if(t.id === "le_busca" && LE){ LE.busca = t.value; $("#le_res").innerHTML = resBusca("le", t.value); return; }
+  if(t.id === "pr_busca" && PR){ PR.busca = t.value; $("#pr_res").innerHTML = resBusca("pr", t.value); return; }
+  if(t.dataset.pr !== undefined && PR){ const x = PR.itens[Number(t.dataset.pr)]; if(!x) return; if(t.dataset.prk === "usado"){ prCampos(); x.usado = t.checked; renderProc(true); } else x.quantidade = t.value; autoSalvarProc(); return; }
+  if(t.id === "pr_lista" && PR){ prCampos(); const l = S.listas.find(x => x.id === t.value); PR.lista_id = t.value;
+    if(l){ const extras = PR.itens.filter(x => !x.da_lista); PR.itens = itensDaLista(l.id).map(x => ({ item_id: x.item_id, quantidade: x.quantidade, usado: false, da_lista: true })).concat(extras); if(!PR.nome.trim()) PR.nome = l.nome; }
+    renderProc(true); autoSalvarProc(); return; }
+  if(PR && /^pr_(nome|medicos|anestesistas|data|hora_inicio|hora_fim|observacoes)$/.test(t.id)){ PR[t.id.slice(3)] = t.value; if(PR.etapa === "edit") autoSalvarProc(); return; }
+  if(t.id === "e_codigo"){ infoCodigo(); return; }
   if(t.dataset.nf !== undefined && NF){ if(nfCampo(t)) renderNF(true); return; }
   if(t.dataset.f){ S.f[t.dataset.f] = t.value; const el = $("#lista"); if(el && PARTS[S.rota]) el.innerHTML = PARTS[S.rota](); return; }
   if(t.id === "m_busca"){ M.busca = t.value; const q = norm(t.value); const xs = D.itens.filter(x => !q || norm([x.nome, x.descricao, x.cod_fornecedor, x.codigo, ...x.lotes.map(l => l.lote)].join(" ")).includes(q)).slice(0, 30);
@@ -1389,10 +1763,12 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("keydown", e => {
   tocar();
-  if(e.key === "Escape" && $("#modal").innerHTML) fechar();
+  if(e.key === "Escape" && $("#modal").innerHTML && !(PR && PR.etapa !== "ver") && !(LE && !LE.leitura)) fechar();
   if(e.key === "/" && !/input|textarea|select/i.test(document.activeElement.tagName) && $("#gsearch")){ e.preventDefault(); $("#gsearch").focus(); }
-  if(!S.sessao && L.u && /^[0-9]$/.test(e.key)) lDig(e.key);
-  if(!S.sessao && L.u && e.key === "Backspace"){ L.pin = L.pin.slice(0, -1); render(); }
+  if(!S.sessao){ const noNome = document.activeElement && document.activeElement.id === "l_nome";
+    if(!noNome && /^[0-9]$/.test(e.key)) lDig(e.key);
+    if(!noNome && e.key === "Backspace"){ lSync(); L.pin = L.pin.slice(0, -1); render(); }
+    if(e.key === "Enter"){ e.preventDefault(); if(noNome && !L.pin) document.activeElement.blur(); else entrar(); } }
   if(e.key === "Enter" && M && e.target.id !== "m_busca" && $("#modal [data-act=mSalvar]")){ e.preventDefault(); salvarMov($("#modal [data-act=mSalvar]")); }
 });
 window.addEventListener("hashchange", () => { fechar(); render(); window.scrollTo(0, 0); });
@@ -1405,7 +1781,10 @@ setInterval(() => {
 if(ONLINE) setInterval(async () => { if(S.sessao && !$("#modal").innerHTML && document.visibilityState === "visible"){ await carregar(true); render(); } }, 60e3);
 if(ONLINE && "serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
 
-(async () => { await carregar(); if(S.sessao && S.sessao.id && !S.usuarios.some(u => u.id === S.sessao.id && u.ativo)) S.sessao = null; render(); })();
+(async () => {
+  if(S.sessao && S.sessao.id){ try { await API.entrar(S.sessao.id, S.sessao.pin); } catch(e){ if(!/fetch|network|rede/i.test(e.message)){ S.sessao = null; store.sdel("estoque_sessao"); } } }
+  await carregar(); render();
+})();
 </script>
 </body>
 </html>
