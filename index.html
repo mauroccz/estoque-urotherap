@@ -255,6 +255,7 @@ tr.sub-row td{font-size:13px}tr.sub-row td:first-child{padding-left:28px}
 .mais-row{display:flex;gap:14px;align-items:center;padding:14px;border:1px solid var(--line);border-radius:12px;text-decoration:none;color:var(--ink);background:#fff;font:inherit;text-align:left;cursor:pointer;width:100%}
 .mais-row b{display:block}.mais-row small{color:var(--muted);font-size:12px}.mais-row.sair{color:var(--crit)}
 .pin-dots i.opt{border-style:dashed}
+.plist button.qc-add{background:var(--gold-soft);color:var(--gold-2)}.plist button.qc-add:hover{background:#F2E6C4}
 .pad-grid button.go{background:linear-gradient(135deg,#34508A,var(--accent));color:#fff;border:0;font-size:16px}
 .pad-grid button.go:disabled{opacity:.6}
 
@@ -332,14 +333,18 @@ const AVC = [["#FDE7DA","#B4532A"],["#DDF3EA","#1C7A55"],["#E4E7FB","#4A55B5"],[
 function av(nome, size){ let h = 0; for(const c of String(nome)) h = (h*31 + c.charCodeAt(0)) >>> 0; const [bg,fg] = AVC[h % AVC.length]; const s = size ? `width:${size}px;height:${size}px;font-size:${Math.round(size*.38)}px;` : ""; return `<span class="av" style="background:${bg};color:${fg};${s}" title="${esc(nome)}">${esc(iniciais(nome))}</span>`; }
 function saudacao(){ const h = new Date().getHours(); return h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite"; }
 
+/* ---------- preço para cobrança: manual ou custo + margem padrão ---------- */
+const margemCobranca = () => { const m = Number(String((S.config || {}).margem_cobranca ?? "15").replace(",", ".")); return isNaN(m) ? 15 : m; };
+const precoDe = i => !i ? null : i.preco_cobranca != null && i.preco_cobranca !== "" ? Number(i.preco_cobranca) : i.custo_unit != null && i.custo_unit !== "" ? Math.round(Number(i.custo_unit) * (1 + margemCobranca() / 100) * 100) / 100 : null;
+
 /* ---------- código interno do produto ---------- */
 const CODIGOS_INICIAIS = { F08662: "MAT-COMPRESSA-25X28", F08445: "MAT-CURATIVO-10X15", F08446: "MAT-CURATIVO-15X30", FP0148: "EPI-MASCARA", F08386: "MAT-AVENTAL", F08218: "MAT-CAMPO-FENEST", F08365: "MAT-KIT-UGP", F08273: "MAT-KIT-UNIV", F00208: "MAT-CAMPO-MESA", "70001232": "MED-ROPIVACAINA-075", "70000070": "MED-PROPOFOL-1", "70000105": "MED-LIDOCAINA-2CV", "70000106": "MED-LIDOCAINA-2SV", "70000088": "MED-LIDOCAINA-GEL2" };
 function sugerirCodigo(nome, categoria){
   const c = norm(categoria); const pre = c.startsWith("medica") ? "MED" : c.startsWith("epi") ? "EPI" : c.startsWith("material") ? "MAT" : (c.replace(/[^a-z]/g, "").slice(0, 3).toUpperCase() || "ITM");
   const stop = new Set(["DE","DA","DO","DAS","DOS","E","C","COM","EM","PARA","P","S","SEM","A","O","EST","ESTERIL","DESC"]);
-  const ws = norm(nome).toUpperCase().split(/[^A-Z0-9]+/).filter(Boolean);
+  const ws = norm(nome).toUpperCase().replace(/(\d)[,.](\d)/g, "$1$2").split(/[^A-Z0-9]+/).filter(Boolean);
   const main = (ws.find(w => !/\d/.test(w) && !stop.has(w) && w.length > 1) || ws[0] || "ITEM").slice(0, 12);
-  const det = ws.filter(w => /\d/.test(w)).join("").slice(0, 8);
+  const det = (ws.find(w => /\d/.test(w)) || "").slice(0, 8);
   return pre + "-" + main + (det ? "-" + det : "");
 }
 const codigosExistentes = () => [...new Set(D.itens.map(i => i.codigo).filter(Boolean))].sort().map(c => `<option value="${esc(c)}">`).join("");
@@ -438,6 +443,11 @@ const API = ONLINE ? (() => {
     salvarProc: d => rpc("salvar_procedimento", { p_dados: d }),
     confirmarProc: id => rpc("confirmar_procedimento", { p_id: id }),
     cancelarProc: id => rpc("cancelar_procedimento", { p_id: id }),
+    salvarExtras: (id, extras, valores) => rpc("salvar_extras_procedimento", { p_id: id, p_extras: extras, p_valores: valores || {} }),
+    editarProcAdmin: (id, d) => rpc("editar_procedimento_admin", { p_id: id, p_dados: d }),
+    salvarConfig: (chave, valor) => rpc("salvar_config", { p_chave: chave, p_valor: String(valor) }),
+    adicionarItemProc: (id, item, qtd, lote) => rpc("adicionar_item_procedimento", { p_id: id, p_item: item, p_qtd: Number(qtd), p_lote: lote || null }),
+    removerItemProc: (id, linha) => rpc("remover_item_procedimento", { p_id: id, p_linha: Number(linha) }),
     movimentar: d => rpc("movimentar", { p_dados: d }),
     salvarItem: i => rpc("salvar_item", { p_item: i }),
     salvarLote: l => rpc("salvar_lote", { p_lote: l }),
@@ -477,7 +487,7 @@ const API = ONLINE ? (() => {
     async carregar(){ return { itens: db.itens, lotes: db.lotes, movs: db.movs.slice(0,1000), config: db.config, listas: db.listas.filter(l => l.ativo !== false), listaItens: db.listaItens }; },
     async entrarNome(nome, pin){ const u = db.usuarios.find(x => x.ativo && norm(x.nome) === norm(nome)); if(!u || u.pin !== pin) throw new Error("Nome ou PIN incorreto."); return pub(u); },
     async usuarios(){ quem(false); return db.usuarios.map(pub).sort((a,b) => a.nome.localeCompare(b.nome)); },
-    async custos(){ quem(true); return Object.fromEntries(db.itens.filter(i => i.custo_unit != null).map(i => [i.id, i.custo_unit])); },
+    async custos(){ quem(true); return Object.fromEntries(db.itens.filter(i => i.custo_unit != null || i.preco_cobranca != null).map(i => [i.id, { c: i.custo_unit ?? null, p: i.preco_cobranca ?? null }])); },
     async procs(){ quem(false); return db.procs.slice().sort((a,b) => (b.data + b.criado_em).localeCompare(a.data + a.criado_em)).map(p => ({ ...p, itens: p.itens.map(x => ({ ...x })) })); },
     async salvarLista(d){
       const u = quem(false); if(!String(d.nome || "").trim()) throw new Error("Dê um nome para a lista."); if(!(d.itens || []).length) throw new Error("Adicione pelo menos um item.");
@@ -494,8 +504,9 @@ const API = ONLINE ? (() => {
       let p = d.id && db.procs.find(x => x.id === d.id);
       if(d.id && !p) throw new Error("Procedimento não encontrado."); if(p && p.status !== "aberto") throw new Error("Este procedimento já foi " + p.status + " e não pode ser alterado.");
       if(!p){ p = { id: novoId(), status: "aberto", criado_por: u.id, criado_por_nome: u.nome, criado_em: new Date().toISOString() }; db.procs.push(p); }
-      Object.assign(p, { lista_id: d.lista_id || null, nome: d.nome.trim(), medicos: d.medicos || null, anestesistas: d.anestesistas || null, data: d.data || hojeISO(), hora_inicio: d.hora_inicio || null, hora_fim: d.hora_fim || null, observacoes: d.observacoes || null,
-        itens: (d.itens || []).map((x, k) => ({ id: db.seq++, item_id: x.item_id, quantidade: Number(x.quantidade) || 0, usado: !!x.usado, da_lista: !!x.da_lista, ordem: k + 1 })) });
+      const extrasAntes = p.extras || []; const extras = (d.extras || []).filter(e => String(e.descricao || "").trim()).map(e => ({ descricao: e.descricao.trim(), quantidade: Number(e.quantidade) || 1, valor: u.papel === "admin" ? (e.valor ?? null) : ((extrasAntes.find(o => norm(o.descricao) === norm(e.descricao)) || {}).valor ?? null) }));
+      Object.assign(p, { extras, codigo_procedimento: d.codigo_procedimento || null, lista_id: d.lista_id || null, nome: d.nome.trim(), medicos: d.medicos || null, anestesistas: d.anestesistas || null, data: d.data || hojeISO(), hora_inicio: d.hora_inicio || null, hora_fim: d.hora_fim || null, observacoes: d.observacoes || null,
+        itens: (d.itens || []).map((x, k) => ({ id: db.seq++, item_id: x.item_id, quantidade: Number(x.quantidade) || 0, usado: !!x.usado, da_lista: !!x.da_lista, lote_id: x.lote_id || null, ordem: k + 1 })) });
       salvar(); return { ok: true, id: p.id };
     },
     async confirmarProc(id){
@@ -503,15 +514,41 @@ const API = ONLINE ? (() => {
       if(p.status !== "aberto") throw new Error("Este procedimento já foi " + p.status + "."); if(!p.hora_fim) throw new Error("Informe o horário de término antes de confirmar.");
       const us = p.itens.filter(x => x.usado && x.quantidade > 0); if(!us.length) throw new Error("Nenhum item marcado como usado.");
       const ok = l => l.quantidade > 0 && !(l.validade && diasAte(l.validade) < 0);
-      us.forEach(x => { const disp = db.lotes.filter(l => l.item_id === x.item_id && ok(l)).reduce((a, l) => a + l.quantidade, 0); if(disp < x.quantidade) throw new Error(`Estoque insuficiente de ${(db.itens.find(i => i.id === x.item_id) || {}).nome} (disponível sem contar lotes vencidos: ${fNum(disp)}; necessário: ${fNum(x.quantidade)}).`); });
+      us.forEach(x => { const nm = (db.itens.find(i => i.id === x.item_id) || {}).nome;
+        if(x.lote_id){ const lc = db.lotes.find(l => l.id === x.lote_id && l.item_id === x.item_id); if(!lc) throw new Error(`O lote escolhido para ${nm} não pertence a este item.`); if(lc.quantidade < x.quantidade) throw new Error(`O lote ${lc.lote || "s/n"} de ${nm} só tem ${fNum(lc.quantidade)} em estoque (necessário: ${fNum(x.quantidade)}).`); return; }
+        const disp = db.lotes.filter(l => l.item_id === x.item_id && ok(l)).reduce((a, l) => a + l.quantidade, 0); if(disp < x.quantidade) throw new Error(`Estoque insuficiente de ${(db.itens.find(i => i.id === x.item_id) || {}).nome} (disponível sem contar lotes vencidos: ${fNum(disp)}; necessário: ${fNum(x.quantidade)}).`); });
       const motivo = "Procedimento: " + p.nome + " · " + fData(p.data);
-      us.forEach(x => { let falta = x.quantidade; x.lotes_usados = [];
-        db.lotes.filter(l => l.item_id === x.item_id && ok(l)).sort((a, b) => (a.validade || "9999").localeCompare(b.validade || "9999")).forEach(l => {
+      us.forEach(x => { let falta = x.quantidade; x.lotes_usados = []; x.valor_unit = precoDe(db.itens.find(i => i.id === x.item_id));
+        (x.lote_id ? db.lotes.filter(l => l.id === x.lote_id) : db.lotes.filter(l => l.item_id === x.item_id && ok(l))).sort((a, b) => (a.validade || "9999").localeCompare(b.validade || "9999")).forEach(l => {
           if(falta <= 0) return; const t = Math.min(falta, l.quantidade); const antes = { ...l }; l.quantidade -= t; aud(u, "UPDATE", "lotes", antes, l);
           const m = { id: db.seq++, item_id: x.item_id, lote_id: l.id, tipo: "saida", quantidade: -t, saldo_lote: l.quantidade, motivo, paciente: null, usuario_id: u.id, usuario_nome: u.nome, origem: "procedimento", criado_em: new Date().toISOString() };
-          db.movs.unshift(m); aud(u, "INSERT", "movimentacoes", null, m); x.lotes_usados.push({ lote: l.lote, validade: l.validade, quantidade: t }); falta -= t; }); });
+          db.movs.unshift(m); aud(u, "INSERT", "movimentacoes", null, m); x.lotes_usados.push({ lote_id: l.id, lote: l.lote, validade: l.validade, quantidade: t }); falta -= t; }); });
       p.status = "confirmado"; p.confirmado_por_nome = u.nome; p.confirmado_em = new Date().toISOString(); salvar(); return { ok: true };
     },
+    async salvarExtras(id, extras, valores){ quem(true); const p = db.procs.find(x => x.id === id); if(!p) throw new Error("Procedimento não encontrado.");
+      p.extras = (extras || []).filter(e => String(e.descricao || "").trim()); Object.entries(valores || {}).forEach(([pid, v]) => { const it = p.itens.find(x => String(x.id) === String(pid)); if(it) it.valor_unit = v === "" ? null : Number(v); }); salvar(); return { ok: true }; },
+    async editarProcAdmin(id, d){ const u = quem(true); const p = db.procs.find(x => x.id === id); if(!p || p.status !== "confirmado") throw new Error("Só procedimentos confirmados podem ser editados aqui.");
+      if(!String(d.nome || "").trim()) throw new Error("Informe o nome do procedimento.");
+      ["nome","codigo_procedimento","medicos","anestesistas","data","hora_inicio","hora_fim","observacoes","paciente_nome","paciente_cpf","paciente_convenio","paciente_carteirinha"].forEach(k => p[k] = String(d[k] ?? "").trim() || null);
+      p.extras = (d.extras || []).filter(e => String(e.descricao || "").trim());
+      Object.entries(d.valores || {}).forEach(([pid, v]) => { const it = p.itens.find(x => String(x.id) === String(pid)); if(it) it.valor_unit = v === "" || v == null ? null : Number(v); }); salvar(); return { ok: true }; },
+    async adicionarItemProc(id, itemId, qtd, loteId){ const u = quem(true); const p = db.procs.find(x => x.id === id); if(!p || p.status !== "confirmado") throw new Error("Só é possível incluir materiais em procedimentos confirmados.");
+      qtd = Number(qtd); if(!(qtd > 0)) throw new Error("Informe a quantidade."); const it = db.itens.find(i => i.id === itemId) || {};
+      const ok = l => l.quantidade > 0 && !(l.validade && diasAte(l.validade) < 0);
+      const lotes = loteId ? db.lotes.filter(l => l.id === loteId && l.item_id === itemId) : db.lotes.filter(l => l.item_id === itemId && ok(l)).sort((a, b) => (a.validade || "9999").localeCompare(b.validade || "9999"));
+      const disp = lotes.reduce((a, l) => a + l.quantidade, 0); if(disp < qtd) throw new Error(loteId ? `O lote escolhido de ${it.nome} só tem ${fNum(disp)} em estoque.` : `Estoque insuficiente de ${it.nome} (disponível: ${fNum(disp)}).`);
+      let falta = qtd; const usados = []; const motivo = "Procedimento: " + p.nome + " · " + fData(p.data) + " (inclusão do administrador)";
+      lotes.forEach(l => { if(falta <= 0) return; const t = Math.min(falta, l.quantidade); const antes = { ...l }; l.quantidade -= t; aud(u, "UPDATE", "lotes", antes, l);
+        const m = { id: db.seq++, item_id: itemId, lote_id: l.id, tipo: "saida", quantidade: -t, saldo_lote: l.quantidade, motivo, paciente: null, usuario_id: u.id, usuario_nome: u.nome, origem: "procedimento", criado_em: new Date().toISOString() };
+        db.movs.unshift(m); usados.push({ lote_id: l.id, lote: l.lote, validade: l.validade, quantidade: t }); falta -= t; });
+      p.itens.push({ id: db.seq++, item_id: itemId, quantidade: qtd, usado: true, da_lista: false, lote_id: loteId || null, lotes_usados: usados, valor_unit: precoDe(it), ordem: p.itens.length + 1 }); salvar(); return { ok: true }; },
+    async removerItemProc(id, linha){ const u = quem(true); const p = db.procs.find(x => x.id === id); if(!p || p.status !== "confirmado") throw new Error("Só é possível remover materiais de procedimentos confirmados.");
+      const k = p.itens.findIndex(x => String(x.id) === String(linha)); if(k < 0) throw new Error("Material não encontrado neste procedimento."); const pi = p.itens[k];
+      (pi.lotes_usados || []).forEach(e => { const l = db.lotes.find(y => y.id === e.lote_id) || db.lotes.find(y => y.item_id === pi.item_id && y.lote === e.lote && y.validade === e.validade); if(!l) throw new Error("Não encontrei o lote " + (e.lote || "s/n") + " para devolver ao estoque.");
+        const antes = { ...l }; l.quantidade += Number(e.quantidade); aud(u, "UPDATE", "lotes", antes, l);
+        db.movs.unshift({ id: db.seq++, item_id: pi.item_id, lote_id: l.id, tipo: "entrada", quantidade: Number(e.quantidade), saldo_lote: l.quantidade, motivo: "Estorno: removido do procedimento " + p.nome + " · " + fData(p.data), paciente: null, usuario_id: u.id, usuario_nome: u.nome, origem: "procedimento", criado_em: new Date().toISOString() }); });
+      p.itens.splice(k, 1); salvar(); return { ok: true }; },
+    async salvarConfig(chave, valor){ quem(true); if(chave !== "margem_cobranca" || !/^\d{1,3}([.,]\d{1,2})?$/.test(String(valor))) throw new Error("Informe a margem em %, por exemplo 15."); db.config[chave] = String(valor).replace(",", "."); salvar(); return { ok: true }; },
     async cancelarProc(id){ quem(false); const p = db.procs.find(x => x.id === id); if(!p || p.status !== "aberto") throw new Error("Só procedimentos em andamento podem ser cancelados."); p.status = "cancelado"; salvar(); return { ok: true }; },
     async todasMovs(){ return db.movs; },
     async entrar(id, pin){ const u = db.usuarios.find(x => x.id === id); if(!u || !u.ativo) throw new Error("Usuário inválido ou inativo."); if(u.pin !== pin) throw new Error("PIN incorreto."); return pub(u); },
@@ -533,11 +570,11 @@ const API = ONLINE ? (() => {
       const u = quem(true);
       if(!String(i.nome||"").trim() || !String(i.categoria||"").trim()) throw new Error("Nome e categoria são obrigatórios.");
       const campos = ["codigo","nome","descricao","categoria","unidade","local","cod_fornecedor","fornecedor"];
-      const num = k => i[k] === "" || i[k] == null ? (k === "custo_unit" ? null : k === "estoque_minimo" ? 15 : 0) : Number(i[k]);
+      const num = k => i[k] === "" || i[k] == null ? (k === "custo_unit" || k === "preco_cobranca" ? null : k === "estoque_minimo" ? 15 : 0) : Number(i[k]);
       i = { ...i, codigo: String(i.codigo || "").trim().toUpperCase() || sugerirCodigo(i.nome, i.categoria) };
-      if(!i.id){ const n = { id: novoId(), ativo: true }; campos.forEach(k => n[k] = i[k] || null); n.custo_unit = num("custo_unit"); n.estoque_minimo = num("estoque_minimo"); n.estoque_ideal = num("estoque_ideal"); n.controlado = !!i.controlado; db.itens.push(n); aud(u, "INSERT", "itens", null, n); salvar(); return { ok: true, id: n.id }; }
+      if(!i.id){ const n = { id: novoId(), ativo: true }; campos.forEach(k => n[k] = i[k] || null); n.custo_unit = num("custo_unit"); n.preco_cobranca = num("preco_cobranca"); n.estoque_minimo = num("estoque_minimo"); n.estoque_ideal = num("estoque_ideal"); n.controlado = !!i.controlado; db.itens.push(n); aud(u, "INSERT", "itens", null, n); salvar(); return { ok: true, id: n.id }; }
       const it = db.itens.find(x => x.id === i.id); const antes = { ...it };
-      campos.forEach(k => it[k] = i[k] || null); it.custo_unit = num("custo_unit"); it.estoque_minimo = num("estoque_minimo"); it.estoque_ideal = num("estoque_ideal"); it.controlado = !!i.controlado; it.ativo = i.ativo !== false;
+      campos.forEach(k => it[k] = i[k] || null); it.custo_unit = num("custo_unit"); if("preco_cobranca" in i) it.preco_cobranca = num("preco_cobranca"); it.estoque_minimo = num("estoque_minimo"); it.estoque_ideal = num("estoque_ideal"); it.controlado = !!i.controlado; it.ativo = i.ativo !== false;
       aud(u, "UPDATE", "itens", antes, it); salvar(); return { ok: true, id: it.id };
     },
     async salvarLote(d){
@@ -583,7 +620,7 @@ async function carregarPrivado(){
   const tenta = async f => { try { return await f(); } catch(e){ return null; } };
   const [pac, procs, us, custos] = await Promise.all([tenta(() => API.pacientes()), tenta(() => API.procs()), tenta(() => API.usuarios()), isAdmin() ? tenta(() => API.custos()) : null]);
   if(pac) S.pac = pac; if(procs) S.procs = procs; if(us) S.usuarios = us;
-  if(custos && ONLINE) S.itens = S.itens.map(i => ({ ...i, custo_unit: custos[i.id] ?? null }));
+  if(custos && ONLINE) S.itens = S.itens.map(i => { const v = custos[i.id]; return { ...i, custo_unit: v == null ? null : typeof v === "object" ? v.c : v, preco_cobranca: v && typeof v === "object" ? v.p : null }; });
 }
 let D = {};
 function derivar(){
@@ -918,6 +955,10 @@ function vBackup(){
       ${ONLINE ? `<p><b style="color:var(--ink)">Cópia guardada neste aparelho:</b> ${cache ? fDH(cache.em) : "ainda não"}</p>` : ""}
       <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-act="contingencia">${ic("down",16)}Planilha de contingência</button>${isAdmin() && !S.offline ? `<button class="btn" data-act="importar">${ic("up",16)}Importar contingência</button>` : ""}</div></div></div>
   </div>
+  ${isAdmin() ? `<div class="card"><div class="card-h"><span class="kic" style="width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--gold-soft);color:var(--gold-2)">${ic("coin",18)}</span><h2>Preço para cobrança</h2></div>
+    <div class="pad"><p>Itens sem preço próprio usam automaticamente o custo de compra mais esta margem. O preço digitado no item continua valendo para aquele item. A mudança vale para os próximos procedimentos confirmados; os já confirmados mantêm o valor.</p>
+    <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap"><label class="f" style="width:180px">Margem sobre o custo (%)<input id="cfg_margem" type="number" min="0" max="999" step="0.5" value="${esc(margemCobranca())}"></label><button class="btn pri" data-act="salvarMargem">${ic("check",16,2.2)}Salvar margem</button>
+    <span class="muted" style="font-size:12.5px">Ex.: custo R$ 10,00 → cobrança ${fBRL(precoDe({ custo_unit: 10 }))}</span></div></div></div>` : ""}
   <div class="cards2">
     <div class="card"><div class="card-h"><h2>Mais usados nos últimos 30 dias</h2></div>
       ${rank.length ? `<div class="bars">${rank.map(x => `<div class="bar-row"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.i.nome)}</span><div class="bar"><i style="width:${x.q / mx * 100}%"></i></div><b class="num" style="text-align:right">${fNum(x.q)} ${esc(low(x.i.unidade))}</b></div>`).join("")}</div>` : `<div class="empty">Ainda não há saídas registradas nos últimos 30 dias.</div>`}</div>
@@ -971,7 +1012,7 @@ function vUsuarios(){
    Modais
    ===================================================================== */
 function abrir(html, cls = ""){ $("#modal").innerHTML = `<div class="ov ${cls}" data-ov>${html}</div>`; const el = $("#modal [autofocus]"); if(el) setTimeout(() => el.focus(), 30); }
-function fechar(){ $("#modal").innerHTML = ""; M = null; PR = null; LE = null; }
+function fechar(){ $("#modal").innerHTML = ""; M = null; PR = null; LE = null; QC = null; }
 const mHead = (t, p) => `<div class="m-h"><div><h2>${t}</h2>${p ? `<p>${p}</p>` : ""}</div><div class="sp"></div><button class="iconbtn" data-act="fechar" aria-label="Fechar">${ic("x")}</button></div>`;
 
 /* ---- ficha do item ---- */
@@ -988,7 +1029,7 @@ function abrirItem(id){
       <div><small>Local</small><b>${esc(i.local || "—")}</b></div>
       <div><small>Fornecedor</small><b>${esc(i.fornecedor || "—")}</b></div>
       <div><small>Cód. fornecedor</small><b>${esc(i.cod_fornecedor || "—")}</b></div>
-      ${isAdmin() ? `<div><small>Custo unitário</small><b class="num">${i.custo_unit != null ? fBRL(i.custo_unit) : "—"}</b></div>` : `<div><small>Código interno</small><b>${esc(i.codigo || "—")}</b></div>`}
+      ${isAdmin() ? `<div><small>Custo unitário · preço p/ cobrança</small><b class="num">${i.custo_unit != null ? fBRL(i.custo_unit) : "—"} · ${precoDe(i) != null ? fBRL(precoDe(i)) + (i.preco_cobranca != null ? "" : ` <span class="muted" style="font-weight:400">(+${margemCobranca()}%)</span>`) : "—"}</b></div>` : `<div><small>Código interno</small><b>${esc(i.codigo || "—")}</b></div>`}
     </div>
     <h3 style="font-size:14px">Lotes</h3>
     ${i.lotes.length ? `<div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Lote</th><th class="hide-m">Fabricação</th><th>Validade</th><th class="r">Qtd.</th><th></th></tr></thead><tbody>${i.lotes.map(l => `<tr><td>${esc(l.lote || "—")}</td><td class="hide-m num">${fData(l.fabricacao)}</td><td>${Number(l.quantidade) > 0 ? pillValidade(l.validade) : `<span class="muted">${fData(l.validade)}</span>`}</td><td class="r num"><b>${fNum(l.quantidade)}</b></td><td class="r" style="white-space:nowrap">${S.offline ? "" : `${isAdmin() ? `<button class="btn sm" data-act="editLote" data-id="${l.id}" title="Corrigir número, fabricação ou validade">${ic("edit",14)}Corrigir</button> ` : ""}<button class="btn sm" data-act="novaMov" data-it="${i.id}" data-lote="${l.id}" data-tipo="${Number(l.quantidade) > 0 ? "saida" : "entrada"}">Movimentar</button>`}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">Nenhum lote.</div>`}
@@ -1076,6 +1117,7 @@ function editItem(id){
     <div class="row3"><label class="f">Categoria<input id="e_categoria" list="e_cats" value="${esc(i.categoria || "")}"></label>${inp("unidade","Unidade")}<label class="f">Local<input id="e_local" list="e_locs" value="${esc(i.local || "")}"></label></div>
     <datalist id="e_cats">${D.cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist><datalist id="e_locs">${D.locais.map(c => `<option value="${esc(c)}">`).join("")}</datalist>
     <div class="row3">${inp("fornecedor","Fornecedor")}${inp("cod_fornecedor","Cód. fornecedor")}${inp("custo_unit","Custo unitário (R$)","number",'step="any" min="0"')}</div>
+    <div class="row2">${inp("preco_cobranca","Preço para cobrança (R$) · usado no documento de reembolso","number",`step="0.01" min="0" placeholder="vazio = custo + ${margemCobranca()}%${i.custo_unit != null ? " (" + fBRL(precoDe({ custo_unit: i.custo_unit })) + ")" : ""}"`)}<div></div></div>
     <div class="row2">${inp("estoque_minimo","Estoque mínimo (padrão 15)","number",'step="any" min="0" placeholder="15"')}${inp("estoque_ideal","Estoque ideal","number",'step="any" min="0"')}</div>
     <label class="check"><input type="checkbox" id="e_controlado" ${i.controlado ? "checked" : ""}>Medicamento controlado (Portaria 344)</label>
     ${id ? `<label class="check"><input type="checkbox" id="e_ativo" ${i.ativo !== false ? "checked" : ""}>Item ativo (desmarque para tirar das listas sem apagar o histórico)</label>` : ""}
@@ -1085,7 +1127,7 @@ function editItem(id){
 }
 async function salvarItem(id, btn){
   const g = k => ($("#e_" + k) || {}).value ?? "";
-  const dados = { id: id || null, nome: g("nome").trim(), codigo: g("codigo"), descricao: g("descricao"), categoria: g("categoria").trim(), unidade: g("unidade"), local: g("local"), fornecedor: g("fornecedor"), cod_fornecedor: g("cod_fornecedor"), custo_unit: g("custo_unit"), estoque_minimo: g("estoque_minimo"), estoque_ideal: g("estoque_ideal"), controlado: $("#e_controlado").checked, ativo: $("#e_ativo") ? $("#e_ativo").checked : true };
+  const dados = { id: id || null, nome: g("nome").trim(), codigo: g("codigo"), descricao: g("descricao"), categoria: g("categoria").trim(), unidade: g("unidade"), local: g("local"), fornecedor: g("fornecedor"), cod_fornecedor: g("cod_fornecedor"), custo_unit: g("custo_unit"), preco_cobranca: g("preco_cobranca"), estoque_minimo: g("estoque_minimo"), estoque_ideal: g("estoque_ideal"), controlado: $("#e_controlado").checked, ativo: $("#e_ativo") ? $("#e_ativo").checked : true };
   btn.disabled = true;
   try { await API.salvarItem(dados); fechar(); S.audit = null; await carregar(); toast("Item salvo."); render(); }
   catch(e){ $("#e_err").textContent = e.message; btn.disabled = false; }
@@ -1150,7 +1192,7 @@ function baixarXlsx(nome, abas){
   return true;
 }
 const stamp = () => { const d = new Date(); return hojeISO() + "-" + String(d.getHours()).padStart(2,"0") + "h" + String(d.getMinutes()).padStart(2,"0"); };
-const linhaItem = i => ({ "Código": i.codigo || "", "Item": i.nome, "Descrição": i.descricao || "", "Categoria": i.categoria, "Unidade": i.unidade || "", "Local": i.local || "", "Saldo": i.saldo, "Estoque mínimo": i.min || "", "Estoque ideal": i.estoque_ideal || "", "Próxima validade": i.prox ? fData(i.prox) : "", "Situação": ST[i.st] ? ST[i.st][1] : "Inativo", "Fornecedor": i.fornecedor || "", "Cód. fornecedor": i.cod_fornecedor || "", ...(isAdmin() ? { "Custo unitário": i.custo_unit ?? "", "Valor em estoque": Math.round(i.valor * 100) / 100 } : {}), "Controlado": i.controlado ? "Sim" : "Não" });
+const linhaItem = i => ({ "Código": i.codigo || "", "Item": i.nome, "Descrição": i.descricao || "", "Categoria": i.categoria, "Unidade": i.unidade || "", "Local": i.local || "", "Saldo": i.saldo, "Estoque mínimo": i.min || "", "Estoque ideal": i.estoque_ideal || "", "Próxima validade": i.prox ? fData(i.prox) : "", "Situação": ST[i.st] ? ST[i.st][1] : "Inativo", "Fornecedor": i.fornecedor || "", "Cód. fornecedor": i.cod_fornecedor || "", ...(isAdmin() ? { "Custo unitário": i.custo_unit ?? "", "Preço para cobrança": precoDe(i) ?? "", "Preço manual?": i.preco_cobranca != null ? "Sim" : "Não (custo + margem)", "Valor em estoque": Math.round(i.valor * 100) / 100 } : {}), "Controlado": i.controlado ? "Sim" : "Não" });
 function linhasLotes(soComSaldo){
   const out = []; D.itens.forEach(i => i.lotes.filter(l => !soComSaldo || Number(l.quantidade) > 0).forEach(l => out.push({ "CODIGO": i.codigo || "", "ITEM / DESCRIÇÃO": i.descricao || "", "NOME": i.nome, "CATEGORIA": i.categoria, "UNIDADE": i.unidade || "", "QUANTIDADE": Number(l.quantidade), "LOCAL PADRÃO": i.local || "", "CODIGO FORNECEDOR": i.cod_fornecedor || "", "FORNECEDOR": i.fornecedor || "", "CUSTO UNITARIO": i.custo_unit ?? "", "FABRICADO": fData(l.fabricacao), "VALIDADE": fData(l.validade), "LOTE": l.lote || "" }))); return out;
 }
@@ -1459,13 +1501,13 @@ function vListas(){
 }
 function vProcs(){
   const abertos = S.procs.filter(p => p.status === "aberto"), hist = S.procs.filter(p => p.status !== "aberto");
-  const custoProc = p => p.itens.filter(x => x.usado).reduce((a, x) => a + (custoItem(x.item_id) || 0) * Number(x.quantidade || 0), 0);
+  const custoProc = p => totaisProc({ itens: p.itens, extras: padExtras(p.extras) }).total;
   return `${abertos.length ? `<div class="card"><div class="card-h"><h2>Em andamento</h2><span class="pill p-warn">${abertos.length}</span></div><div class="pad" style="display:grid;gap:10px">
     ${abertos.map(p => `<div class="picked"><div style="min-width:0"><b>${esc(p.nome)}</b><small>${fData(p.data)} · início ${hhmm(p.hora_inicio)}${p.medicos ? " · " + esc(p.medicos) : ""} · ${p.itens.filter(x => x.usado).length} de ${p.itens.length} itens checados</small></div><span class="sp"></span><button class="btn pri sm" data-act="procAbrir" data-id="${p.id}">Continuar</button></div>`).join("")}</div></div>` : ""}
-  <div class="card"><div class="card-h"><h2>Histórico</h2></div>${hist.length ? `<div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Procedimento</th><th class="hide-m">Médicos</th><th class="hide-m">Horário</th><th class="r">Itens usados</th>${isAdmin() ? '<th class="r hide-m">Custo</th>' : ""}<th>Situação</th><th></th></tr></thead><tbody>
-    ${hist.map(p => `<tr class="click" data-act="procVer" data-id="${p.id}"><td class="num">${fData(p.data)}</td><td><b>${esc(p.nome)}</b></td><td class="hide-m">${esc(p.medicos || "—")}</td><td class="hide-m num">${hhmm(p.hora_inicio)}–${hhmm(p.hora_fim)}</td><td class="r num">${p.itens.filter(x => x.usado).length}</td>
+  <div class="card"><div class="card-h"><h2>Histórico</h2></div>${hist.length ? `<div class="tbl-wrap"><table><thead><tr><th>Data</th><th>Procedimento</th><th class="hide-m">Médicos</th><th class="hide-m">Horário</th><th class="r">Itens usados</th>${isAdmin() ? '<th class="r hide-m">Valor total</th>' : ""}<th>Situação</th><th></th></tr></thead><tbody>
+    ${hist.map(p => `<tr class="click" data-act="procVer" data-id="${p.id}"><td class="num">${fData(p.data)}</td><td><b>${esc(p.nome)}</b>${isAdmin() && p.paciente_nome ? `<span class="sub">Pcte: ${esc(p.paciente_nome)}</span>` : ""}</td><td class="hide-m">${esc(p.medicos || "—")}</td><td class="hide-m num">${hhmm(p.hora_inicio)}–${hhmm(p.hora_fim)}</td><td class="r num">${p.itens.filter(x => x.usado).length}</td>
       ${isAdmin() ? `<td class="r num hide-m">${fBRL(custoProc(p))}</td>` : ""}<td><span class="pill ${PST[p.status][0]}">${PST[p.status][1]}</span></td>
-      <td class="r">${p.status === "confirmado" ? `<button class="btn sm" data-act="procImprimir" data-id="${p.id}">Imprimir</button>` : ""}</td></tr>`).join("")}
+      <td class="r">${p.status === "confirmado" && isAdmin() ? `<button class="btn sm" data-act="procVer" data-id="${p.id}">${ic("sheet",14)}Preparar documento</button>` : ""}</td></tr>`).join("")}
   </tbody></table></div>` : `<div class="empty">Nenhum procedimento finalizado ainda.</div>`}</div>`;
 }
 
@@ -1478,7 +1520,10 @@ function abrirLista(id, dup){
   renderLista();
 }
 function buscaItens(q){ const ws = norm(q).split(/\s+/).filter(Boolean); return D.itens.filter(x => { const h = norm([x.nome, x.descricao, x.codigo, x.cod_fornecedor, x.fornecedor].join(" ")); return ws.every(w => h.includes(w)); }).slice(0, 12); }
-function resBusca(prefixo, q){ const xs = buscaItens(q); return xs.map(x => `<button data-act="${prefixo}Add" data-id="${x.id}">${av(x.categoria, 28)}<span><b>${esc(x.nome)}</b><br><small class="muted">${esc(x.codigo || "")} · ${fNum(x.saldo)} ${esc(low(x.unidade))}</small></span></button>`).join("") || `<div class="empty">Nenhum item encontrado.</div>`; }
+function resBusca(prefixo, q){ const xs = buscaItens(q);
+  const novo = isAdmin() ? `<button class="qc-add" data-act="qcNovo" data-volta="${prefixo}" data-v="${esc(q || "")}">${ic("plus",16,2.2)}<span><b>Cadastrar item novo no estoque${q ? ` "${esc(q)}"` : ""}</b><br><small class="muted">Não achou? Cadastre agora e volte para cá com o item adicionado</small></span></button>`
+    : `<div class="empty" style="padding:10px">Não achou o item? Peça ao administrador para cadastrá-lo.</div>`;
+  return (xs.map(x => `<button data-act="${prefixo}Add" data-id="${x.id}">${av(x.categoria, 28)}<span><b>${esc(x.nome)}</b><br><small class="muted">${esc(x.codigo || "")} · ${fNum(x.saldo)} ${esc(low(x.unidade))}</small></span></button>`).join("") || `<div class="empty">Nenhum item encontrado.</div>`) + novo; }
 function renderLista(manter){
   const sc = manter && $("#modal .modal") ? $("#modal .modal").scrollTop : 0;
   const L2 = LE, ro = L2.leitura, adm = isAdmin(); const c = custoLista(L2.itens);
@@ -1509,57 +1554,125 @@ async function salvarLista(btn){
 }
 
 /* ---- procedimento ---- */
+const CLINICA_INFO = {
+  nome: "UROtherap - Centro de Urologia Especializado",
+  endereco: "End.: Avenida Anchieta, 671, Jardim Nova América, São José dos Campos-SP 12242-280",
+  telefone: "Tel.: (12)3921-7508",
+  cnpj: CFG.cnpj || "05.661.735/0001-80"
+};
+const N_EXTRAS = 4;
+const padExtras = ex => { const a = (ex || []).map(e => ({ descricao: e.descricao || "", quantidade: e.quantidade ?? 1, valor: e.valor ?? "" })); while(a.length < N_EXTRAS) a.push({ descricao: "", quantidade: 1, valor: "" }); return a; };
 function novoProc(listaId){
   const l = listaId ? S.listas.find(x => x.id === listaId) : null;
-  PR = { id: null, lista_id: l ? l.id : "", nome: l ? l.nome : "", medicos: "", anestesistas: "", data: hojeISO(), hora_inicio: horaAgora(), hora_fim: "", observacoes: "",
-    itens: l ? itensDaLista(l.id).map(x => ({ item_id: x.item_id, quantidade: x.quantidade, usado: false, da_lista: true })) : [], busca: "", etapa: "edit", status: "aberto" };
+  PR = { id: null, lista_id: l ? l.id : "", nome: l ? l.nome : "", codigo_procedimento: "", medicos: "", anestesistas: "", data: hojeISO(), hora_inicio: horaAgora(), hora_fim: "", observacoes: "",
+    itens: l ? itensDaLista(l.id).map(x => ({ item_id: x.item_id, quantidade: x.quantidade, usado: false, da_lista: true, lote_id: "" })) : [], extras: padExtras([]), busca: "", etapa: "edit", status: "aberto" };
   renderProc();
 }
 function abrirProc(id){
   const p = S.procs.find(x => x.id === id); if(!p) return;
-  PR = { id: p.id, lista_id: p.lista_id || "", nome: p.nome, medicos: p.medicos || "", anestesistas: p.anestesistas || "", data: String(p.data).slice(0, 10),
+  PR = { id: p.id, lista_id: p.lista_id || "", nome: p.nome, codigo_procedimento: p.codigo_procedimento || "", medicos: p.medicos || "", anestesistas: p.anestesistas || "", data: String(p.data).slice(0, 10),
     hora_inicio: hhmm(p.hora_inicio).replace("—", ""), hora_fim: hhmm(p.hora_fim).replace("—", ""), observacoes: p.observacoes || "",
-    itens: p.itens.map(x => ({ item_id: x.item_id, quantidade: x.quantidade, usado: x.usado, da_lista: x.da_lista, lotes_usados: x.lotes_usados })),
-    busca: "", etapa: p.status === "aberto" ? "edit" : "ver", status: p.status, confirmado_por_nome: p.confirmado_por_nome, confirmado_em: p.confirmado_em };
+    itens: p.itens.map(x => ({ pid: x.id, item_id: x.item_id, quantidade: x.quantidade, usado: x.usado, da_lista: x.da_lista, lote_id: x.lote_id || "", lotes_usados: x.lotes_usados, valor_unit: x.valor_unit })),
+    extras: padExtras(p.extras), busca: "", etapa: p.status === "aberto" ? "edit" : "ver", status: p.status, confirmado_por_nome: p.confirmado_por_nome, confirmado_em: p.confirmado_em,
+    paciente_nome: p.paciente_nome || "", paciente_cpf: p.paciente_cpf || "", paciente_convenio: p.paciente_convenio || "", paciente_carteirinha: p.paciente_carteirinha || "", novo: null };
   renderProc();
 }
-function prCampos(){ ["nome","medicos","anestesistas","data","hora_inicio","hora_fim","observacoes"].forEach(k => { const el = $("#pr_" + k); if(el) PR[k] = el.value; }); }
-function prevLotes(itemId, qtd){
-  const i = D.idx[itemId]; if(!i || !i.comSaldo) return { lotes: [], falta: qtd };
-  let falta = Number(qtd); const out = [];
-  i.comSaldo.filter(l => !(l.validade && diasAte(l.validade) < 0)).forEach(l => { if(falta <= 0) return; const t = Math.min(falta, Number(l.quantidade)); out.push({ lote: l.lote, validade: l.validade, quantidade: t }); falta -= t; });
+function prCampos(){ ["nome","codigo_procedimento","medicos","anestesistas","data","hora_inicio","hora_fim","observacoes","paciente_nome","paciente_cpf","paciente_convenio","paciente_carteirinha"].forEach(k => { const el = $("#pr_" + k); if(el) PR[k] = el.value; }); }
+const lotesDoItem = itemId => S.lotes.filter(l => l.item_id === itemId && Number(l.quantidade) > 0).sort((a, b) => (a.validade || "9999").localeCompare(b.validade || "9999"));
+function prevLotes(x){
+  const qtd = Number(x.quantidade);
+  if(x.lote_id){ const l = S.lotes.find(y => y.id === x.lote_id); if(!l) return { lotes: [], falta: qtd };
+    return { lotes: [{ lote: l.lote, validade: l.validade, quantidade: Math.min(qtd, Number(l.quantidade)) }], falta: Math.max(0, qtd - Number(l.quantidade)), escolhido: true, vencido: l.validade && diasAte(l.validade) < 0 }; }
+  let falta = qtd; const out = [];
+  lotesDoItem(x.item_id).filter(l => !(l.validade && diasAte(l.validade) < 0)).forEach(l => { if(falta <= 0) return; const t = Math.min(falta, Number(l.quantidade)); out.push({ lote: l.lote, validade: l.validade, quantidade: t }); falta -= t; });
   return { lotes: out, falta: Math.max(0, falta) };
+}
+const precoItem = id => precoDe(D.idx[id]);
+const valorItemProc = x => x.valor_unit != null && x.valor_unit !== "" ? Number(x.valor_unit) : precoItem(x.item_id);
+function totaisProc(P){
+  const us = P.itens.filter(x => x.usado && Number(x.quantidade) > 0);
+  const mat = us.reduce((a, x) => a + (valorItemProc(x) || 0) * Number(x.quantidade), 0);
+  const tax = P.extras.filter(e => String(e.descricao).trim()).reduce((a, e) => a + (Number(e.valor) || 0) * (Number(e.quantidade) || 0), 0);
+  return { mat, tax, total: mat + tax };
+}
+function atualizarTotaisProc(){
+  if(!PR) return; const t = totaisProc(PR); const set = (id, v) => { const el = $("#" + id); if(el) el.textContent = v; };
+  set("pr_tmat", fBRL(t.mat)); set("pr_ttax", fBRL(t.tax)); set("pr_ttot", fBRL(t.total));
+  PR.extras.forEach((e, k) => set("pre_sub_" + k, String(e.descricao).trim() && e.valor !== "" ? fBRL(Number(e.valor) * Number(e.quantidade || 0)) : "—"));
+  PR.itens.forEach((x, k) => { const vu = valorItemProc(x); set("prv_sub_" + k, vu != null && !isNaN(vu) ? fBRL(vu * Number(x.quantidade)) : "—"); });
+}
+function extrasHTML(P, editavel){
+  const adm = isAdmin(); const t = totaisProc(P);
+  return `<div class="card-h" style="padding:6px 0 0"><h2>Taxas e outros itens</h2><span class="muted" style="font-size:12px">taxa de sala, RPA, procedimentos etc. (não mexem no estoque)</span></div>
+  <div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Descrição</th><th class="r" style="width:90px">Qtd.</th>${adm ? '<th class="r" style="width:130px">Valor unit. (R$)</th><th class="r hide-m">Subtotal</th>' : ""}</tr></thead><tbody>
+    ${P.extras.map((e, k) => `<tr><td>${editavel ? `<input class="field" style="width:100%" data-pre="${k}" data-prek="descricao" value="${esc(e.descricao)}" placeholder="Ex.: Taxa de sala">` : esc(e.descricao)}</td>
+      <td class="r">${editavel ? `<input class="field num" style="width:76px;text-align:right" type="number" min="0" step="any" data-pre="${k}" data-prek="quantidade" value="${esc(e.quantidade)}">` : fNum(e.quantidade)}</td>
+      ${adm ? `<td class="r">${editavel ? `<input class="field num" style="width:116px;text-align:right" type="number" min="0" step="0.01" data-pre="${k}" data-prek="valor" value="${esc(e.valor)}">` : (e.valor !== "" ? fBRL(e.valor) : "—")}</td><td class="r num hide-m" id="pre_sub_${k}">${e.descricao && e.valor !== "" ? fBRL(Number(e.valor) * Number(e.quantidade || 0)) : "—"}</td>` : ""}</tr>`).join("")}
+  </tbody></table></div>
+  ${editavel ? `<button class="btn sm" data-act="prMaisExtra" style="align-self:flex-start">${ic("plus",14)}Mais uma linha</button>` : ""}
+  ${adm ? `<div class="dl" style="grid-template-columns:repeat(3,1fr)"><div><small>Materiais</small><b class="num" id="pr_tmat">${fBRL(t.mat)}</b></div><div><small>Taxas e outros</small><b class="num" id="pr_ttax">${fBRL(t.tax)}</b></div><div><small>Total</small><b class="num" id="pr_ttot" style="color:var(--accent)">${fBRL(t.total)}</b></div></div>` : ""}`;
 }
 function renderProc(manter){
   const sc = manter && $("#modal .modal") ? $("#modal .modal").scrollTop : 0;
-  const P = PR, ver = P.etapa === "ver", rev = P.etapa === "revisao";
-  const usados = P.itens.filter(x => x.usado && Number(x.quantidade) > 0);
-  const info = `<div class="dl"><div><small>Procedimento</small><b>${esc(P.nome || "—")}</b></div><div><small>Data</small><b>${fData(P.data)}</b></div><div><small>Horário</small><b>${hhmm(P.hora_inicio)} – ${hhmm(P.hora_fim)}</b></div><div><small>Médico(s)</small><b>${esc(P.medicos || "—")}</b></div><div><small>Anestesista(s)</small><b>${esc(P.anestesistas || "—")}</b></div><div><small>Situação</small><b>${PST[P.status][1]}</b></div></div>`;
+  const P = PR, ver = P.etapa === "ver", rev = P.etapa === "revisao", adm = isAdmin();
+  const usadosK = P.itens.map((x, k) => ({ x, k })).filter(o => o.x.usado && Number(o.x.quantidade) > 0);
+  const info = `<div class="dl"><div><small>Procedimento</small><b>${esc(P.nome || "—")}${P.codigo_procedimento ? ` <span class="muted">(${esc(P.codigo_procedimento)})</span>` : ""}</b></div><div><small>Data</small><b>${fData(P.data)}</b></div><div><small>Horário</small><b>${hhmm(P.hora_inicio)} – ${hhmm(P.hora_fim)}</b></div><div><small>Médico(s)</small><b>${esc(P.medicos || "—")}</b></div><div><small>Anestesista(s)</small><b>${esc(P.anestesistas || "—")}</b></div><div><small>Situação</small><b>${PST[P.status][1]}</b></div></div>`;
   let corpo, rodape, titulo, sub;
-  if(ver){
+  if(ver && adm && P.status === "confirmado"){
+    titulo = "Preparar documento"; sub = `Confirmado por ${esc(P.confirmado_por_nome || "—")} em ${fDH(P.confirmado_em)}. Ajuste o que precisar antes de imprimir.`;
+    const n = P.novo; const ni = n ? D.idx[n.item_id] || {} : null;
+    corpo = `<div class="row2"><label class="f">Nome do procedimento<input id="pr_nome" value="${esc(P.nome)}"></label><label class="f">Código do procedimento (TUSS/CBHPM)<input id="pr_codigo_procedimento" value="${esc(P.codigo_procedimento)}" inputmode="numeric"></label></div>
+      <div class="row2"><label class="f">Médico(s) <span class="muted" style="font-weight:400">(nome e CRM)</span><input id="pr_medicos" value="${esc(P.medicos)}"></label><label class="f">Anestesista(s) <span class="muted" style="font-weight:400">(nome e CRM)</span><input id="pr_anestesistas" value="${esc(P.anestesistas)}"></label></div>
+      <div class="row3"><label class="f">Data<input type="date" id="pr_data" value="${esc(P.data)}"></label><label class="f">Início<input type="time" id="pr_hora_inicio" value="${esc(P.hora_inicio)}"></label><label class="f">Término<input type="time" id="pr_hora_fim" value="${esc(P.hora_fim)}"></label></div>
+      <div class="card-h" style="padding:6px 0 0"><h2>Paciente</h2><span class="muted" style="font-size:12px">opcional: o que ficar vazio sai em branco para preencher à mão</span></div>
+      <div class="row2"><label class="f">Nome do paciente<input id="pr_paciente_nome" value="${esc(P.paciente_nome)}" autocomplete="off"></label><label class="f">CPF<input id="pr_paciente_cpf" value="${esc(P.paciente_cpf)}" inputmode="numeric" placeholder="000.000.000-00" autocomplete="off"></label></div>
+      <div class="row2"><label class="f">Convênio<input id="pr_paciente_convenio" value="${esc(P.paciente_convenio)}" autocomplete="off"></label><label class="f">Nº da carteirinha<input id="pr_paciente_carteirinha" value="${esc(P.paciente_carteirinha)}" autocomplete="off"></label></div>
+      <div class="card-h" style="padding:6px 0 0"><h2>Materiais e medicamentos</h2><span class="muted" style="font-size:12px">remover devolve ao estoque; incluir dá saída</span></div>
+      <div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Material</th><th>Lote(s)</th><th class="r">Qtd.</th><th class="r" style="width:130px">Preço unit. (R$)</th><th class="r hide-m">Subtotal</th><th></th></tr></thead><tbody>
+      ${usadosK.map(({ x, k }) => { const vu = valorItemProc(x); return `<tr><td><b>${esc(nomeItem(x.item_id))}</b><span class="sub">${esc(codItem(x.item_id))}</span></td><td>${(x.lotes_usados || []).map(l => `${esc(l.lote || "s/n")} <span class="muted">(val. ${fData(l.validade)}${(x.lotes_usados || []).length > 1 ? ", " + fNum(l.quantidade) : ""})</span>`).join("<br>") || "—"}</td><td class="r num"><b>${fNum(x.quantidade)}</b></td>
+        <td class="r"><input class="field num" style="width:116px;text-align:right" type="number" min="0" step="0.01" data-prv="${k}" value="${esc(vu ?? "")}"></td><td class="r num hide-m" id="prv_sub_${k}">${vu != null ? fBRL(vu * Number(x.quantidade)) : "—"}</td>
+        <td class="r"><button class="btn sm danger" data-act="prRemover" data-k="${k}" title="Remove do documento e devolve ao estoque">${P.remover === k ? "Confirmar: devolver ao estoque" : "Remover"}</button></td></tr>`; }).join("") || `<tr><td colspan="6"><div class="empty">Nenhum material.</div></td></tr>`}</tbody></table></div>
+      ${n ? `<div class="picked" style="flex-wrap:wrap"><div style="min-width:0;flex:1"><b>Incluir: ${esc(ni.nome || "")}</b><small>${esc(ni.codigo || "")} · em estoque: ${fNum(ni.saldo)} ${esc(low(ni.unidade))}</small></div>
+          <input class="field num" id="pa_qtd" type="number" min="0" step="any" value="${esc(n.quantidade)}" style="width:80px;text-align:right" aria-label="Quantidade">
+          <select class="field" id="pa_lote" style="max-width:260px"><option value="">Lote: vence primeiro</option>${lotesDoItem(n.item_id).map(l => `<option value="${l.id}" ${n.lote_id === l.id ? "selected" : ""}>Lote ${esc(l.lote || "s/n")} · val. ${fData(l.validade)} · ${fNum(l.quantidade)}</option>`).join("")}</select>
+          <button class="btn sm" data-act="paCancelar">Cancelar</button><button class="btn sm pri" data-act="paConfirmar">Incluir e dar saída</button></div>`
+        : `<label class="f">Incluir material<input id="pr_busca" value="${esc(P.busca)}" placeholder="Digite nome ou código" autocomplete="off"></label><div class="plist" id="pr_res" style="max-height:200px">${resBusca("pa", P.busca)}</div>`}
+      ${extrasHTML(P, true)}
+      <label class="f">Observações<input id="pr_observacoes" value="${esc(P.observacoes)}"></label>
+      <div class="err" id="pr_err" role="alert"></div>`;
+    rodape = `<button class="btn" data-act="fechar" style="margin-right:auto">Fechar</button><button class="btn" data-act="procSalvarAdmin">${ic("check",16,2.2)}Salvar</button><button class="btn pri" data-act="procDocumento" data-id="${P.id}">${ic("sheet",16)}Salvar e abrir documento (PDF)</button>`;
+  } else if(ver){
     titulo = "Procedimento"; sub = P.status === "confirmado" ? `Confirmado por ${esc(P.confirmado_por_nome || "—")} em ${fDH(P.confirmado_em)}` : "Procedimento cancelado";
-    corpo = info + `<div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Item</th><th>Lote(s)</th><th class="r">Qtd.</th></tr></thead><tbody>
-      ${usados.map(x => `<tr><td><b>${esc(nomeItem(x.item_id))}</b><span class="sub">${esc(codItem(x.item_id))}</span></td><td>${(x.lotes_usados || []).map(l => `${esc(l.lote || "s/n")} <span class="muted">(val. ${fData(l.validade)}${(x.lotes_usados || []).length > 1 ? ", " + fNum(l.quantidade) : ""})</span>`).join("<br>") || "—"}</td><td class="r num"><b>${fNum(x.quantidade)}</b></td></tr>`).join("") || `<tr><td colspan="3"><div class="empty">Nenhum item usado.</div></td></tr>`}</tbody></table></div>
+    corpo = info + `<div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Material</th><th>Lote(s)</th><th class="r">Qtd.</th></tr></thead><tbody>
+      ${usadosK.map(({ x }) => `<tr><td><b>${esc(nomeItem(x.item_id))}</b><span class="sub">${esc(codItem(x.item_id))}</span></td><td>${(x.lotes_usados || []).map(l => `${esc(l.lote || "s/n")} <span class="muted">(val. ${fData(l.validade)}${(x.lotes_usados || []).length > 1 ? ", " + fNum(l.quantidade) : ""})</span>`).join("<br>") || "—"}</td><td class="r num"><b>${fNum(x.quantidade)}</b></td></tr>`).join("") || `<tr><td colspan="3"><div class="empty">Nenhum item usado.</div></td></tr>`}</tbody></table></div>
+      ${P.extras.some(e => String(e.descricao).trim()) ? `<div class="note info">Taxas e outros: ${P.extras.filter(e => String(e.descricao).trim()).map(e => esc(e.descricao) + " (" + fNum(e.quantidade) + ")").join(", ")}</div>` : ""}
       ${P.observacoes ? `<div class="note info">${esc(P.observacoes)}</div>` : ""}`;
-    rodape = `<button class="btn" data-act="fechar">Fechar</button>${P.status === "confirmado" ? `<button class="btn pri" data-act="procImprimir" data-id="${P.id}">${ic("sheet",16)}Imprimir</button>` : ""}`;
+    rodape = `<button class="btn" data-act="fechar">Fechar</button>`;
   } else if(rev){
-    titulo = "Revisar e confirmar"; sub = "Confira os itens realmente usados. Ao confirmar, a saída é registrada no estoque.";
-    const linhas = usados.map(x => { const pv = prevLotes(x.item_id, x.quantidade); return { x, pv }; });
+    titulo = "Revisar e confirmar"; sub = "Confira os itens, o lote de onde cada um saiu e as taxas. Ao confirmar, a saída é registrada no estoque.";
+    const linhas = usadosK.map(o => ({ ...o, pv: prevLotes(o.x) }));
     const faltas = linhas.filter(l => l.pv.falta > 0);
     corpo = `<div class="row3"><label class="f">Data<input type="date" id="pr_data" value="${esc(P.data)}"></label><label class="f">Início<input type="time" id="pr_hora_inicio" value="${esc(P.hora_inicio)}"></label><label class="f">Término<input type="time" id="pr_hora_fim" value="${esc(P.hora_fim || horaAgora())}"></label></div>
-      ${info.replace(/<div><small>Data<\/small>.*?<\/div><div><small>Horário<\/small>.*?<\/div>/, "")}
-      <div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Item usado</th><th>Sairá do lote</th><th class="r">Qtd.</th></tr></thead><tbody>
-      ${linhas.map(({ x, pv }) => `<tr><td><b>${esc(nomeItem(x.item_id))}</b><span class="sub">${esc(codItem(x.item_id))}</span></td><td>${pv.lotes.map(l => `${esc(l.lote || "s/n")} <span class="muted">(val. ${fData(l.validade)}${pv.lotes.length > 1 ? ", " + fNum(l.quantidade) : ""})</span>`).join("<br>") || "—"}${pv.falta > 0 ? `<br><span class="pill p-crit">faltam ${fNum(pv.falta)} em estoque</span>` : ""}</td><td class="r num"><b>${fNum(x.quantidade)}</b> <span class="muted">${esc(low((D.idx[x.item_id] || {}).unidade))}</span></td></tr>`).join("") || `<tr><td colspan="3"><div class="empty">Nenhum item marcado como usado.</div></td></tr>`}</tbody></table></div>
-      ${P.itens.length > usados.length ? `<p class="muted" style="margin:0">${P.itens.length - usados.length} ${P.itens.length - usados.length === 1 ? "item da lista não foi marcado e não sairá" : "itens da lista não foram marcados e não sairão"} do estoque.</p>` : ""}
-      ${faltas.length ? `<div class="note crit">Há itens sem saldo suficiente (sem contar lotes vencidos). Ajuste as quantidades ou dê entrada antes de confirmar.</div>` : `<div class="note info">A saída usa sempre o lote que vence primeiro. Depois de confirmado, o procedimento não pode mais ser alterado.</div>`}
+      <div class="dl"><div><small>Procedimento</small><b>${esc(P.nome || "—")}</b></div><div><small>Médico(s)</small><b>${esc(P.medicos || "—")}</b></div><div><small>Anestesista(s)</small><b>${esc(P.anestesistas || "—")}</b></div></div>
+      <div class="card-h" style="padding:6px 0 0"><h2>Materiais usados</h2></div>
+      <div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Material</th><th style="min-width:210px">Lote usado</th><th class="r">Qtd.</th>${adm ? '<th class="r hide-m">Valor</th>' : ""}</tr></thead><tbody>
+      ${linhas.map(({ x, k, pv }) => { const ls = lotesDoItem(x.item_id); const vu = valorItemProc(x);
+        return `<tr><td><b>${esc(nomeItem(x.item_id))}</b><span class="sub">${esc(codItem(x.item_id))}</span></td>
+        <td><select class="field" style="width:100%" data-prl="${k}"><option value="">Automático: vence primeiro${!x.lote_id && pv.lotes.length ? ` (${esc(pv.lotes.map(l => l.lote || "s/n").join(" + "))})` : ""}</option>
+          ${ls.map(l => { const venc = l.validade && diasAte(l.validade) < 0; return `<option value="${l.id}" ${x.lote_id === l.id ? "selected" : ""}>Lote ${esc(l.lote || "s/n")} · val. ${fData(l.validade)} · ${fNum(l.quantidade)} em estoque${venc ? " · VENCIDO" : ""}</option>`; }).join("")}</select>
+          ${pv.falta > 0 ? `<br><span class="pill p-crit">${pv.escolhido ? `este lote só tem ${fNum(pv.lotes[0] ? pv.lotes[0].quantidade : 0)}` : `faltam ${fNum(pv.falta)} em estoque`}</span>` : ""}${pv.vencido ? ' <span class="pill p-warn">lote vencido</span>' : ""}</td>
+        <td class="r num"><b>${fNum(x.quantidade)}</b> <span class="muted">${esc(low((D.idx[x.item_id] || {}).unidade))}</span></td>${adm ? `<td class="r num hide-m">${vu != null ? fBRL(vu * Number(x.quantidade)) : "—"}</td>` : ""}</tr>`; }).join("") || `<tr><td colspan="4"><div class="empty">Nenhum item marcado como usado.</div></td></tr>`}</tbody></table></div>
+      ${P.itens.length > usadosK.length ? `<p class="muted" style="margin:0">${P.itens.length - usadosK.length} ${P.itens.length - usadosK.length === 1 ? "item da lista não foi marcado e não sairá" : "itens da lista não foram marcados e não sairão"} do estoque.</p>` : ""}
+      ${extrasHTML(P, true)}
+      ${faltas.length ? `<div class="note crit">Há itens sem saldo suficiente no lote escolhido ou no estoque. Ajuste antes de confirmar.</div>` : `<div class="note info">Se nada for escolhido, a saída usa o lote que vence primeiro. Depois de confirmado, os materiais não podem mais ser alterados.</div>`}
       <div class="err" id="pr_err" role="alert"></div>`;
-    rodape = `<button class="btn" data-act="prEtapa" data-v="edit" style="margin-right:auto">${ic("back",16)}Voltar e ajustar</button><button class="btn pri" data-act="procConfirmar" ${!usados.length || faltas.length ? "disabled" : ""}>${ic("check",16,2.2)}Confirmar e dar saída</button>`;
+    rodape = `<button class="btn" data-act="prEtapa" data-v="edit" style="margin-right:auto">${ic("back",16)}Voltar e ajustar</button><button class="btn pri" data-act="procConfirmar" ${!usadosK.length || faltas.length ? "disabled" : ""}>${ic("check",16,2.2)}Confirmar e dar saída</button>`;
   } else {
     titulo = P.id ? "Procedimento em andamento" : "Novo procedimento"; sub = "Marque cada item conforme for usado. Tudo é salvo neste procedimento até a confirmação final.";
     const marcados = P.itens.filter(x => x.usado).length;
     corpo = `<label class="f">Lista padrão<select id="pr_lista"><option value="">Sem lista (adicionar itens manualmente)</option>${S.listas.slice().sort((a,b) => coll.compare(a.nome, b.nome)).map(l => `<option value="${l.id}" ${P.lista_id === l.id ? "selected" : ""}>${esc(l.nome)}</option>`).join("")}</select></label>
-      <label class="f">Nome do procedimento<input id="pr_nome" value="${esc(P.nome)}" placeholder="Ex.: Cistoscopia diagnóstica"></label>
-      <div class="row2"><label class="f">Médico(s)<input id="pr_medicos" value="${esc(P.medicos)}" placeholder="Separe por vírgula"></label><label class="f">Anestesista(s)<input id="pr_anestesistas" value="${esc(P.anestesistas)}" placeholder="Separe por vírgula"></label></div>
+      <div class="row2"><label class="f">Nome do procedimento<input id="pr_nome" value="${esc(P.nome)}" placeholder="Ex.: Cistoscopia diagnóstica"></label><label class="f">Código do procedimento <span class="muted" style="font-weight:400">(TUSS/CBHPM, opcional)</span><input id="pr_codigo_procedimento" value="${esc(P.codigo_procedimento)}" inputmode="numeric"></label></div>
+      <div class="row2"><label class="f">Médico(s) <span class="muted" style="font-weight:400">(nome e CRM)</span><input id="pr_medicos" value="${esc(P.medicos)}" placeholder="Ex.: Dr. João Silva CRM 12345"></label><label class="f">Anestesista(s) <span class="muted" style="font-weight:400">(nome e CRM)</span><input id="pr_anestesistas" value="${esc(P.anestesistas)}"></label></div>
       <div class="row3"><label class="f">Data<input type="date" id="pr_data" value="${esc(P.data)}"></label>
         <label class="f">Início<span class="tm"><input type="time" id="pr_hora_inicio" value="${esc(P.hora_inicio)}"><button class="btn sm" data-act="prAgora" data-k="hora_inicio">Agora</button></span></label>
         <label class="f">Término<span class="tm"><input type="time" id="pr_hora_fim" value="${esc(P.hora_fim)}"><button class="btn sm" data-act="prAgora" data-k="hora_fim">Agora</button></span></label></div>
@@ -1568,7 +1681,7 @@ function renderProc(manter){
           <label class="chk-box"><input type="checkbox" data-pr="${k}" data-prk="usado" ${x.usado ? "checked" : ""}><span><b>${esc(nomeItem(x.item_id))}</b><small>${esc(i.codigo || "")}${x.da_lista ? "" : " · fora da lista"} · em estoque: ${fNum(i.saldo)}</small></span></label>
           <input class="field num" type="number" min="0" step="any" data-pr="${k}" data-prk="quantidade" value="${esc(x.quantidade)}" aria-label="Quantidade"><span class="muted" style="font-size:12px;min-width:44px">${esc(low(i.unidade))}</span>
           <button class="iconbtn" style="width:32px;height:32px" data-act="prDel" data-k="${k}" aria-label="Remover">${ic("x",14)}</button></div>`; }).join("") || `<div class="empty">Escolha uma lista padrão ou adicione itens abaixo.</div>`}</div>
-      <label class="f">Adicionar outro item usado<input id="pr_busca" value="${esc(P.busca)}" placeholder="Digite nome ou código" autocomplete="off"></label><div class="plist" id="pr_res" style="max-height:200px">${resBusca("pr", P.busca)}</div>
+      <label class="f">Adicionar outro item usado<input id="pr_busca" value="${esc(P.busca)}" placeholder="Digite nome ou código" autocomplete="off"></label><div class="plist" id="pr_res" style="max-height:220px">${resBusca("pr", P.busca)}</div>
       <label class="f">Observações (opcional)<input id="pr_observacoes" value="${esc(P.observacoes)}"></label>
       <div class="err" id="pr_err" role="alert"></div>`;
     rodape = `${P.id ? `<button class="btn danger" data-act="procCancelar" style="margin-right:auto">Cancelar procedimento</button>` : ""}<button class="btn" data-act="procSalvarFechar">Salvar e fechar</button><button class="btn pri" data-act="prEtapa" data-v="revisao">Finalizar e revisar ${ic("check",16,2.2)}</button>`;
@@ -1576,53 +1689,215 @@ function renderProc(manter){
   abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead(titulo, sub)}<div class="m-b">${corpo}</div><div class="m-f">${rodape}</div></div>`);
   if(sc) $("#modal .modal").scrollTop = sc;
 }
-const dadosProc = (P = PR) => ({ id: P.id, lista_id: P.lista_id || "", nome: P.nome.trim(), medicos: P.medicos, anestesistas: P.anestesistas, data: P.data, hora_inicio: P.hora_inicio, hora_fim: P.hora_fim, observacoes: P.observacoes,
-  itens: P.itens.map(x => ({ item_id: x.item_id, quantidade: Number(x.quantidade) || 0, usado: !!x.usado, da_lista: !!x.da_lista })) });
+const dadosProc = (P = PR) => ({ id: P.id, lista_id: P.lista_id || "", nome: P.nome.trim(), codigo_procedimento: P.codigo_procedimento, medicos: P.medicos, anestesistas: P.anestesistas, data: P.data, hora_inicio: P.hora_inicio, hora_fim: P.hora_fim, observacoes: P.observacoes,
+  extras: P.extras.filter(e => String(e.descricao).trim()).map(e => ({ descricao: String(e.descricao).trim(), quantidade: Number(e.quantidade) || 1, valor: e.valor === "" ? null : Number(e.valor) })),
+  itens: P.itens.map(x => ({ item_id: x.item_id, quantidade: Number(x.quantidade) || 0, usado: !!x.usado, da_lista: !!x.da_lista, lote_id: x.lote_id || "" })) });
 async function salvarProc(silencioso){
   prCampos(); if(!PR.nome.trim()){ if(!silencioso){ const e = $("#pr_err"); if(e) e.textContent = "Informe o nome do procedimento."; } return false; }
   const P = PR; while(P._salvando) await P._salvando;
   P._salvando = API.salvarProc(dadosProc(P)).then(r => { if(r && r.id) P.id = r.id; }).finally(() => { P._salvando = null; });
   await P._salvando; return true;
 }
-function autoSalvarProc(){ clearTimeout(prTimer); prTimer = setTimeout(async () => { if(!PR || PR.etapa !== "edit" || !PR.nome.trim()) return; try { await salvarProc(true); } catch(e){ toast("Não consegui salvar automaticamente: " + e.message, true); } }, 700); }
+function autoSalvarProc(){ clearTimeout(prTimer); prTimer = setTimeout(async () => { if(!PR || PR.etapa === "ver" || !PR.nome.trim()) return; try { await salvarProc(true); } catch(e){ toast("Não consegui salvar automaticamente: " + e.message, true); } }, 700); }
 async function confirmarProc(btn){
   prCampos(); if(!PR.hora_fim){ $("#pr_err").textContent = "Informe o horário de término."; return; }
   btn.disabled = true; btn.innerHTML = "Confirmando…";
   try {
-    await salvarProc(); await API.confirmarProc(PR.id); const id = PR.id;
-    await carregar(); fechar(); PR = null; render();
-    abrir(`<div class="modal" role="dialog" aria-modal="true">${mHead("Procedimento confirmado", "A saída dos materiais foi registrada no estoque.")}<div class="m-b"><div class="note info">Você pode imprimir a lista agora ou depois, em Cirurgias → Histórico.</div></div>
-      <div class="m-f"><button class="btn" data-act="fechar">Fechar</button><button class="btn pri" data-act="procImprimir" data-id="${id}">${ic("sheet",16)}Imprimir lista</button></div></div>`);
+    clearTimeout(prTimer); await salvarProc(); await API.confirmarProc(PR.id); const id = PR.id;
+    await carregar(); fechar(); render();
+    abrir(`<div class="modal" role="dialog" aria-modal="true">${mHead("Procedimento confirmado", "A saída dos materiais foi registrada no estoque.")}<div class="m-b"><div class="note info">${isAdmin() ? "Você pode abrir o documento agora ou depois, em Cirurgias → Histórico." : "O administrador pode gerar o documento deste procedimento em Cirurgias → Histórico."}</div></div>
+      <div class="m-f"><button class="btn" data-act="fechar">Fechar</button>${isAdmin() ? `<button class="btn pri" data-act="procVer" data-id="${id}">${ic("sheet",16)}Preparar documento</button>` : ""}</div></div>`);
   } catch(e){ $("#pr_err").textContent = e.message; btn.disabled = false; btn.innerHTML = "Confirmar e dar saída"; }
 }
-function imprimirProc(id){
-  const p = S.procs.find(x => x.id === id); if(!p) return toast("Procedimento não encontrado.", true);
-  const logo = new URL("img/logo.png", location.href).href; const us = p.itens.filter(x => x.usado && Number(x.quantidade) > 0);
-  const linhas = us.map((x, k) => { const i = D.idx[x.item_id] || {}; const ls = x.lotes_usados || [];
-    return `<tr><td>${k + 1}</td><td>${esc(i.codigo || "")}</td><td>${esc(nomeItem(x.item_id))}</td><td>${ls.map(l => esc(l.lote || "s/n")).join("<br>") || "—"}</td><td>${ls.map(l => fData(l.validade)).join("<br>") || "—"}</td><td class="r">${fNum(x.quantidade)}</td><td>${esc(low(i.unidade))}</td></tr>`; }).join("");
-  const html = `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(p.nome)} · ${fData(p.data)}</title><style>
-    *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#1F2A44;margin:28px;font-size:12.5px}
-    .top{display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid #C1982F;padding-bottom:12px;margin-bottom:16px}
-    .top img{height:70px}.top h1{font-size:17px;margin:0;color:#263B65;text-align:right}.top p{margin:4px 0 0;color:#6F7688;text-align:right}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;margin-bottom:14px}.grid div{border-bottom:1px solid #E9E4DA;padding:5px 0}.grid b{color:#263B65}
-    .pac{border:1.5px solid #263B65;border-radius:6px;padding:14px 12px;margin:10px 0 16px;font-size:14px}.pac span{display:inline-block;border-bottom:1px solid #1F2A44;width:72%;margin-left:6px}
-    table{width:100%;border-collapse:collapse;margin-top:6px}th{background:#E9EDF5;color:#263B65;text-align:left;padding:7px;font-size:11.5px;border:1px solid #CCD3E2}td{padding:7px;border:1px solid #DDD;vertical-align:top}.r{text-align:right}
-    .ass{display:flex;gap:40px;margin-top:46px}.ass div{flex:1;border-top:1px solid #1F2A44;padding-top:5px;text-align:center;color:#6F7688}
-    .rod{margin-top:22px;color:#6F7688;font-size:11px}@media print{body{margin:12mm}button{display:none}}
+const dadosAdminProc = () => { prCampos(); const valores = {}; PR.itens.forEach(x => { if(x.pid && x.usado) valores[x.pid] = x.valor_unit == null || x.valor_unit === "" ? "" : String(x.valor_unit); });
+  return { nome: PR.nome, codigo_procedimento: PR.codigo_procedimento, medicos: PR.medicos, anestesistas: PR.anestesistas, data: PR.data, hora_inicio: PR.hora_inicio, hora_fim: PR.hora_fim, observacoes: PR.observacoes,
+    paciente_nome: PR.paciente_nome, paciente_cpf: PR.paciente_cpf, paciente_convenio: PR.paciente_convenio, paciente_carteirinha: PR.paciente_carteirinha, extras: dadosProc().extras, valores }; };
+async function salvarAdminProc(reabrir = true){ const id = PR.id; await API.editarProcAdmin(id, dadosAdminProc()); await carregar(); render(); if(reabrir) abrirProc(id); return id; }
+async function salvarValoresProc(btn){
+  const valores = {}; PR.itens.forEach(x => { if(x.pid && x.usado) valores[x.pid] = x.valor_unit == null || x.valor_unit === "" ? "" : String(x.valor_unit); });
+  btn.disabled = true;
+  try { await API.salvarExtras(PR.id, dadosProc().extras, valores); const id = PR.id; await carregar(); render(); abrirProc(id); toast("Valores e taxas salvos."); }
+  catch(e){ $("#pr_err").textContent = e.message; btn.disabled = false; }
+}
+
+/* ---- documento do procedimento (reembolso) ---- */
+function dadosDocumento(p){
+  const us = p.itens.filter(x => x.usado && Number(x.quantidade) > 0);
+  const itens = us.map((x, k) => { const i = D.idx[x.item_id] || {}; const ls = x.lotes_usados || []; const vu = x.valor_unit != null ? Number(x.valor_unit) : null;
+    return { n: k + 1, codigo: i.codigo || "", material: nomeItem(x.item_id), lote: ls.map(l => l.lote || "s/n").join(" / ") || "—", validade: ls.map(l => fData(l.validade)).join(" / ") || "—",
+      qtd: Number(x.quantidade), unidade: low(i.unidade), vu, sub: vu != null ? vu * Number(x.quantidade) : null }; });
+  const extras = (p.extras || []).filter(e => String(e.descricao || "").trim()).map(e => ({ descricao: e.descricao, qtd: Number(e.quantidade) || 1, vu: e.valor != null && e.valor !== "" ? Number(e.valor) : null, sub: e.valor != null && e.valor !== "" ? Number(e.valor) * (Number(e.quantidade) || 1) : null }));
+  const totMat = itens.reduce((a, x) => a + (x.sub || 0), 0), totTax = extras.reduce((a, x) => a + (x.sub || 0), 0);
+  return { titulo: "Demonstrativo de materiais, medicamentos e taxas", clinica: CLINICA_INFO, logo: new URL("img/logo.png", location.href).href,
+    procedimento: p.nome, codigo: p.codigo_procedimento || "", local: CLINICA_INFO.nome, data: fData(p.data), horario: `início ${hhmm(p.hora_inicio)} · término ${hhmm(p.hora_fim)}`,
+    medicos: p.medicos || "—", anestesistas: p.anestesistas || "—",
+    paciente: { nome: p.paciente_nome || "", cpf: p.paciente_cpf || "", convenio: p.paciente_convenio || "", carteirinha: p.paciente_carteirinha || "" }, conferido: p.confirmado_por_nome || "—", confirmadoEm: fDH(p.confirmado_em), emitidoEm: fDH(new Date().toISOString()),
+    itens, extras, totMat, totTax, total: totMat + totTax, observacoes: p.observacoes || "",
+    arquivo: `procedimento-${String(p.data).slice(0, 10)}-${norm(p.nome).replace(/[^a-z0-9]+/g, "-").slice(0, 40)}.pdf` };
+}
+const brl = n => n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+function htmlDocumento(d){
+  const e = esc;
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${e(d.procedimento)} · ${e(d.data)}</title><style>
+  *{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#1F2A44;margin:0;background:#EEF0F4;font-size:12.5px}
+  .bar{position:sticky;top:0;z-index:5;display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px 12px;background:#263B65;color:#fff;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+  .bar b{flex:1;min-width:140px;font-size:13px}.bar button{border:0;border-radius:10px;padding:10px 14px;font:600 14px Arial,Helvetica,sans-serif;cursor:pointer;background:#fff;color:#263B65}
+  .bar button.pri{background:#C1982F;color:#fff}.msg{padding:8px 12px;background:#FDF2DE;color:#8A5A08;display:none}
+  .folha{background:#fff;max-width:820px;margin:16px auto;padding:30px 34px;box-shadow:0 2px 14px rgba(0,0,0,.08)}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:2px solid #C1982F;padding-bottom:12px;margin-bottom:14px}.top img{height:66px}
+  .top h1{font-size:16px;margin:0;color:#263B65;text-align:right}.top p{margin:4px 0 0;color:#6F7688;text-align:right;font-size:11.5px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 22px;margin-bottom:12px}.grid div{border-bottom:1px solid #E9E4DA;padding:5px 0}.grid b{color:#263B65}.full{grid-column:1/-1}
+  .pac{border:1.5px solid #263B65;border-radius:6px;padding:10px 12px;margin:8px 0 14px;display:grid;gap:10px}.pac div{display:flex;gap:6px;align-items:flex-end}.pac span{flex:1;border-bottom:1px solid #1F2A44;min-height:16px;padding:0 2px}
+  h2{font-size:13px;color:#263B65;margin:14px 0 6px}table{width:100%;border-collapse:collapse}th{background:#E9EDF5;color:#263B65;text-align:left;padding:6px;font-size:11px;border:1px solid #CCD3E2}td{padding:6px;border:1px solid #DDD;vertical-align:top}.r{text-align:right;white-space:nowrap}
+  .tot{margin-top:10px;margin-left:auto;width:min(320px,100%)}.tot td{border:0;border-bottom:1px solid #E9E4DA}.tot tr:last-child td{font-size:14px;font-weight:bold;color:#263B65;border-bottom:2px solid #C1982F}
+  .decl{margin-top:16px;font-size:12px}.ass{display:flex;gap:36px;margin-top:44px}.ass div{flex:1;border-top:1px solid #1F2A44;padding-top:5px;text-align:center;color:#6F7688;font-size:11.5px}
+  .rod{margin-top:22px;border-top:1px solid #E9E4DA;padding-top:8px;color:#6F7688;font-size:10.5px;text-align:center;line-height:1.5}
+  @media(max-width:600px){.folha{margin:0;padding:18px 14px}.grid{grid-template-columns:1fr}.top img{height:48px}}
+  @media print{body{background:#fff}.bar,.msg{display:none!important}.folha{box-shadow:none;margin:0;max-width:none;padding:0}@page{margin:12mm}}
   </style></head><body>
-  <div class="top"><img src="${logo}" alt="UROtherap"><div><h1>Registro de materiais utilizados</h1><p>${esc(CLINICA)}</p></div></div>
-  <div class="grid"><div><b>Procedimento:</b> ${esc(p.nome)}</div><div><b>Data:</b> ${fData(p.data)}</div>
-    <div><b>Médico(s):</b> ${esc(p.medicos || "—")}</div><div><b>Horário:</b> início ${hhmm(p.hora_inicio)} · término ${hhmm(p.hora_fim)}</div>
-    <div><b>Anestesista(s):</b> ${esc(p.anestesistas || "—")}</div><div><b>Conferido por:</b> ${esc(p.confirmado_por_nome || "—")}</div></div>
-  <div class="pac"><b>Nome do paciente:</b><span>&nbsp;</span></div>
-  <table><thead><tr><th>#</th><th>Código</th><th>Material</th><th>Lote</th><th>Validade</th><th class="r">Qtd.</th><th>Unid.</th></tr></thead><tbody>${linhas || '<tr><td colspan="7">Nenhum item.</td></tr>'}</tbody></table>
-  ${p.observacoes ? `<p><b>Observações:</b> ${esc(p.observacoes)}</p>` : ""}
-  <div class="ass"><div>Responsável pela conferência</div><div>Médico responsável</div></div>
-  <div class="rod">Confirmado no sistema em ${fDH(p.confirmado_em)} · ${us.length} ${us.length === 1 ? "item" : "itens"}</div>
-  <script>window.onload=function(){setTimeout(function(){window.print()},300)}<\/script></body></html>`;
+  <div class="bar"><b>Documento do procedimento</b><button class="pri" onclick="window.print()">🖨 Imprimir</button><button id="bpdf">⬇ Baixar PDF</button><button onclick="voltar()">← Voltar ao app</button></div>
+  <div class="msg" id="msg"></div>
+  <div class="folha">
+  <div class="top"><img src="${e(d.logo)}" alt="UROtherap"><div><h1>${e(d.titulo)}</h1><p>Emitido em ${e(d.emitidoEm)}</p></div></div>
+  <div class="grid"><div class="full"><b>Procedimento:</b> ${e(d.procedimento)}${d.codigo ? ` · <b>Código:</b> ${e(d.codigo)}` : ""}</div>
+    <div class="full"><b>Local:</b> ${e(d.local)}</div>
+    <div><b>Data:</b> ${e(d.data)}</div><div><b>Horário:</b> ${e(d.horario)}</div>
+    <div><b>Médico(s):</b> ${e(d.medicos)}</div><div><b>Anestesista(s):</b> ${e(d.anestesistas)}</div></div>
+  <div class="pac"><div><b>Nome do paciente:</b><span>${e(d.paciente.nome)}</span></div><div><b>CPF:</b><span>${e(d.paciente.cpf)}</span><b>Convênio / nº da carteirinha:</b><span>${e([d.paciente.convenio, d.paciente.carteirinha].filter(Boolean).join(" · "))}</span></div></div>
+  <h2>Materiais e medicamentos utilizados</h2>
+  <table><thead><tr><th>#</th><th>Código</th><th>Material</th><th>Lote</th><th>Validade</th><th class="r">Qtd.</th><th class="r">Valor unit.</th><th class="r">Subtotal</th></tr></thead><tbody>
+  ${d.itens.map(x => `<tr><td>${x.n}</td><td>${e(x.codigo)}</td><td>${e(x.material)}</td><td>${e(x.lote)}</td><td>${e(x.validade)}</td><td class="r">${e(fNum(x.qtd))} ${e(x.unidade)}</td><td class="r">${brl(x.vu)}</td><td class="r">${brl(x.sub)}</td></tr>`).join("") || '<tr><td colspan="8">Nenhum material.</td></tr>'}</tbody></table>
+  ${d.extras.length ? `<h2>Taxas e outros procedimentos</h2><table><thead><tr><th>Descrição</th><th class="r">Qtd.</th><th class="r">Valor unit.</th><th class="r">Subtotal</th></tr></thead><tbody>${d.extras.map(x => `<tr><td>${e(x.descricao)}</td><td class="r">${e(fNum(x.qtd))}</td><td class="r">${brl(x.vu)}</td><td class="r">${brl(x.sub)}</td></tr>`).join("")}</tbody></table>` : ""}
+  <table class="tot"><tr><td>Materiais e medicamentos</td><td class="r">${brl(d.totMat)}</td></tr>${d.extras.length ? `<tr><td>Taxas e outros</td><td class="r">${brl(d.totTax)}</td></tr>` : ""}<tr><td>TOTAL</td><td class="r">${brl(d.total)}</td></tr></table>
+  ${d.observacoes ? `<p><b>Observações:</b> ${e(d.observacoes)}</p>` : ""}
+  <p class="decl">Declaramos, para fins de reembolso, que os materiais, medicamentos e taxas acima foram utilizados no procedimento descrito.</p>
+  <div class="ass"><div>Médico responsável<br>(assinatura, carimbo e CRM)</div><div>${e(d.clinica.nome.split(" - ")[0])}<br>(assinatura e carimbo)</div></div>
+  <div class="rod">${e(d.clinica.nome)}${d.clinica.cnpj ? ` · CNPJ ${e(d.clinica.cnpj)}` : ""}<br>${e(d.clinica.endereco)} · ${e(d.clinica.telefone)}<br>Conferido no sistema por ${e(d.conferido)} em ${e(d.confirmadoEm)}</div>
+  </div>
+  <script src="${e(new URL("vendor/pdflib/pdf-lib.min.js", location.href).href)}"><\/script>
+  <script>
+  var DADOS = ${JSON.stringify(d).replace(/</g, "\\u003c")};
+  ${pdfDocumento.toString()}
+  function voltar(){ try { window.close(); } catch(e){} setTimeout(function(){ var m = document.getElementById("msg"); m.style.display = "block"; m.textContent = "Se esta aba não fechar sozinha, volte para a aba do app (o app continua aberto)."; }, 300); }
+  document.getElementById("bpdf").onclick = async function(){
+    var b = this; b.disabled = true; b.textContent = "Gerando…";
+    try { var bytes = await pdfDocumento(DADOS, window.PDFLib); var blob = new Blob([bytes], { type: "application/pdf" }); var url = URL.createObjectURL(blob);
+      var a = document.createElement("a"); a.href = url; a.download = DADOS.arquivo; document.body.appendChild(a); a.click(); setTimeout(function(){ a.remove(); }, 1000);
+    } catch(err){ var m = document.getElementById("msg"); m.style.display = "block"; m.textContent = "Não consegui gerar o PDF (" + err.message + "). Use Imprimir > Salvar como PDF."; }
+    b.disabled = false; b.textContent = "⬇ Baixar PDF";
+  };
+  <\/script></body></html>`;
+}
+/* Gera o PDF (A4) sem depender do app: roda dentro da aba do documento */
+async function pdfDocumento(d, L){
+  var doc = await L.PDFDocument.create(); doc.setTitle(d.procedimento + " - " + d.data); doc.setAuthor(d.clinica.nome);
+  var F = await doc.embedFont(L.StandardFonts.Helvetica), B = await doc.embedFont(L.StandardFonts.HelveticaBold);
+  var azul = L.rgb(0.149, 0.231, 0.396), ouro = L.rgb(0.757, 0.596, 0.184), cinza = L.rgb(0.43, 0.46, 0.53), tinta = L.rgb(0.12, 0.16, 0.27), claro = L.rgb(0.91, 0.93, 0.96), linha = L.rgb(0.82, 0.84, 0.88);
+  var logo = null; try { var lb = await (await fetch(d.logo)).arrayBuffer(); logo = await doc.embedPng(lb); } catch(e){}
+  var W = 595.28, H = 841.89, M = 40, page, y;
+  var limpa = function(s){ return String(s == null ? "" : s).replace(/[^\x20-\x7E\xA0-\xFF–—‘’“”•…€·]/g, ""); };
+  var brl = function(n){ return n == null ? "—" : Number(n).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }).replace(/ /g, " "); };
+  var num = function(n){ return Number(n || 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 }); };
+  var txt = function(s, x, yy, o){ o = o || {}; var f = o.bold ? B : F, sz = o.size || 9; s = limpa(s); var w = f.widthOfTextAtSize(s, sz); var xx = o.align === "right" ? x - w : o.align === "center" ? x - w / 2 : x; page.drawText(s, { x: xx, y: yy, size: sz, font: f, color: o.color || tinta }); return w; };
+  var quebra = function(s, f, sz, larg){ s = limpa(s); var ps = s.split(/\s+/), ls = [], at = ""; ps.forEach(function(p){ var t = at ? at + " " + p : p; if(f.widthOfTextAtSize(t, sz) <= larg) at = t; else { if(at) ls.push(at); at = p; while(f.widthOfTextAtSize(at, sz) > larg && at.length > 1){ var k = at.length; while(k > 1 && f.widthOfTextAtSize(at.slice(0, k), sz) > larg) k--; ls.push(at.slice(0, k)); at = at.slice(k); } } }); if(at) ls.push(at); return ls.length ? ls : [""]; };
+  var rodape = function(){ page.drawLine({ start: { x: M, y: 46 }, end: { x: W - M, y: 46 }, thickness: 0.6, color: linha });
+    txt(d.clinica.nome + (d.clinica.cnpj ? " · CNPJ " + d.clinica.cnpj : ""), W / 2, 34, { size: 7.5, color: cinza, align: "center" });
+    txt(d.clinica.endereco + " · " + d.clinica.telefone, W / 2, 24, { size: 7.5, color: cinza, align: "center" }); };
+  var novaPagina = function(){ page = doc.addPage([W, H]); y = H - M; rodape(); };
+  var precisa = function(h){ if(y - h < 62){ novaPagina(); return true; } return false; };
+  novaPagina();
+  if(logo){ var lh = 50, lw = logo.width * lh / logo.height; page.drawImage(logo, { x: M, y: y - lh, width: lw, height: lh }); }
+  txt(d.titulo, W - M, y - 18, { size: 12, bold: true, color: azul, align: "right" }); txt("Emitido em " + d.emitidoEm, W - M, y - 32, { size: 8, color: cinza, align: "right" });
+  y -= 60; page.drawLine({ start: { x: M, y: y }, end: { x: W - M, y: y }, thickness: 1.5, color: ouro }); y -= 16;
+  var campo = function(rot, val, x, larg){ var w = txt(rot + " ", x, y, { bold: true, color: azul }); var ls = quebra(val, F, 9, larg - w); txt(ls[0], x + w, y); for(var i = 1; i < ls.length; i++){ y -= 11; txt(ls[i], x + w, y); } };
+  campo("Procedimento:", d.procedimento + (d.codigo ? "   (código " + d.codigo + ")" : ""), M, W - 2 * M); y -= 14;
+  campo("Local:", d.local, M, W - 2 * M); y -= 14;
+  var meio = M + (W - 2 * M) / 2 + 8, y0 = y;
+  campo("Data:", d.data, M, (W - 2 * M) / 2); y = y0; campo("Horário:", d.horario, meio, (W - 2 * M) / 2 - 8); y -= 14; y0 = y;
+  campo("Médico(s):", d.medicos, M, (W - 2 * M) / 2 - 6); var ya = y; y = y0; campo("Anestesista(s):", d.anestesistas, meio, (W - 2 * M) / 2 - 8); y = Math.min(y, ya) - 14;
+  // paciente (preenchimento à mão)
+  page.drawRectangle({ x: M, y: y - 44, width: W - 2 * M, height: 52, borderColor: azul, borderWidth: 1 });
+  var pac = d.paciente || {};
+  var w1 = txt("Nome do paciente:", M + 8, y - 8, { bold: true, color: azul }); if(pac.nome) txt(pac.nome, M + 16 + w1, y - 8); page.drawLine({ start: { x: M + 14 + w1, y: y - 10 }, end: { x: W - M - 8, y: y - 10 }, thickness: 0.6, color: tinta });
+  var w2 = txt("CPF:", M + 8, y - 32, { bold: true, color: azul }); if(pac.cpf) txt(pac.cpf, M + 16 + w2, y - 32); page.drawLine({ start: { x: M + 14 + w2, y: y - 34 }, end: { x: M + 190, y: y - 34 }, thickness: 0.6, color: tinta });
+  var w3 = txt("Convênio / nº da carteirinha:", M + 200, y - 32, { bold: true, color: azul }); var cv = [pac.convenio, pac.carteirinha].filter(Boolean).join(" · "); if(cv) txt(cv, M + 208 + w3, y - 32, { size: 8.5 }); page.drawLine({ start: { x: M + 206 + w3, y: y - 34 }, end: { x: W - M - 8, y: y - 34 }, thickness: 0.6, color: tinta });
+  y -= 64;
+  var tabela = function(titulo, cols, linhas){
+    precisa(40); txt(titulo, M, y, { bold: true, size: 10, color: azul }); y -= 8;
+    var cab = function(){ page.drawRectangle({ x: M, y: y - 14, width: W - 2 * M, height: 14, color: claro }); var x = M; cols.forEach(function(c){ txt(c.t, c.r ? x + c.w - 4 : x + 4, y - 10, { bold: true, size: 7.5, color: azul, align: c.r ? "right" : "left" }); x += c.w; }); y -= 14; };
+    cab();
+    linhas.forEach(function(ln){ var partes = cols.map(function(c, i){ return quebra(ln[i], F, 8, c.w - 8); }); var h = Math.max.apply(null, partes.map(function(p){ return p.length; })) * 10 + 6;
+      if(precisa(h)) cab();
+      var x = M; cols.forEach(function(c, i){ partes[i].forEach(function(t, j){ txt(t, c.r ? x + c.w - 4 : x + 4, y - 10 - j * 10, { size: 8, align: c.r ? "right" : "left" }); }); x += c.w; });
+      y -= h; page.drawLine({ start: { x: M, y: y }, end: { x: W - M, y: y }, thickness: 0.4, color: linha }); });
+    y -= 12;
+  };
+  var T = W - 2 * M;
+  tabela("Materiais e medicamentos utilizados", [{ t: "#", w: 18 }, { t: "Código", w: 98 }, { t: "Material", w: T - 18 - 98 - 62 - 52 - 50 - 58 - 62 }, { t: "Lote", w: 62 }, { t: "Validade", w: 52 }, { t: "Qtd.", w: 50, r: 1 }, { t: "Valor unit.", w: 58, r: 1 }, { t: "Subtotal", w: 62, r: 1 }],
+    d.itens.map(function(x){ return [x.n, x.codigo, x.material, x.lote, x.validade, num(x.qtd) + " " + x.unidade, brl(x.vu), brl(x.sub)]; }));
+  if(d.extras.length) tabela("Taxas e outros procedimentos", [{ t: "Descrição", w: T - 50 - 70 - 70 }, { t: "Qtd.", w: 50, r: 1 }, { t: "Valor unit.", w: 70, r: 1 }, { t: "Subtotal", w: 70, r: 1 }],
+    d.extras.map(function(x){ return [x.descricao, num(x.qtd), brl(x.vu), brl(x.sub)]; }));
+  precisa(70); var xr = W - M, xl = W - M - 230;
+  var tot = function(r, v, forte){ txt(r, xl, y, { bold: !!forte, size: forte ? 11 : 9, color: forte ? azul : tinta }); txt(v, xr, y, { bold: !!forte, size: forte ? 11 : 9, color: forte ? azul : tinta, align: "right" }); y -= 6; page.drawLine({ start: { x: xl, y: y }, end: { x: xr, y: y }, thickness: forte ? 1.4 : 0.4, color: forte ? ouro : linha }); y -= 12; };
+  tot("Materiais e medicamentos", brl(d.totMat)); if(d.extras.length) tot("Taxas e outros", brl(d.totTax)); tot("TOTAL", brl(d.total), true);
+  if(d.observacoes){ precisa(30); campo("Observações:", d.observacoes, M, T); y -= 16; }
+  precisa(110); y -= 4; quebra("Declaramos, para fins de reembolso, que os materiais, medicamentos e taxas acima foram utilizados no procedimento descrito.", F, 9, T).forEach(function(l){ txt(l, M, y); y -= 12; });
+  y -= 44; var aw = (T - 30) / 2;
+  page.drawLine({ start: { x: M, y: y }, end: { x: M + aw, y: y }, thickness: 0.7, color: tinta }); page.drawLine({ start: { x: M + aw + 30, y: y }, end: { x: W - M, y: y }, thickness: 0.7, color: tinta });
+  txt("Médico responsável (assinatura, carimbo e CRM)", M + aw / 2, y - 11, { size: 8, color: cinza, align: "center" }); txt(d.clinica.nome.split(" - ")[0] + " (assinatura e carimbo)", M + aw + 30 + aw / 2, y - 11, { size: 8, color: cinza, align: "center" });
+  y -= 28; txt("Conferido no sistema por " + d.conferido + " em " + d.confirmadoEm, M, y, { size: 7.5, color: cinza });
+  var pgs = doc.getPages(); pgs.forEach(function(pg, i){ pg.drawText("Página " + (i + 1) + " de " + pgs.length, { x: W - M - 60, y: 14, size: 7, font: F, color: cinza }); });
+  return await doc.save();
+}
+function abrirDocumento(id, antes){
+  if(!isAdmin()) return toast("Apenas o administrador pode gerar este documento.", true);
   const w = window.open("", "_blank");
-  if(!w){ toast("O navegador bloqueou a janela de impressão. Permita pop-ups para este site.", true); return; }
-  w.document.open(); w.document.write(html); w.document.close();
+  if(!w){ toast("O navegador bloqueou a nova aba. Permita pop-ups para este site.", true); return; }
+  w.document.write('<p style="font-family:Arial;padding:24px;color:#263B65">Preparando o documento…</p>');
+  (async () => {
+    try { if(antes) await antes(); } catch(e){ w.close(); const el = $("#pr_err"); if(el) el.textContent = e.message; else toast(e.message, true); return; }
+    const p = S.procs.find(x => x.id === id); if(!p){ w.close(); toast("Procedimento não encontrado.", true); return; }
+    w.document.open(); w.document.write(htmlDocumento(dadosDocumento(p))); w.document.close();
+  })();
+}
+
+/* ---- cadastro rápido de item (a partir da lista ou do procedimento) ---- */
+let QC = null;
+function abrirCadastroRapido(volta, nome){
+  if(volta === "le") leCampos(); else if(volta === "pr" || volta === "pa") prCampos();
+  QC = { volta, nome: String(nome || "").toUpperCase(), categoria: D.cats.find(c => norm(c).startsWith("material")) || D.cats[0] || "", local: D.locais.find(c => norm(c) === "almoxarifado") || D.locais[0] || "", unidade: "UNIDADE" };
+  const v = QC; const dl = (id, xs) => `<datalist id="${id}">${xs.map(c => `<option value="${esc(c)}">`).join("")}</datalist>`;
+  abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead("Cadastrar item novo no estoque", `Depois de salvar, você volta para ${volta === "le" ? "a lista" : "o procedimento"} com o item já adicionado`)}<div class="m-b">
+    <div class="row2"><label class="f">Nome curto<input id="qc_nome" value="${esc(v.nome)}" autofocus></label><label class="f">Código interno<span class="tm"><input id="qc_codigo" list="qc_cods" style="text-transform:uppercase" autocomplete="off"><button class="btn sm" data-act="qcSugCod">Sugerir</button></span></label></div>
+    <label class="f">Descrição completa (opcional)<input id="qc_descricao"></label>
+    <div class="row3"><label class="f">Categoria<input id="qc_categoria" list="qc_cats" value="${esc(v.categoria)}"></label><label class="f">Unidade<input id="qc_unidade" value="${esc(v.unidade)}"></label><label class="f">Local<input id="qc_local" list="qc_locs" value="${esc(v.local)}"></label></div>
+    <div class="row3"><label class="f">Fornecedor<input id="qc_fornecedor"></label><label class="f">Cód. fornecedor<input id="qc_cod_fornecedor"></label><label class="f">Custo unitário (R$)<input id="qc_custo" type="number" min="0" step="any"></label></div>
+    <div class="row2"><label class="f">Preço para cobrança (R$)<input id="qc_preco" type="number" min="0" step="0.01" placeholder="vazio = custo + ${margemCobranca()}%"></label><label class="f">Estoque mínimo<input id="qc_minimo" type="number" min="0" step="any" placeholder="15"></label></div>
+    <div class="card-h" style="padding:6px 0 0"><h2>Dar entrada agora</h2><span class="muted" style="font-size:12px">opcional: se o produto já chegou</span></div>
+    <div class="row2"><label class="f">Quantidade<input id="qc_qtd" type="number" min="0" step="any" placeholder="0"></label><label class="f">Número do lote<input id="qc_lote"></label></div>
+    <div class="row2"><label class="f">Fabricação<input id="qc_fab" type="date"></label><label class="f">Validade<input id="qc_val" type="date"></label></div>
+    ${dl("qc_cods", [...new Set(D.itens.map(i => i.codigo).filter(Boolean))].sort())}${dl("qc_cats", D.cats)}${dl("qc_locs", D.locais)}
+    <div class="err" id="qc_err" role="alert"></div></div>
+    <div class="m-f"><button class="btn" data-act="qcVoltar">${ic("back",16)}Voltar sem cadastrar</button><button class="btn pri" data-act="qcSalvar">${ic("check",16,2.2)}Cadastrar e voltar</button></div></div>`);
+}
+function qcVoltar(){ const v = QC && QC.volta; QC = null; if(v === "le" && LE) renderLista(true); else if((v === "pr" || v === "pa") && PR) renderProc(true); else fechar(); }
+async function qcSalvar(btn){
+  const g = k => ($("#qc_" + k) || {}).value || ""; const err = $("#qc_err");
+  if(!g("nome").trim() || !g("categoria").trim()){ err.textContent = "Informe pelo menos o nome e a categoria."; return; }
+  const qtd = Number(g("qtd") || 0);
+  if(qtd > 0 && g("fab") && g("val") && g("val") < g("fab")){ err.textContent = "A validade não pode ser anterior à fabricação."; return; }
+  btn.disabled = true;
+  try {
+    const r = await API.salvarItem({ nome: g("nome").trim(), codigo: g("codigo").trim().toUpperCase(), descricao: g("descricao"), categoria: g("categoria").trim(), unidade: g("unidade"), local: g("local"),
+      fornecedor: g("fornecedor"), cod_fornecedor: g("cod_fornecedor"), custo_unit: g("custo"), preco_cobranca: g("preco"), estoque_minimo: g("minimo"), estoque_ideal: "", controlado: false, ativo: true });
+    const id = r.id;
+    if(qtd > 0) await API.movimentar({ tipo: "entrada", item_id: id, lote_id: null, quantidade: qtd, motivo: "Cadastro rápido", lote: g("lote"), fabricacao: g("fab"), validade: g("val"), origem: "sistema" });
+    await carregar(); const v = QC.volta; QC = null;
+    if(v === "le" && LE){ if(!LE.itens.some(x => x.item_id === id)) LE.itens.push({ item_id: id, quantidade: 1 }); LE.busca = ""; renderLista(true); }
+    else if(v === "pr" && PR){ PR.itens.push({ item_id: id, quantidade: 1, usado: true, da_lista: false, lote_id: "" }); PR.busca = ""; renderProc(true); autoSalvarProc(); }
+    else if(v === "pa" && PR){ PR.novo = { item_id: id, quantidade: 1, lote_id: "" }; PR.busca = ""; renderProc(true); }
+    toast(qtd > 0 ? "Item cadastrado e entrada registrada." : "Item cadastrado.");
+  } catch(e){ err.textContent = e.message; btn.disabled = false; }
 }
 
 /* ---- página "Mais" (celular) ---- */
@@ -1710,8 +1985,22 @@ const ACT = {
   listaExcluir: async (d, el) => { if(!LE.confExcluir){ LE.confExcluir = true; el.textContent = "Clique de novo para excluir"; return; }
     try { await API.excluirLista(LE.id); fechar(); await carregar(); render(); toast("Lista excluída."); } catch(e){ $("#le_err").textContent = e.message; } },
   procNovo: () => novoProc(null), procDaLista: (d) => { fechar(); S.f.aba = "proc"; novoProc(d.id); },
-  procAbrir: (d) => abrirProc(d.id), procVer: (d) => abrirProc(d.id), procImprimir: (d) => imprimirProc(d.id),
-  prAdd: (d) => { prCampos(); const ex = PR.itens.find(x => x.item_id === d.id); if(ex) ex.usado = true; else PR.itens.push({ item_id: d.id, quantidade: 1, usado: true, da_lista: false }); PR.busca = ""; renderProc(true); autoSalvarProc(); },
+  procAbrir: (d) => abrirProc(d.id), procVer: (d) => { fechar(); abrirProc(d.id); }, procImprimir: (d) => abrirDocumento(d.id), procDocumento: (d) => abrirDocumento(d.id, PR && PR.id === d.id && PR.etapa === "ver" && isAdmin() ? () => salvarAdminProc(false) : null),
+  procSalvarValores: (d, el) => salvarValoresProc(el),
+  salvarMargem: async (d, el) => { el.disabled = true; try { await API.salvarConfig("margem_cobranca", $("#cfg_margem").value.trim()); await carregar(); render(); toast("Margem salva: custo + " + margemCobranca() + "%."); } catch(e){ toast(e.message, true); el.disabled = false; } },
+  procSalvarAdmin: async (d, el) => { el.disabled = true; try { await salvarAdminProc(); toast("Alterações salvas."); } catch(e){ $("#pr_err").textContent = e.message; el.disabled = false; } },
+  paAdd: (d) => { prCampos(); PR.novo = { item_id: d.id, quantidade: 1, lote_id: "" }; PR.busca = ""; renderProc(true); },
+  paCancelar: () => { prCampos(); PR.novo = null; renderProc(true); },
+  paConfirmar: async (d, el) => { const n = PR.novo; if(!(Number(n.quantidade) > 0)){ $("#pr_err").textContent = "Informe a quantidade."; return; } el.disabled = true;
+    try { const id = PR.id; await API.editarProcAdmin(id, dadosAdminProc()); await API.adicionarItemProc(id, n.item_id, n.quantidade, n.lote_id); await carregar(); render(); abrirProc(id); toast("Material incluído e saída registrada."); }
+    catch(e){ $("#pr_err").textContent = e.message; el.disabled = false; } },
+  prRemover: async (d, el) => { const k = Number(d.k); prCampos(); if(PR.remover !== k){ PR.remover = k; renderProc(true); return; }
+    el.disabled = true; try { const id = PR.id; const pid = PR.itens[k].pid; await API.editarProcAdmin(id, dadosAdminProc()); await API.removerItemProc(id, pid); await carregar(); render(); abrirProc(id); toast("Material removido e devolvido ao estoque."); }
+    catch(e){ $("#pr_err").textContent = e.message; el.disabled = false; } },
+  prMaisExtra: () => { prCampos(); PR.extras.push({ descricao: "", quantidade: 1, valor: "" }); renderProc(true); },
+  qcNovo: (d) => abrirCadastroRapido(d.volta, d.v), qcVoltar: () => qcVoltar(), qcSalvar: (d, el) => qcSalvar(el),
+  qcSugCod: () => { $("#qc_codigo").value = sugerirCodigo($("#qc_nome").value, $("#qc_categoria").value); },
+  prAdd: (d) => { prCampos(); const ex = PR.itens.find(x => x.item_id === d.id); if(ex) ex.usado = true; else PR.itens.push({ item_id: d.id, quantidade: 1, usado: true, da_lista: false, lote_id: "" }); PR.busca = ""; renderProc(true); autoSalvarProc(); },
   prDel: (d) => { prCampos(); PR.itens.splice(Number(d.k), 1); renderProc(true); autoSalvarProc(); },
   prAgora: (d) => { prCampos(); PR[d.k] = horaAgora(); renderProc(true); autoSalvarProc(); },
   prEtapa: (d) => { prCampos(); if(d.v === "revisao"){ if(!PR.nome.trim()){ $("#pr_err").textContent = "Informe o nome do procedimento."; return; } if(!PR.itens.some(x => x.usado)){ $("#pr_err").textContent = "Marque os itens que foram usados."; return; } if(!PR.hora_fim) PR.hora_fim = horaAgora(); } PR.etapa = d.v; renderProc(); },
@@ -1746,12 +2035,18 @@ document.addEventListener("input", e => {
   const t = e.target;
   if(t.dataset.le !== undefined && LE){ const x = LE.itens[Number(t.dataset.le)]; if(x) x.quantidade = t.value; return; }
   if(t.id === "le_busca" && LE){ LE.busca = t.value; $("#le_res").innerHTML = resBusca("le", t.value); return; }
-  if(t.id === "pr_busca" && PR){ PR.busca = t.value; $("#pr_res").innerHTML = resBusca("pr", t.value); return; }
+  if(t.id === "pr_busca" && PR){ PR.busca = t.value; $("#pr_res").innerHTML = resBusca(PR.etapa === "ver" ? "pa" : "pr", t.value); return; }
   if(t.dataset.pr !== undefined && PR){ const x = PR.itens[Number(t.dataset.pr)]; if(!x) return; if(t.dataset.prk === "usado"){ prCampos(); x.usado = t.checked; renderProc(true); } else x.quantidade = t.value; autoSalvarProc(); return; }
   if(t.id === "pr_lista" && PR){ prCampos(); const l = S.listas.find(x => x.id === t.value); PR.lista_id = t.value;
     if(l){ const extras = PR.itens.filter(x => !x.da_lista); PR.itens = itensDaLista(l.id).map(x => ({ item_id: x.item_id, quantidade: x.quantidade, usado: false, da_lista: true })).concat(extras); if(!PR.nome.trim()) PR.nome = l.nome; }
     renderProc(true); autoSalvarProc(); return; }
-  if(PR && /^pr_(nome|medicos|anestesistas|data|hora_inicio|hora_fim|observacoes)$/.test(t.id)){ PR[t.id.slice(3)] = t.value; if(PR.etapa === "edit") autoSalvarProc(); return; }
+  if(t.dataset.prl !== undefined && PR){ const x = PR.itens[Number(t.dataset.prl)]; if(x){ x.lote_id = t.value; renderProc(true); autoSalvarProc(); } return; }
+  if(t.dataset.pre !== undefined && PR){ const e = PR.extras[Number(t.dataset.pre)]; if(e){ e[t.dataset.prek] = t.value; atualizarTotaisProc(); if(PR.etapa !== "ver") autoSalvarProc(); } return; }
+  if(t.dataset.prv !== undefined && PR){ const x = PR.itens[Number(t.dataset.prv)]; if(x){ x.valor_unit = t.value === "" ? null : t.value; atualizarTotaisProc(); } return; }
+  if(t.id === "pa_qtd" && PR && PR.novo){ PR.novo.quantidade = t.value; return; }
+  if(t.id === "pa_lote" && PR && PR.novo){ PR.novo.lote_id = t.value; return; }
+  if(t.id === "pr_paciente_cpf" && PR){ const d = t.value.replace(/\D/g, "").slice(0, 11); t.value = d.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2"); PR.paciente_cpf = t.value; return; }
+  if(PR && /^pr_(nome|codigo_procedimento|medicos|anestesistas|data|hora_inicio|hora_fim|observacoes|paciente_nome|paciente_convenio|paciente_carteirinha)$/.test(t.id)){ PR[t.id.slice(3)] = t.value; if(PR.etapa === "edit") autoSalvarProc(); return; }
   if(t.id === "e_codigo"){ infoCodigo(); return; }
   if(t.dataset.nf !== undefined && NF){ if(nfCampo(t)) renderNF(true); return; }
   if(t.dataset.f){ S.f[t.dataset.f] = t.value; const el = $("#lista"); if(el && PARTS[S.rota]) el.innerHTML = PARTS[S.rota](); return; }
