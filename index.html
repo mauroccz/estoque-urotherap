@@ -276,23 +276,24 @@ tr.sub-row td{font-size:13px}tr.sub-row td:first-child{padding-left:28px}
   .top{padding:10px 16px}
   .top .when,.top .hide-m{display:none}
   .mlogo{display:block}
-  .content{padding:18px 16px calc(118px + env(safe-area-inset-bottom))}
+  .content{padding:18px 16px calc(100px + env(safe-area-inset-bottom))}
   .top{padding-top:calc(10px + env(safe-area-inset-top))}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .kpi .kv{font-size:24px}
   .cards2,.row3,.dl{grid-template-columns:1fr}
   .bar-row{grid-template-columns:110px 1fr 90px}
-  .mobnav{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);z-index:30;padding:8px max(14px, calc(6px + env(safe-area-inset-left))) max(20px, calc(12px + env(safe-area-inset-bottom))) max(14px, calc(6px + env(safe-area-inset-right)))}
+  .mobnav{display:grid;grid-template-columns:repeat(6,1fr);position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);z-index:30;padding:6px max(14px, calc(6px + env(safe-area-inset-left))) max(10px, calc(4px + env(safe-area-inset-bottom))) max(14px, calc(6px + env(safe-area-inset-right)))}
   .mobnav a{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;color:var(--muted);text-decoration:none;padding:4px 0;font-weight:600}
   .mobnav a{border-radius:12px;margin:0 2px;position:relative}
   .mobnav a.on{color:var(--accent);background:var(--accent-soft);font-weight:700}
   .mobnav a.on::before{content:"";position:absolute;top:-6px;left:26%;right:26%;height:3px;border-radius:0 0 3px 3px;background:var(--gold)}
   .iconbtn.show-m{display:grid}
-  .fab{display:grid;place-items:center;position:fixed;right:18px;bottom:calc(100px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:18px;border:0;background:linear-gradient(135deg,#34508A,var(--accent));color:#fff;box-shadow:0 8px 22px rgba(38,59,101,.35);z-index:31;cursor:pointer}
+  .fab{display:grid;place-items:center;position:fixed;right:18px;bottom:calc(86px + env(safe-area-inset-bottom));width:56px;height:56px;border-radius:18px;border:0;background:linear-gradient(135deg,#34508A,var(--accent));color:#fff;box-shadow:0 8px 22px rgba(38,59,101,.35);z-index:31;cursor:pointer}
   .ov{padding:0;align-items:flex-end}
   .modal{border-radius:18px 18px 0 0;max-height:94%}
   .ov.drawer .modal{border-radius:18px 18px 0 0;height:94%}
   .hide-m{display:none}
+  input:not([type=checkbox]):not([type=radio]),select,textarea,.field{font-size:16px!important}
 }
 @media (max-width:420px){.row2{grid-template-columns:1fr}.tl-row{grid-template-columns:44px 1fr auto}}
 </style>
@@ -471,6 +472,7 @@ const API = ONLINE ? (() => {
     salvarItem: i => rpc("salvar_item", { p_item: i }),
     salvarLote: l => rpc("salvar_lote", { p_lote: l }),
     salvarUsuario: u => rpc("salvar_usuario", { p_dados: u }),
+    excluirUsuario: id => rpc("excluir_usuario", { p_id: id }),
     async auditoria(){ return (await rpc("ler_auditoria", { p_limite: 3000 })).dados; },
     async pacientes(){ return (await rpc("ler_pacientes", { p_limite: 20000 })).dados || {}; },
     registrarBackup: () => rpc("registrar_backup", {})
@@ -504,8 +506,10 @@ const API = ONLINE ? (() => {
   const pub = u => ({ id: u.id, nome: u.nome, papel: u.papel, ativo: u.ativo });
   return {
     async carregar(){ return { itens: db.itens, lotes: db.lotes, movs: db.movs.slice(0,1000), config: db.config, listas: db.listas.filter(l => l.ativo !== false), listaItens: db.listaItens }; },
-    async entrarNome(nome, pin){ const u = db.usuarios.find(x => x.ativo && norm(x.nome) === norm(nome)); if(!u || u.pin !== pin) throw new Error("Nome ou PIN incorreto."); return pub(u); },
-    async usuarios(){ quem(false); return db.usuarios.map(pub).sort((a,b) => a.nome.localeCompare(b.nome)); },
+    async entrarNome(nome, pin){ const u = db.usuarios.find(x => !x.excluido && norm(x.nome) === norm(nome)); if(!u || u.pin !== pin) throw new Error("Nome ou PIN incorreto."); if(!u.ativo) throw new Error("Este acesso está bloqueado. Fale com o administrador."); return pub(u); },
+    async usuarios(){ const q = quem(false); const adm = q.papel === "admin"; return db.usuarios.filter(u => adm || !u.excluido).map(u => adm ? { ...pub(u), excluido: !!u.excluido, excluido_em: u.excluido_em || null, nome_completo: u.nome_completo || null, funcao: u.funcao || null, criado_em: u.criado_em || null, historico: u.historico || [] } : pub(u)).sort((a,b) => a.nome.localeCompare(b.nome)); },
+    async excluirUsuario(id){ const u = quem(true); if(id === u.id) throw new Error("Você não pode excluir o próprio acesso."); const x = db.usuarios.find(y => y.id === id && !y.excluido); if(!x) throw new Error("Usuário não encontrado.");
+      const antes = { ...x }; x.excluido = true; x.excluido_em = new Date().toISOString(); x.ativo = false; (x.historico ||= []).push({ acao: "excluido", em: x.excluido_em, por: u.nome }); aud(u, "UPDATE", "usuarios", antes, { ...x }); salvar(); return { ok: true }; },
     async custos(){ quem(true); return Object.fromEntries(db.itens.filter(i => i.custo_unit != null || i.preco_cobranca != null).map(i => [i.id, { c: i.custo_unit ?? null, p: i.preco_cobranca ?? null }])); },
     async procs(){ quem(false); return db.procs.slice().sort((a,b) => (b.data + b.criado_em).localeCompare(a.data + a.criado_em)).map(p => ({ ...p, itens: p.itens.map(x => ({ ...x })) })); },
     async salvarLista(d){
@@ -586,18 +590,19 @@ const API = ONLINE ? (() => {
       db.movs.unshift(m); aud(u, "INSERT", "movimentacoes", null, m); salvar(); return { ok: true, id: m.id };
     },
     async salvarItem(i){
-      const u = quem(true);
+      const u = quem(false);
+      if(u.papel !== "admin"){ i = { ...i }; delete i.preco_cobranca; if(i.id) delete i.custo_unit; }
       if(!String(i.nome||"").trim() || !String(i.categoria||"").trim()) throw new Error("Nome e categoria são obrigatórios.");
       const campos = ["codigo","nome","descricao","categoria","unidade","local","cod_fornecedor","fornecedor"];
       const num = k => i[k] === "" || i[k] == null ? (k === "custo_unit" || k === "preco_cobranca" ? null : k === "estoque_minimo" ? 15 : 0) : Number(i[k]);
       i = { ...i, codigo: String(i.codigo || "").trim().toUpperCase() || sugerirCodigo(i.nome, i.categoria) };
       if(!i.id){ const n = { id: novoId(), ativo: true }; campos.forEach(k => n[k] = i[k] || null); n.custo_unit = num("custo_unit"); n.preco_cobranca = num("preco_cobranca"); n.estoque_minimo = num("estoque_minimo"); n.estoque_ideal = num("estoque_ideal"); n.controlado = !!i.controlado; db.itens.push(n); aud(u, "INSERT", "itens", null, n); salvar(); return { ok: true, id: n.id }; }
       const it = db.itens.find(x => x.id === i.id); const antes = { ...it };
-      campos.forEach(k => it[k] = i[k] || null); it.custo_unit = num("custo_unit"); if("preco_cobranca" in i) it.preco_cobranca = num("preco_cobranca"); it.estoque_minimo = num("estoque_minimo"); it.estoque_ideal = num("estoque_ideal"); it.controlado = !!i.controlado; it.ativo = i.ativo !== false;
+      campos.forEach(k => it[k] = i[k] || null); if("custo_unit" in i) it.custo_unit = num("custo_unit"); if("preco_cobranca" in i) it.preco_cobranca = num("preco_cobranca"); it.estoque_minimo = num("estoque_minimo"); it.estoque_ideal = num("estoque_ideal"); it.controlado = !!i.controlado; it.ativo = i.ativo !== false;
       aud(u, "UPDATE", "itens", antes, it); salvar(); return { ok: true, id: it.id };
     },
     async salvarLote(d){
-      const u = quem(true); const l = db.lotes.find(x => x.id === d.id); if(!l) throw new Error("Lote não encontrado.");
+      const u = quem(false); const l = db.lotes.find(x => x.id === d.id); if(!l) throw new Error("Lote não encontrado.");
       if(d.fabricacao && d.validade && d.validade < d.fabricacao) throw new Error("A validade não pode ser anterior à fabricação.");
       const antes = { ...l }; l.lote = String(d.lote || "").trim() || null; l.fabricacao = d.fabricacao || null; l.validade = d.validade || null;
       aud(u, "UPDATE", "lotes", antes, l); salvar(); return { ok: true, id: l.id };
@@ -607,10 +612,12 @@ const API = ONLINE ? (() => {
       if(pin && !/^\d{4,6}$/.test(pin)) throw new Error("O PIN deve ter de 4 a 6 números.");
       const nome = String(d.nome || "").trim(); if(!nome) throw new Error("Informe o nome.");
       if(db.usuarios.some(x => norm(x.nome) === norm(nome) && x.id !== d.id)) throw new Error("Já existe um usuário com esse nome.");
-      if(!d.id){ if(!pin) throw new Error("Defina um PIN de 4 a 6 números."); const n = { id: novoId(), nome, papel: d.papel || "funcionaria", ativo: true, pin }; db.usuarios.push(n); aud(u, "INSERT", "usuarios", null, n); salvar(); return { ok: true }; }
-      if(d.id === u.id && (d.ativo === false || d.papel !== "admin")) throw new Error("Você não pode desativar nem rebaixar o próprio acesso.");
-      const x = db.usuarios.find(y => y.id === d.id); const antes = { ...x };
-      x.nome = nome; x.papel = d.papel; x.ativo = d.ativo !== false; if(pin) x.pin = pin;
+      const agora = new Date().toISOString(); const log = (x, acao) => (x.historico ||= []).push({ acao, em: agora, por: u.nome });
+      if(!d.id){ if(!pin) throw new Error("Defina um PIN de 4 a 6 números."); const n = { id: novoId(), nome, papel: d.papel || "funcionaria", ativo: true, pin, nome_completo: d.nome_completo || null, funcao: d.funcao || null, criado_em: agora, historico: [] }; log(n, "criado"); db.usuarios.push(n); aud(u, "INSERT", "usuarios", null, n); salvar(); return { ok: true }; }
+      if(d.id === u.id && (d.ativo === false || d.papel !== "admin")) throw new Error("Você não pode bloquear nem rebaixar o próprio acesso.");
+      const x = db.usuarios.find(y => y.id === d.id); const antes = { ...x, historico: undefined };
+      if((d.ativo !== false) !== (x.ativo !== false)) log(x, d.ativo === false ? "bloqueado" : "desbloqueado"); if(pin) log(x, "pin_redefinido");
+      x.nome = nome; x.papel = d.papel; x.ativo = d.ativo !== false; if(pin) x.pin = pin; if("nome_completo" in d) x.nome_completo = d.nome_completo || null; if("funcao" in d) x.funcao = d.funcao || null;
       const dep = { ...x }; if(pin) dep.pin_alterado = true; aud(u, "UPDATE", "usuarios", antes, dep); salvar(); return { ok: true };
     },
     async auditoria(){ quem(true); return db.aud; },
@@ -761,7 +768,7 @@ function vHoje(){
   const maxCat = Math.max(1, ...porCat.map(x => x.v));
   return `${banners()}
   <div class="head"><div><h1>${saudacao()}, ${esc(S.sessao.nome.split(" ")[0])}</h1><p>${its.length} itens ativos · ${D.alertas.length} ${D.alertas.length === 1 ? "alerta" : "alertas"} · atualizado às ${fHora(S.carregadoEm || Date.now())}</p></div><div class="sp"></div>
-    ${isAdmin() ? `<button class="btn" data-act="importNF" ${S.offline ? "disabled" : ""}>${ic("up",16)}Importar nota fiscal</button>` : ""}<button class="btn" data-act="novaMov" data-tipo="entrada" ${S.offline ? "disabled" : ""}>${ic("down",16)}Dar entrada</button></div>
+    <button class="btn" data-act="importNF" ${S.offline ? "disabled" : ""}>${ic("up",16)}Importar nota fiscal</button><button class="btn" data-act="novaMov" data-tipo="entrada" ${S.offline ? "disabled" : ""}>${ic("down",16)}Dar entrada</button></div>
   <div class="kpis">
     ${k("box","accent","Itens ativos", its.length, `${lotesAtivos} lotes com saldo`, "itens")}
     ${k("cart","warn","Abaixo do mínimo", baixo, semMin ? `${semMin} sem mínimo definido` : "mínimos definidos", "compras")}
@@ -808,7 +815,7 @@ function rowTL(m){
 function vItens(){
   const f = S.f;
   return `${banners()}<div class="head"><div><h1>Itens</h1><p>Agrupados pelo nosso código: o saldo soma todos os fornecedores e lotes. Toque no código para ver as opções e depois no item para ver lotes e histórico.</p></div><div class="sp"></div>
-    <button class="btn" data-act="exportItens">${ic("down",16)}Exportar planilha</button>${isAdmin() ? `<button class="btn" data-act="importNF" ${S.offline ? "disabled" : ""}>${ic("up",16)}Importar nota fiscal</button>` : ""}${isAdmin() ? `<button class="btn pri" data-act="editItem" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Novo item</button>` : ""}</div>
+    <button class="btn" data-act="exportItens">${ic("down",16)}Exportar planilha</button><button class="btn" data-act="importNF" ${S.offline ? "disabled" : ""}>${ic("up",16)}Importar nota fiscal</button><button class="btn pri" data-act="editItem" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Novo item</button></div>
   <div class="card"><div class="toolbar">
     <div class="search">${ic("search",16)}<input data-f="q" value="${esc(f.q || "")}" placeholder="Nome, descrição, código ou fornecedor" aria-label="Filtrar itens"></div>
     <select class="field" data-f="cat" aria-label="Categoria"><option value="">Todas as categorias</option>${D.cats.map(c => `<option ${f.cat === c ? "selected" : ""}>${esc(c)}</option>`).join("")}</select>
@@ -913,7 +920,7 @@ function listaMovs(){
   ${ms.slice(0, 500).map(m => { const it = D.idx[m.item_id] || { nome: "—" }; const l = D.lotesIdx[m.lote_id] || {};
     return `<tr class="click" data-item="${m.item_id}"><td class="num" style="white-space:nowrap">${fDH(m.criado_em)}</td><td><span class="pill ${TIPO[m.tipo][1]}">${TIPO[m.tipo][0]}</span></td><td><b>${esc(it.nome)}</b></td><td class="hide-m">${esc(l.lote || "—")}</td>
     <td class="r num qty ${m.quantidade >= 0 ? "q-pos" : "q-neg"}">${m.quantidade > 0 ? "+" : ""}${fNum(m.quantidade)}</td><td class="r num hide-m">${fNum(m.saldo_lote)}</td><td class="hide-m">${esc(pacDe(m) || "—")}</td><td class="hide-m">${esc(m.motivo || "—")}${m.origem === "contingencia" ? ' <span class="pill p-warn">contingência</span>' : ""}</td>
-    <td><span style="display:inline-flex;align-items:center;gap:8px">${av(m.usuario_nome || "?")}<span class="hide-m">${esc(m.usuario_nome || "—")}</span></span></td></tr>`; }).join("")}
+    <td style="white-space:nowrap"><b style="font-weight:600">${esc(m.usuario_nome || "—")}</b></td></tr>`; }).join("")}
   </tbody></table>${ms.length > 500 ? `<div class="empty">Mostrando 500 de ${ms.length}. Use a exportação para ver todas.</div>` : ""}`;
 }
 
@@ -1022,10 +1029,18 @@ function listaAud(){
 }
 
 /* ---- Usuários ---- */
+const HIST_U = { criado: "Login criado", bloqueado: "Bloqueado", desbloqueado: "Desbloqueado", pin_redefinido: "PIN redefinido", excluido: "Login excluído" };
+const jaBloqueado = u => (u.historico || []).some(h => h.acao === "bloqueado");
+const situacaoU = u => u.excluido ? '<span class="pill p-mute">Excluído</span>' : u.ativo ? '<span class="pill p-ok">Ativo</span>' : '<span class="pill p-crit">Bloqueado</span>';
 function vUsuarios(){
   if(!isAdmin()) return `<div class="empty">Acesso restrito ao administrador.</div>`;
-  return `${banners()}<div class="head"><div><h1>Usuários</h1><p>Cada pessoa entra digitando o próprio nome de login e um PIN de 4 a 6 números (recomendado: 6). Assim o sistema sabe quem fez cada registro.</p></div><div class="sp"></div><button class="btn pri" data-act="editUser" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Novo usuário</button></div>
-  <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Nome</th><th>Perfil</th><th>Situação</th><th></th></tr></thead><tbody>${S.usuarios.map(u => `<tr><td><span style="display:inline-flex;align-items:center;gap:10px">${av(u.nome)}<b>${esc(u.nome)}</b></span></td><td>${u.papel === "admin" ? '<span class="pill p-acc">Administrador</span>' : '<span class="pill p-mute">Funcionária</span>'}</td><td>${u.ativo ? '<span class="pill p-ok">Ativo</span>' : '<span class="pill p-crit">Inativo</span>'}</td><td class="r"><button class="btn sm" data-act="editUser" data-id="${u.id}" ${S.offline ? "disabled" : ""}>${ic("edit",14)}Editar</button></td></tr>`).join("")}</tbody></table></div></div>`;
+  const ativos = S.usuarios.filter(u => !u.excluido), excl = S.usuarios.filter(u => u.excluido);
+  const linha = u => `<tr class="click" data-act="editUser" data-id="${u.id}"><td><span style="display:inline-flex;align-items:center;gap:10px">${av(u.nome)}<span><b>${esc(u.nome)}</b>${u.nome_completo ? `<span class="sub">${esc(u.nome_completo)}</span>` : ""}</span></span></td>
+    <td class="hide-m">${esc(u.funcao || "—")}</td><td>${u.papel === "admin" ? '<span class="pill p-acc">Administrador</span>' : '<span class="pill p-mute">Funcionária</span>'}</td>
+    <td>${situacaoU(u)}${!u.excluido && u.ativo && jaBloqueado(u) ? ' <span class="pill p-warn" title="Este acesso já foi bloqueado alguma vez">já foi bloqueado</span>' : ""}</td><td class="hide-m num">${u.criado_em ? new Date(u.criado_em).toLocaleDateString("pt-BR") : "—"}</td></tr>`;
+  return `${banners()}<div class="head"><div><h1>Usuários</h1><p>Cada pessoa entra com o próprio nome de login e um PIN de 4 a 6 números. Toque em um usuário para editar, bloquear, redefinir o PIN ou excluir. Tudo o que a pessoa registrou continua no histórico com o nome dela, mesmo depois de bloqueada ou excluída.</p></div><div class="sp"></div><button class="btn pri" data-act="editUser" ${S.offline ? "disabled" : ""}>${ic("plus",16,2.2)}Novo usuário</button></div>
+  <div class="card"><div class="tbl-wrap"><table><thead><tr><th>Login</th><th class="hide-m">Função</th><th>Perfil</th><th>Situação</th><th class="hide-m">Criado em</th></tr></thead><tbody>${ativos.map(linha).join("")}</tbody></table></div></div>
+  ${excl.length ? `<div class="card"><div class="card-h"><h2>Logins excluídos</h2><span class="pill p-mute">${excl.length}</span></div><div class="tbl-wrap"><table><tbody>${excl.map(u => `<tr class="click" data-act="editUser" data-id="${u.id}"><td><b>${esc(u.nome)}</b>${u.nome_completo ? `<span class="sub">${esc(u.nome_completo)}</span>` : ""}</td><td class="hide-m">${esc(u.funcao || "—")}</td><td>Excluído em ${u.excluido_em ? new Date(u.excluido_em).toLocaleDateString("pt-BR") : "—"}</td></tr>`).join("")}</tbody></table></div></div>` : ""}`;
 }
 
 /* =====================================================================
@@ -1053,11 +1068,11 @@ function abrirItem(id){
     </div>
     ${i.grupo && i.grupo.itens.length > 1 ? `<h3 style="font-size:14px">Outras opções do código ${esc(i.codigo)}</h3><div class="plist" style="max-height:none">${porValidade(i.grupo.itens.filter(x => x.id !== i.id)).map(x => `<button class="gopt" data-item="${x.id}"><span><b>${esc(x.nome)}</b><br><small class="muted">${esc(x.fornecedor || "sem fornecedor")} · ${fNum(x.saldo)} ${esc(low(x.unidade))}</small></span><span class="sp"></span>${x.prox ? pillValidade(x.prox) : ""}</button>`).join("")}</div>` : ""}
     <h3 style="font-size:14px">Lotes</h3>
-    ${i.lotes.length ? `<div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Lote</th><th class="hide-m">Fabricação</th><th>Validade</th><th class="r">Qtd.</th><th></th></tr></thead><tbody>${i.lotes.map(l => `<tr><td>${esc(l.lote || "—")}</td><td class="hide-m num">${fData(l.fabricacao)}</td><td>${Number(l.quantidade) > 0 ? pillValidade(l.validade) : `<span class="muted">${fData(l.validade)}</span>`}</td><td class="r num"><b>${fNum(l.quantidade)}</b></td><td class="r" style="white-space:nowrap">${S.offline ? "" : `${isAdmin() ? `<button class="btn sm" data-act="editLote" data-id="${l.id}" title="Corrigir número, fabricação ou validade">${ic("edit",14)}Corrigir</button> ` : ""}<button class="btn sm" data-act="novaMov" data-it="${i.id}" data-lote="${l.id}" data-tipo="${Number(l.quantidade) > 0 ? "saida" : "entrada"}">Movimentar</button>`}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">Nenhum lote.</div>`}
+    ${i.lotes.length ? `<div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><thead><tr><th>Lote</th><th class="hide-m">Fabricação</th><th>Validade</th><th class="r">Qtd.</th><th></th></tr></thead><tbody>${i.lotes.map(l => `<tr><td>${esc(l.lote || "—")}</td><td class="hide-m num">${fData(l.fabricacao)}</td><td>${Number(l.quantidade) > 0 ? pillValidade(l.validade) : `<span class="muted">${fData(l.validade)}</span>`}</td><td class="r num"><b>${fNum(l.quantidade)}</b></td><td class="r" style="white-space:nowrap">${S.offline ? "" : `<button class="btn sm" data-act="editLote" data-id="${l.id}" title="Corrigir número, fabricação ou validade">${ic("edit",14)}Corrigir</button> <button class="btn sm" data-act="novaMov" data-it="${i.id}" data-lote="${l.id}" data-tipo="${Number(l.quantidade) > 0 ? "saida" : "entrada"}">Movimentar</button>`}</td></tr>`).join("")}</tbody></table></div>` : `<div class="empty">Nenhum lote.</div>`}
     <h3 style="font-size:14px">Histórico</h3>
     <div class="tl" style="padding:0">${ms.length ? ms.map(rowTL).join("") : `<div class="empty">Sem movimentações.</div>`}</div>
   </div>
-  <div class="m-f">${isAdmin() && !S.offline ? `<button class="btn" data-act="editItem" data-id="${i.id}">${ic("edit",16)}Editar item</button>` : ""}${S.offline ? "" : `<button class="btn pri" data-act="novaMov" data-it="${i.id}">${ic("plus",16,2.2)}Movimentar</button>`}</div></div>`, "drawer");
+  <div class="m-f">${!S.offline ? `<button class="btn" data-act="editItem" data-id="${i.id}">${ic("edit",16)}Editar item</button>` : ""}${S.offline ? "" : `<button class="btn pri" data-act="novaMov" data-it="${i.id}">${ic("plus",16,2.2)}Movimentar</button>`}</div></div>`, "drawer");
 }
 
 /* ---- nova movimentação ---- */
@@ -1136,8 +1151,8 @@ function editItem(id){
     <datalist id="e_cods">${codigosExistentes()}</datalist><div class="muted" id="e_codinfo" style="font-size:12.5px;margin-top:-6px"></div>
     ${inp("descricao","Descrição completa")}
     <div class="row3">${combo("e_categoria","Categoria",i.categoria,opcoesDe("categoria"))}${combo("e_unidade","Unidade",i.unidade,opcoesDe("unidade"))}${combo("e_local","Local",i.local,opcoesDe("local"))}</div>
-    <div class="row3">${combo("e_fornecedor","Fornecedor",i.fornecedor,opcoesDe("fornecedor"))}${inp("cod_fornecedor","Cód. fornecedor")}${inp("custo_unit","Custo unitário (R$)","number",'step="any" min="0"')}</div>
-    <div class="row2">${inp("preco_cobranca","Preço para cobrança (R$) · usado no documento de reembolso","number",`step="0.01" min="0" placeholder="vazio = custo + ${margemCobranca()}%${i.custo_unit != null ? " (" + fBRL(precoDe({ custo_unit: i.custo_unit })) + ")" : ""}"`)}<div></div></div>
+    <div class="row3">${combo("e_fornecedor","Fornecedor",i.fornecedor,opcoesDe("fornecedor"))}${inp("cod_fornecedor","Cód. fornecedor")}${isAdmin() ? inp("custo_unit","Custo unitário (R$)","number",'step="any" min="0"') : "<div></div>"}</div>
+    ${!isAdmin() ? "" : `<div class="row2">${inp("preco_cobranca","Preço para cobrança (R$) · usado no documento de reembolso","number",`step="0.01" min="0" placeholder="vazio = custo + ${margemCobranca()}%${i.custo_unit != null ? " (" + fBRL(precoDe({ custo_unit: i.custo_unit })) + ")" : ""}"`)}<div></div></div>`}
     <div class="row2">${inp("estoque_minimo","Estoque mínimo (padrão 15)","number",'step="any" min="0" placeholder="15"')}${inp("estoque_ideal","Estoque ideal","number",'step="any" min="0"')}</div>
     <label class="check"><input type="checkbox" id="e_controlado" ${i.controlado ? "checked" : ""}>Medicamento controlado (Portaria 344)</label>
     ${id ? `<label class="check"><input type="checkbox" id="e_ativo" ${i.ativo !== false ? "checked" : ""}>Item ativo (desmarque para tirar das listas sem apagar o histórico)</label>` : ""}
@@ -1149,6 +1164,7 @@ async function salvarItem(id, btn){
   const g = k => ($("#e_" + k) || {}).value ?? "";
   const U = k => g(k).trim().toUpperCase();
   const dados = { id: id || null, nome: g("nome").trim(), codigo: g("codigo").trim().toUpperCase() || sugerirCodigo(g("nome"), g("categoria")), descricao: g("descricao"), categoria: U("categoria"), unidade: U("unidade"), local: U("local"), fornecedor: U("fornecedor"), cod_fornecedor: g("cod_fornecedor"), custo_unit: g("custo_unit"), preco_cobranca: g("preco_cobranca"), estoque_minimo: g("estoque_minimo"), estoque_ideal: g("estoque_ideal"), controlado: $("#e_controlado").checked, ativo: $("#e_ativo") ? $("#e_ativo").checked : true };
+  if(!isAdmin()){ delete dados.preco_cobranca; if(id) delete dados.custo_unit; else if(dados.custo_unit === "") delete dados.custo_unit; }
   btn.disabled = true;
   try { await API.salvarItem(dados); fechar(); S.audit = null; await carregar(); toast("Item salvo."); render(); }
   catch(e){ $("#e_err").textContent = e.message; btn.disabled = false; }
@@ -1183,25 +1199,42 @@ async function salvarLote(id, btn){
 }
 
 /* ---- editar usuário ---- */
+let UX = null;
 function editUser(id){
-  const u = id ? S.usuarios.find(x => x.id === id) : { papel: "funcionaria", ativo: true };
-  abrir(`<div class="modal" role="dialog" aria-modal="true">${mHead(id ? "Editar usuário" : "Novo usuário", id ? "Deixe o PIN em branco para manter o atual" : "Combine o PIN pessoalmente com a funcionária")}<div class="m-b">
-    <label class="f">Nome de login (é o que a pessoa digita para entrar)<input id="u_nome" value="${esc(u.nome || "")}" autofocus></label>
-    <div class="row2"><label class="f">Perfil<select id="u_papel"><option value="funcionaria" ${u.papel === "funcionaria" ? "selected" : ""}>Funcionária</option><option value="admin" ${u.papel === "admin" ? "selected" : ""}>Administrador</option></select></label>
-    <label class="f">${id ? "Novo PIN (opcional)" : "PIN de 4 a 6 números"}<input id="u_pin" inputmode="numeric" maxlength="6" pattern="[0-9]*" autocomplete="off"></label></div>
-    ${id ? `<label class="check"><input type="checkbox" id="u_ativo" ${u.ativo ? "checked" : ""}>Acesso ativo</label>` : ""}
-    <div class="note info">Funcionária: registra entradas, saídas, ajustes e descartes. Administrador: também cadastra itens, usuários e vê a auditoria.</div>
+  const u = id ? S.usuarios.find(x => x.id === id) : { papel: "funcionaria", ativo: true }; if(!u) return;
+  UX = { id: id || null, confirmaExcluir: false }; const ro = !!u.excluido; const eu = id && id === S.sessao.id;
+  abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead(id ? (ro ? "Login excluído" : "Editar usuário") : "Novo usuário", id ? (ro ? "Mantido só para consulta: o histórico continua com este nome" : "Alterações ficam registradas na auditoria") : "Combine o PIN pessoalmente com a pessoa")}<div class="m-b">
+    ${id ? `<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${situacaoU(u)}${jaBloqueado(u) ? '<span class="pill p-warn">já foi bloqueado</span>' : ""}<span class="muted" style="font-size:12.5px">Criado em ${u.criado_em ? fDH(u.criado_em) : "—"}</span></div>` : ""}
+    <div class="row2"><label class="f">Nome de login (é o que a pessoa digita para entrar)<input id="u_nome" value="${esc(u.nome || "")}" ${ro ? "disabled" : "autofocus"} autocomplete="off"></label>
+    <label class="f">Nome completo<input id="u_nome_completo" value="${esc(u.nome_completo || "")}" ${ro ? "disabled" : ""} autocomplete="off"></label></div>
+    <div class="row2"><label class="f">Função<input id="u_funcao" list="u_funcoes" value="${esc(u.funcao || "")}" placeholder="Ex.: Enfermeira, Técnica de enfermagem" ${ro ? "disabled" : ""} autocomplete="off"></label>
+    <label class="f">Perfil<select id="u_papel" ${ro || eu ? "disabled" : ""}><option value="funcionaria" ${u.papel === "funcionaria" ? "selected" : ""}>Funcionária</option><option value="admin" ${u.papel === "admin" ? "selected" : ""}>Administrador</option></select></label></div>
+    <datalist id="u_funcoes">${[...new Set(["Enfermeira","Técnica de enfermagem","Recepção","Médico", ...S.usuarios.map(x => x.funcao).filter(Boolean)])].map(f => `<option value="${esc(f)}">`).join("")}</datalist>
+    ${ro ? "" : `<label class="f">${id ? "Redefinir PIN (se a pessoa esqueceu): digite o novo PIN de 4 a 6 números" : "PIN de 4 a 6 números"}<input id="u_pin" inputmode="numeric" maxlength="6" pattern="[0-9]*" autocomplete="off" placeholder="${id ? "deixe em branco para manter o PIN atual" : ""}"></label>`}
+    <div class="note info">Funcionária: registra movimentações, cadastra e corrige itens e lotes, importa nota fiscal e monta cirurgias. Administrador: também vê custos e preços, gera o documento de reembolso, gerencia usuários e vê a auditoria.</div>
+    ${id && (u.historico || []).length ? `<h3 style="font-size:14px;margin:4px 0 0">Histórico do login</h3><div class="tbl-wrap" style="border:1px solid var(--line);border-radius:12px"><table><tbody>${(u.historico || []).slice().reverse().map(h => `<tr><td style="white-space:nowrap" class="num">${fDH(h.em)}</td><td><b>${esc(HIST_U[h.acao] || h.acao)}</b></td><td class="muted">${h.por ? "por " + esc(h.por) : ""}</td></tr>`).join("")}</tbody></table></div>` : ""}
     <div class="err" id="u_err" role="alert"></div></div>
-    <div class="m-f"><button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" data-act="salvarUser" data-id="${id || ""}">${ic("check",16,2.2)}Salvar</button></div></div>`);
+    <div class="m-f">${id && !ro && !eu ? `<button class="btn danger" data-act="userExcluir" style="margin-right:auto">${ic("x",16)}Excluir login</button><button class="btn" data-act="userBloq">${u.ativo ? "Bloquear acesso" : "Desbloquear acesso"}</button>` : ""}
+      <button class="btn" data-act="fechar">${ro ? "Fechar" : "Cancelar"}</button>${ro ? "" : `<button class="btn pri" data-act="salvarUser" data-id="${id || ""}">${ic("check",16,2.2)}Salvar</button>`}</div></div>`);
 }
-async function salvarUser(id, btn){
-  const dados = { id: id || null, nome: $("#u_nome").value.trim(), papel: $("#u_papel").value, pin: $("#u_pin").value.trim(), ativo: $("#u_ativo") ? $("#u_ativo").checked : true };
+function dadosUser(id){ const u = id ? S.usuarios.find(x => x.id === id) || {} : {};
+  return { id: id || null, nome: $("#u_nome").value.trim(), nome_completo: $("#u_nome_completo").value.trim(), funcao: $("#u_funcao").value.trim(), papel: $("#u_papel").value, pin: ($("#u_pin") || {}).value ? $("#u_pin").value.trim() : "", ativo: id ? u.ativo !== false : true }; }
+async function salvarUser(id, btn, extra = {}){
+  const dados = { ...dadosUser(id), ...extra };
   btn.disabled = true;
   try {
     await API.salvarUsuario(dados);
     if(id && id === S.sessao.id){ if(dados.pin) S.sessao.pin = dados.pin; S.sessao.nome = dados.nome; store.sset("estoque_sessao", S.sessao); }
-    fechar(); S.audit = null; await carregar(); toast("Usuário salvo."); render();
+    fechar(); S.audit = null; await carregar(); render();
+    toast(extra.ativo === false ? "Acesso bloqueado. O histórico da pessoa continua registrado." : extra.ativo === true ? "Acesso desbloqueado." : dados.pin && id ? "Usuário salvo e PIN redefinido." : "Usuário salvo.");
   } catch(e){ $("#u_err").textContent = e.message; btn.disabled = false; }
+}
+async function excluirUser(btn){
+  if(!UX || !UX.id) return;
+  if(!UX.confirmaExcluir){ UX.confirmaExcluir = true; btn.innerHTML = "Toque de novo para confirmar a exclusão"; $("#u_err").textContent = "A pessoa não vai mais conseguir entrar. Tudo o que ela registrou continua no histórico com o nome dela."; return; }
+  btn.disabled = true;
+  try { await API.excluirUsuario(UX.id); fechar(); S.audit = null; await carregar(); render(); toast("Login excluído. O histórico continua com o nome da pessoa."); }
+  catch(e){ $("#u_err").textContent = e.message; btn.disabled = false; }
 }
 
 /* =====================================================================
@@ -1434,7 +1467,7 @@ function renderNF(manterScroll){
         <div class="row3"><label class="f">Itens por embalagem <span class="muted" style="font-weight:400">(ex.: caixa com 100)</span><input type="number" min="1" step="any" data-nf="${k}" data-nfk="fator" value="${esc(l.fator)}"></label>
           <label class="f">Quantidade que entra${it ? ` (${esc(low(it.unidade))})` : ""}<input type="number" min="0" step="any" data-nf="${k}" data-nfk="qtdFinal" value="${esc(l.qtdFinal ?? "")}"></label>
           <label class="f">Custo unitário (R$)<input type="number" min="0" step="any" data-nf="${k}" data-nfk="custo" value="${esc(l.custo ?? "")}"></label></div>
-        ${it ? `<label class="check" style="font-size:13px"><input type="checkbox" data-nf="${k}" data-nfk="atualizarCusto" ${l.atualizarCusto ? "checked" : ""}>Atualizar o custo do item para o valor desta nota${it.custo_unit != null ? ` (hoje ${fBRL(it.custo_unit)})` : ""}</label>` : ""}
+        ${it && isAdmin() ? `<label class="check" style="font-size:13px"><input type="checkbox" data-nf="${k}" data-nfk="atualizarCusto" ${l.atualizarCusto ? "checked" : ""}>Atualizar o custo do item para o valor desta nota${it.custo_unit != null ? ` (hoje ${fBRL(it.custo_unit)})` : ""}</label>` : ""}
       </div>` : ""}</div>`; };
   abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead("Conferir nota fiscal", `${esc(n.arquivo)} · leitura do ${n.origem}`)}<div class="m-b">
     <div class="dl"><div><small>Nota fiscal</small><b>${esc(n.numero || "—")}${n.serie ? " · série " + esc(n.serie) : ""}</b></div><div><small>Emissão</small><b>${fData(n.emissao)}</b></div><div><small>Produtos na nota</small><b>${n.linhas.length}</b></div></div>
@@ -1575,7 +1608,7 @@ function atualizarBusca(prefixo){
 }
 function buscaItens(q){ const ws = norm(q).split(/\s+/).filter(Boolean); return D.itens.filter(x => { const h = norm([x.nome, x.descricao, x.codigo, x.cod_fornecedor, x.fornecedor].join(" ")); return ws.every(w => h.includes(w)); }).slice(0, 12); }
 function resBusca(prefixo, q){
-  const novo = isAdmin() ? `<button class="qc-add" data-act="qcNovo" data-volta="${prefixo}" data-v="${esc(q || "")}">${ic("plus",16,2.2)}<span><b>Cadastrar item novo no estoque${q ? ` "${esc(q)}"` : ""}</b><br><small class="muted">Não achou? Cadastre agora e volte para cá com o item adicionado</small></span></button>`
+  const novo = !S.offline ? `<button class="qc-add" data-act="qcNovo" data-volta="${prefixo}" data-v="${esc(q || "")}">${ic("plus",16,2.2)}<span><b>Cadastrar item novo no estoque${q ? ` "${esc(q)}"` : ""}</b><br><small class="muted">Não achou? Cadastre agora e volte para cá com o item adicionado</small></span></button>`
     : `<div class="empty" style="padding:10px">Não achou o item? Peça ao administrador para cadastrá-lo.</div>`;
   return resGrupos(prefixo, q) + novo; }
 function renderLista(manter){
@@ -1809,7 +1842,7 @@ function htmlDocumento(d){
   @media(max-width:600px){.folha{margin:0;padding:18px 14px}.grid{grid-template-columns:1fr}.top img{height:48px}}
   @media print{body{background:#fff}.bar,.msg{display:none!important}.folha{box-shadow:none;margin:0;max-width:none;padding:0}@page{margin:12mm}}
   </style></head><body>
-  <div class="bar"><b>Documento do procedimento</b><button class="pri" id="bpdf">⬇ Baixar PDF</button><button onclick="voltar()">← Voltar ao app</button></div>
+  <div class="bar"><b>Documento do procedimento</b><button id="bpdf">⬇ Baixar PDF</button><button onclick="voltar()">← Voltar ao app</button></div>
   <div class="msg" id="msg"></div>
   <div class="folha">
   <div class="top"><img src="${e(d.logo)}" alt="UROtherap"><div><h1>${e(d.titulo)}</h1><p>Emitido em ${e(d.emitidoEm)}</p></div></div>
@@ -1925,8 +1958,8 @@ function abrirCadastroRapido(volta, nome){
     <div class="row2"><label class="f">Nome curto<input id="qc_nome" value="${esc(v.nome)}" autofocus></label><label class="f">Código interno<span class="tm"><input id="qc_codigo" list="qc_cods" style="text-transform:uppercase" autocomplete="off"><button class="btn sm" data-act="qcSugCod">Sugerir</button></span></label></div>
     <label class="f">Descrição completa (opcional)<input id="qc_descricao"></label>
     <div class="row3">${combo("qc_categoria","Categoria",v.categoria,opcoesDe("categoria"))}${combo("qc_unidade","Unidade",v.unidade,opcoesDe("unidade"))}${combo("qc_local","Local",v.local,opcoesDe("local"))}</div>
-    <div class="row3">${combo("qc_fornecedor","Fornecedor","",opcoesDe("fornecedor"))}<label class="f">Cód. fornecedor<input id="qc_cod_fornecedor"></label><label class="f">Custo unitário (R$)<input id="qc_custo" type="number" min="0" step="any"></label></div>
-    <div class="row2"><label class="f">Preço para cobrança (R$)<input id="qc_preco" type="number" min="0" step="0.01" placeholder="vazio = custo + ${margemCobranca()}%"></label><label class="f">Estoque mínimo<input id="qc_minimo" type="number" min="0" step="any" placeholder="15"></label></div>
+    <div class="row3">${combo("qc_fornecedor","Fornecedor","",opcoesDe("fornecedor"))}<label class="f">Cód. fornecedor<input id="qc_cod_fornecedor"></label>${isAdmin() ? `<label class="f">Custo unitário (R$)<input id="qc_custo" type="number" min="0" step="any"></label>` : `<label class="f">Estoque mínimo<input id="qc_minimo" type="number" min="0" step="any" placeholder="15"></label>`}</div>
+    ${isAdmin() ? `<div class="row2"><label class="f">Preço para cobrança (R$)<input id="qc_preco" type="number" min="0" step="0.01" placeholder="vazio = custo + ${margemCobranca()}%"></label><label class="f">Estoque mínimo<input id="qc_minimo" type="number" min="0" step="any" placeholder="15"></label></div>` : ""}
     <div class="card-h" style="padding:6px 0 0"><h2>Dar entrada agora</h2><span class="muted" style="font-size:12px">opcional: se o produto já chegou</span></div>
     <div class="row2"><label class="f">Quantidade<input id="qc_qtd" type="number" min="0" step="any" placeholder="0"></label><label class="f">Número do lote<input id="qc_lote"></label></div>
     <div class="row2"><label class="f">Fabricação<input id="qc_fab" type="date"></label><label class="f">Validade<input id="qc_val" type="date"></label></div>
@@ -1986,7 +2019,12 @@ function vLogin(){
   </div></div>`;
 }
 function lSync(){ const n = $("#l_nome"), c = $("#l_lembrar"); if(n) L.nome = n.value; if(c) L.lembrar = c.checked; }
-function lDig(v){ lSync(); if(L.pin.length >= 6) return; L.pin += v; L.erro = ""; render(); }
+function lDots(){
+  const d = $(".pin-dots"); if(!d) return render();
+  d.innerHTML = [0,1,2,3,4,5].map(n => `<i class="${n < L.pin.length ? "f" : ""} ${n > 3 ? "opt" : ""}"></i>`).join(""); d.setAttribute("aria-label", "PIN digitado: " + L.pin.length + " números");
+  const e = $(".lcard .err"); if(e && !L.erro) e.remove();
+}
+function lDig(v){ lSync(); if(L.pin.length >= 6) return; L.pin += v; L.erro = ""; lDots(); }
 async function entrar(){
   lSync(); if(L.enviando) return;
   if(!L.nome.trim()){ L.erro = "Digite seu nome de login."; return render(); }
@@ -2066,7 +2104,9 @@ const ACT = {
   procCancelar: async (d, el) => { if(!PR.cc){ PR.cc = true; el.textContent = "Clique de novo para cancelar"; return; }
     try { clearTimeout(prTimer); await API.cancelarProc(PR.id); fechar(); await carregar(); render(); toast("Procedimento cancelado. Nada saiu do estoque."); } catch(e){ toast(e.message, true); } }, salvarLote: (d, el) => salvarLote(d.id, el), voltarItem: (d) => abrirItem(d.id),
   editUser: (d) => editUser(d.id), salvarUser: (d, el) => salvarUser(d.id, el),
-  lDig: (d) => lDig(d.v), lApaga: () => { lSync(); L.pin = L.pin.slice(0, -1); render(); }, lEntrar: () => entrar(),
+  userBloq: (d, el) => { const u = S.usuarios.find(x => x.id === UX.id); if(u) salvarUser(u.id, el, { ativo: !u.ativo, pin: "" }); },
+  userExcluir: (d, el) => excluirUser(el),
+  lDig: (d) => lDig(d.v), lApaga: () => { lSync(); L.pin = L.pin.slice(0, -1); L.erro = ""; lDots(); }, lEntrar: () => entrar(),
   consultaOffline: () => { S.sessao = { id: null, nome: "Consulta offline", papel: "funcionaria", pin: "" }; render(); },
   exportItens: () => baixarXlsx(`itens-${hojeISO()}.xlsx`, [{ nome: "Itens", linhas: ordenarPor(itensFiltrados(), COL_ITENS).map(linhaItem) }]),
   exportMovs: () => baixarXlsx(`movimentacoes-${hojeISO()}.xlsx`, [{ nome: "Movimentações", linhas: movsOrdenadas(movsFiltradas()).map(linhaMov) }]),
@@ -2119,7 +2159,7 @@ document.addEventListener("keydown", e => {
   if(e.key === "/" && !/input|textarea|select/i.test(document.activeElement.tagName) && $("#gsearch")){ e.preventDefault(); $("#gsearch").focus(); }
   if(!S.sessao){ const noNome = document.activeElement && document.activeElement.id === "l_nome";
     if(!noNome && /^[0-9]$/.test(e.key)) lDig(e.key);
-    if(!noNome && e.key === "Backspace"){ lSync(); L.pin = L.pin.slice(0, -1); render(); }
+    if(!noNome && e.key === "Backspace"){ lSync(); L.pin = L.pin.slice(0, -1); L.erro = ""; lDots(); }
     if(e.key === "Enter"){ e.preventDefault(); if(noNome && !L.pin) document.activeElement.blur(); else entrar(); } }
   if(e.key === "Enter" && M && e.target.id !== "m_busca" && $("#modal [data-act=mSalvar]")){ e.preventDefault(); salvarMov($("#modal [data-act=mSalvar]")); }
 });
