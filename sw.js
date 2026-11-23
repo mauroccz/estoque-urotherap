@@ -1,5 +1,5 @@
 // Guarda a página no aparelho para abrir mesmo sem internet (dados vêm da cópia local).
-const CACHE = "estoque-v10";
+const CACHE = "estoque-v11";
 const ARQ = ["./", "./index.html", "./config.js", "./manifest.webmanifest", "./img/logo.png", "./img/emblema.png", "./img/favicon.png", "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARQ)).then(() => self.skipWaiting())); });
 self.addEventListener("activate", e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
