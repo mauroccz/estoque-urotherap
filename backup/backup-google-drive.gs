@@ -10,7 +10,7 @@
  * Se um backup falhar, o Google manda um e-mail automático avisando.
  */
 
-const SITE  = 'https://mauroccz.github.io/estoque-urotherap/';
+const SITE  = 'https://urotherap-clinica.github.io/estoque-urotherap/';
 const PASTA = 'Backup Estoque UROtherap';
 const FUSO  = 'America/Sao_Paulo';
 const TIPOS = { entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste', descarte: 'Descarte' };
