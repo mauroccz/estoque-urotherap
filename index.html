@@ -1994,7 +1994,7 @@ function htmlLista(d){
   .top h1{font-size:16px;margin:0;color:#263B65;text-align:right}.top p{margin:4px 0 0;color:#6F7688;text-align:right;font-size:11.5px}
   h2{font-size:18px;color:#263B65;margin:4px 0}.desc{color:#4A5470;margin:0 0 10px}
   .campos{display:grid;grid-template-columns:1fr 1fr;gap:12px 22px;margin:12px 0 16px}.campos div{display:flex;gap:6px;align-items:flex-end}.campos b{color:#263B65;white-space:nowrap}.campos span{flex:1;border-bottom:1px solid #1F2A44;min-height:16px}.full{grid-column:1/-1}
-  table{width:100%;border-collapse:collapse}th{background:#E9EDF5;color:#263B65;text-align:left;padding:7px 6px;font-size:11px;border:1px solid #CCD3E2}td{padding:8px 6px;border:1px solid #DDD;vertical-align:middle}.r{text-align:right;white-space:nowrap}.c{text-align:center}.cx{display:inline-block;width:15px;height:15px;border:1.5px solid #263B65;border-radius:3px}
+  table{width:100%;border-collapse:collapse}th{background:#E9EDF5;color:#263B65;text-align:left;padding:7px 6px;font-size:11px;border:1px solid #CCD3E2}td{padding:8px 6px;border:1px solid #DDD;vertical-align:middle}.r{text-align:right;white-space:nowrap}.c{text-align:center}.cx{display:inline-block;width:15px;height:15px;border:1.5px solid #263B65;border-radius:3px}tr.vazia td{height:30px}.obs{color:#6F7688;font-size:11px;margin:6px 0 0}
   .rod{margin-top:22px;border-top:1px solid #E9E4DA;padding-top:8px;color:#6F7688;font-size:10.5px;text-align:center;line-height:1.5}
   @media(max-width:600px){.folha{margin:0;padding:18px 14px}.campos{grid-template-columns:1fr}.top img{height:48px}}
   </style></head><body>
@@ -2004,8 +2004,10 @@ function htmlLista(d){
   <div class="top"><img src="${e(d.logo)}" alt="UROtherap"><div><h1>${e(d.titulo)}</h1><p>Emitida em ${e(d.emitidoEm)}</p></div></div>
   <h2>${e(d.lista)}</h2>${d.descricao ? `<p class="desc">${e(d.descricao)}</p>` : ""}
   <div class="campos"><div class="full"><b>Paciente:</b><span></span></div><div><b>Data da cirurgia:</b><span></span></div><div><b>Médico:</b><span></span></div><div><b>Separado por:</b><span></span></div><div><b>Conferido por:</b><span></span></div></div>
-  <table><thead><tr><th>#</th><th>Código</th><th>Material</th><th class="r">Qtd.</th><th class="c">Separado</th><th class="c">Conferido</th></tr></thead><tbody>
-  ${d.itens.map(x => `<tr><td>${x.n}</td><td>${e(x.codigo)}</td><td>${e(x.material)}</td><td class="r">${e(fNum(x.qtd))} ${e(x.unidade)}</td><td class="c"><span class="cx"></span></td><td class="c"><span class="cx"></span></td></tr>`).join("") || '<tr><td colspan="6">Nenhum material.</td></tr>'}</tbody></table>
+  <table><thead><tr><th>#</th><th>Código</th><th>Material</th><th class="r">Qtd.</th><th class="c">Separado</th><th class="c">Conferido</th><th class="c">Qtd. extra</th></tr></thead><tbody>
+  ${d.itens.map(x => `<tr><td>${x.n}</td><td>${e(x.codigo)}</td><td>${e(x.material)}</td><td class="r">${e(fNum(x.qtd))} ${e(x.unidade)}</td><td class="c"><span class="cx"></span></td><td class="c"><span class="cx"></span></td><td></td></tr>`).join("")}
+  ${[1,2,3,4,5].map(k => `<tr class="vazia"><td>${d.itens.length + k}</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`).join("")}</tbody></table>
+  <p class="obs">Linhas em branco: anote materiais usados que não estão na lista.</p>
   <div class="rod">${e(d.clinica.nome)}<br>${e(d.clinica.endereco)} · ${e(d.clinica.telefone)}</div>
   </div>
   <script src="${e(new URL("vendor/pdflib/pdf-lib.min.js", location.href).href)}"><\/script>
@@ -2035,7 +2037,8 @@ async function pdfLista(d, L){
   var rodape = function(){ page.drawLine({ start: { x: M, y: 46 }, end: { x: W - M, y: 46 }, thickness: 0.6, color: linha });
     txt(d.clinica.nome, W / 2, 34, { size: 7.5, color: cinza, align: "center" }); txt(d.clinica.endereco + " · " + d.clinica.telefone, W / 2, 24, { size: 7.5, color: cinza, align: "center" }); };
   var T = W - 2 * M;
-  var cols = [{ t: "#", w: 20 }, { t: "Código", w: 120 }, { t: "Material", w: T - 20 - 120 - 66 - 58 - 58 }, { t: "Qtd.", w: 66, r: 1 }, { t: "Separado", w: 58, c: 1 }, { t: "Conferido", w: 58, c: 1 }];
+  var cols = [{ t: "#", w: 20 }, { t: "Código", w: 104 }, { t: "Material", w: T - 20 - 104 - 60 - 52 - 54 - 56 }, { t: "Qtd.", w: 60, r: 1 }, { t: "Separado", w: 52, c: 1 }, { t: "Conferido", w: 54, c: 1 }, { t: "Qtd. extra", w: 56, c: 1, livre: 1 }];
+  var divisorias = function(topo, h){ var x = M; cols.forEach(function(c, i){ if(i) page.drawLine({ start: { x: x, y: topo }, end: { x: x, y: topo - h }, thickness: 0.4, color: linha }); x += c.w; }); };
   var cab = function(){ page.drawRectangle({ x: M, y: y - 16, width: T, height: 16, color: claro }); var x = M; cols.forEach(function(c){ txt(c.t, c.r ? x + c.w - 4 : c.c ? x + c.w / 2 : x + 4, y - 11, { bold: true, size: 8, color: azul, align: c.r ? "right" : c.c ? "center" : "left" }); x += c.w; }); y -= 16; };
   var novaPagina = function(){ page = doc.addPage([W, H]); y = H - M; rodape(); };
   novaPagina();
@@ -2052,16 +2055,20 @@ async function pdfLista(d, L){
   linhaCampo("Separado por:", M, meio); linhaCampo("Conferido por:", M + meio + 20, meio); y -= 22;
   cab();
   d.itens.forEach(function(x){
-    var vals = [x.n, x.codigo, x.material, num(x.qtd) + " " + x.unidade, "", ""];
+    var vals = [x.n, x.codigo, x.material, num(x.qtd) + " " + x.unidade, "", "", ""];
     var partes = cols.map(function(c, i){ return quebra(vals[i], F, 9, c.w - 8); }); var h = Math.max.apply(null, partes.map(function(p){ return p.length; })) * 11 + 10;
     if(y - h < 62){ novaPagina(); cab(); }
     var xx = M; cols.forEach(function(c, i){
-      if(c.c){ page.drawRectangle({ x: xx + c.w / 2 - 6, y: y - h / 2 - 6, width: 12, height: 12, borderColor: azul, borderWidth: 1 }); }
+      if(c.livre){ }
+      else if(c.c){ page.drawRectangle({ x: xx + c.w / 2 - 6, y: y - h / 2 - 6, width: 12, height: 12, borderColor: azul, borderWidth: 1 }); }
       else partes[i].forEach(function(t, j){ txt(t, c.r ? xx + c.w - 4 : xx + 4, y - 14 - j * 11, { size: 9, align: c.r ? "right" : "left" }); });
       xx += c.w; });
-    y -= h; page.drawLine({ start: { x: M, y: y }, end: { x: W - M, y: y }, thickness: 0.4, color: linha });
+    divisorias(y, h); y -= h; page.drawLine({ start: { x: M, y: y }, end: { x: W - M, y: y }, thickness: 0.4, color: linha });
   });
-  if(!d.itens.length){ txt("Nenhum material.", M + 4, y - 14); y -= 20; }
+  // 5 linhas em branco para materiais usados que não estão na lista
+  for(var k = 1; k <= 5; k++){ var hv = 24; if(y - hv < 80){ novaPagina(); cab(); }
+    txt(String(d.itens.length + k), M + 4, y - 15, { size: 9, color: cinza }); divisorias(y, hv); y -= hv; page.drawLine({ start: { x: M, y: y }, end: { x: W - M, y: y }, thickness: 0.4, color: linha }); }
+  y -= 12; txt("Linhas em branco: anote materiais usados que não estão na lista.", M, y, { size: 8, color: cinza });
   var pgs = doc.getPages(); pgs.forEach(function(pg, i){ pg.drawText("Página " + (i + 1) + " de " + pgs.length, { x: W - M - 60, y: 14, size: 7, font: F, color: cinza }); });
   return await doc.save();
 }
