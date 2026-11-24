@@ -1,10 +1,13 @@
 /**
  * BACKUP SEMANAL AUTOMÁTICO — Estoque UROtherap
  * Roda no Google Apps Script da conta Google do administrador.
- * Toda segunda-feira, entre 6h e 7h, salva na pasta "Backup Estoque UROtherap" do Drive:
+ * Toda segunda-feira, entre 6h e 7h, salva na pasta "Backup Estoque UROtherap" do Drive,
+ * separado em pastas por ano e mês (ex.: Backup Estoque UROtherap / 2026 / 11 - Novembro):
  *   • estoque-urotherap-backup-AAAA-MM-DD.xlsx  → para abrir e conferir (Excel / Planilhas)
  *   • estoque-urotherap-backup-AAAA-MM-DD.json  → cópia completa e exata, para restaurar o banco
  *
+ * Para organizar os backups antigos (que estão soltos na pasta principal) nas pastas de ano e mês:
+ * escolha "organizarBackupsAntigos" e clique em Executar (só precisa uma vez).
  * Primeira vez: escolha a função "configurar" no menu acima e clique em Executar.
  * Para testar a qualquer momento: escolha "fazerBackup" e clique em Executar.
  * Se um backup falhar, o Google manda um e-mail automático avisando.
@@ -13,6 +16,7 @@
 const SITE  = 'https://urotherap-clinica.github.io/estoque-urotherap/';
 const PASTA = 'Backup Estoque UROtherap';
 const FUSO  = 'America/Sao_Paulo';
+const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const TIPOS = { entrada: 'Entrada', saida: 'Saída', ajuste: 'Ajuste', descarte: 'Descarte' };
 
 /** Rode uma vez: cria o token secreto, a pasta, o agendamento semanal e já faz o primeiro backup. */
@@ -42,8 +46,9 @@ function fazerBackup() {
   const d = rpc_('backup_completo', { p_token: token });
   if (!d.ok) throw new Error(d.erro || 'O banco recusou o backup.');
 
-  const nome = 'estoque-urotherap-backup-' + Utilities.formatDate(new Date(), FUSO, "yyyy-MM-dd_HH'h'mm");
-  const pasta = pasta_();
+  const agora = new Date();
+  const nome = 'estoque-urotherap-backup-' + Utilities.formatDate(agora, FUSO, "yyyy-MM-dd_HH'h'mm");
+  const pasta = pastaDoMes_(agora);
 
   // 1) Cópia completa (JSON)
   pasta.createFile(Utilities.newBlob(JSON.stringify(d, null, 1), 'application/json', nome + '.json'));
@@ -93,11 +98,33 @@ function fazerBackup() {
   pasta.createFile(xlsx);
   DriveApp.getFileById(ss.getId()).setTrashed(true); // apaga a planilha temporária
 
-  Logger.log('Backup salvo em "' + PASTA + '": ' + nome + ' (.xlsx e .json) — ' +
+  Logger.log('Backup salvo em "' + PASTA + ' / ' + Utilities.formatDate(agora, FUSO, 'yyyy') + ' / ' + pasta.getName() + '": ' + nome + ' (.xlsx e .json) — ' +
     d.itens.length + ' itens, ' + d.lotes.length + ' lotes, ' + d.movimentacoes.length + ' movimentações.');
 }
 
+/** Rode uma vez: move os backups soltos na pasta principal para as pastas de ano e mês. */
+function organizarBackupsAntigos() {
+  const raiz = pasta_(); const arqs = raiz.getFiles(); let n = 0;
+  while (arqs.hasNext()) {
+    const f = arqs.next();
+    const m = f.getName().match(/(\d{4})-(\d{2})-(\d{2})/);
+    const data = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12) : f.getDateCreated();
+    f.moveTo(pastaDoMes_(data)); n++;
+  }
+  Logger.log(n ? n + ' arquivo(s) organizados nas pastas de ano e mês.' : 'Nenhum arquivo solto para organizar.');
+}
+
 /* ---------- auxiliares ---------- */
+function subpasta_(mae, nome) {
+  const it = mae.getFoldersByName(nome);
+  return it.hasNext() ? it.next() : mae.createFolder(nome);
+}
+/** Backup Estoque UROtherap / AAAA / MM - Mês  (o número na frente mantém os meses em ordem) */
+function pastaDoMes_(data) {
+  const ano = Utilities.formatDate(data, FUSO, 'yyyy');
+  const mes = Number(Utilities.formatDate(data, FUSO, 'M'));
+  return subpasta_(subpasta_(pasta_(), ano), (mes < 10 ? '0' : '') + mes + ' - ' + MESES[mes - 1]);
+}
 function cfg_() {
   const txt = UrlFetchApp.fetch(SITE + 'config.js?t=' + Date.now()).getContentText();
   const url = (txt.match(/supabaseUrl:\s*"([^"]+)"/) || [])[1];
