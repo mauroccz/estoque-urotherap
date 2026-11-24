@@ -1476,6 +1476,13 @@ function abrirImportNF(){
     } catch(e){ msg.innerHTML = `<div class="note crit">${esc(e.message)}</div>`; }
   });
 }
+/* campo da NF com lista de opções já cadastradas + "criar nova" (mesmo jeito do cadastro de item) */
+function nfCombo(k, campo, label, val, opts, maiusc){
+  val = String(val || "").trim(); const xs = [...new Set([...opts, val].filter(Boolean))].sort((a, b) => a.localeCompare(b, "pt"));
+  const novo = !xs.length;
+  return `<label class="f">${label}<select data-nfsel="${k}" data-nfk="${campo}">${val ? "" : `<option value="" selected>Selecione…</option>`}${xs.map(o => `<option value="${esc(o)}" ${o === val ? "selected" : ""}>${esc(o)}</option>`).join("")}<option value="__novo" ${novo ? "selected" : ""}>➕ Criar nova opção…</option></select>
+    <input data-nf="${k}" data-nfk="${campo}" value="${esc(val)}" placeholder="Digite a nova opção" autocomplete="off" style="${novo ? "" : "display:none;"}margin-top:6px${maiusc ? ";text-transform:uppercase" : ""}"></label>`;
+}
 function renderNF(manterScroll){
   const sc = manterScroll && $("#modal .modal") ? $("#modal .modal").scrollTop : 0;
   const n = NF; const inc = n.linhas.filter(l => l.incluir);
@@ -1487,8 +1494,8 @@ function renderNF(manterScroll){
         ${l.auto ? '<span class="pill p-ok">item encontrado</span>' : l.item_id === "novo" ? '<span class="pill p-acc">item novo</span>' : ""}${!l.val ? '<span class="pill p-warn">sem validade</span>' : ""}</div>
       ${l.incluir ? `<div class="nfl-b">
         <label class="f">Item no estoque<select data-nf="${k}" data-nfk="item_id">${opts(l.item_id)}</select></label>
-        ${l.item_id === "novo" ? `<div class="row2"><label class="f">Nome curto do item novo<input data-nf="${k}" data-nfk="novo.nome" value="${esc(l.novo.nome)}"></label><label class="f">Categoria<input data-nf="${k}" data-nfk="novo.categoria" list="nf_cats" value="${esc(l.novo.categoria)}"></label></div>
-          <div class="row3"><label class="f">Código interno<input data-nf="${k}" data-nfk="novo.codigo" list="nf_cods" value="${esc(l.novo.codigo)}" style="text-transform:uppercase"></label><label class="f">Local<input data-nf="${k}" data-nfk="novo.local" list="nf_locs" value="${esc(l.novo.local)}"></label><label class="f">Unidade de controle<input data-nf="${k}" data-nfk="novo.unidade" value="${esc(l.novo.unidade)}"></label></div>` : ""}
+        ${l.item_id === "novo" ? `<div class="row2"><label class="f">Nome curto do item novo<input data-nf="${k}" data-nfk="novo.nome" value="${esc(l.novo.nome)}"></label>${nfCombo(k, "novo.codigo", "Código interno <span class=\"muted\" style=\"font-weight:400\">(igual para produtos equivalentes)</span>", l.novo.codigo, opcoesDe("codigo"), true)}</div>
+          <div class="row3">${nfCombo(k, "novo.categoria", "Categoria", l.novo.categoria, opcoesDe("categoria"), true)}${nfCombo(k, "novo.local", "Local", l.novo.local, opcoesDe("local"), true)}${nfCombo(k, "novo.unidade", "Unidade de controle", l.novo.unidade, opcoesDe("unidade"), true)}</div>` : ""}
         <div class="row3"><label class="f">Lote<input data-nf="${k}" data-nfk="lote" value="${esc(l.lote)}"></label><label class="f">Fabricação<input type="date" data-nf="${k}" data-nfk="fab" value="${esc(l.fab)}"></label><label class="f">Validade<input type="date" data-nf="${k}" data-nfk="val" value="${esc(l.val)}"></label></div>
         <div class="row3"><label class="f">Itens por embalagem <span class="muted" style="font-weight:400">(ex.: caixa com 100)</span><input type="number" min="1" step="any" data-nf="${k}" data-nfk="fator" value="${esc(l.fator)}"></label>
           <label class="f">Quantidade que entra${it ? ` (${esc(low(it.unidade))})` : ""}<input type="number" min="0" step="any" data-nf="${k}" data-nfk="qtdFinal" value="${esc(l.qtdFinal ?? "")}"></label>
@@ -1497,12 +1504,11 @@ function renderNF(manterScroll){
       </div>` : ""}</div>`; };
   abrir(`<div class="modal wide" role="dialog" aria-modal="true">${mHead("Conferir nota fiscal", `${esc(n.arquivo)} · leitura do ${n.origem}`)}<div class="m-b">
     <div class="dl"><div><small>Nota fiscal</small><b>${esc(n.numero || "—")}${n.serie ? " · série " + esc(n.serie) : ""}</b></div><div><small>Emissão</small><b>${fData(n.emissao)}</b></div><div><small>Produtos na nota</small><b>${n.linhas.length}</b></div></div>
-    <label class="f">Fornecedor<input id="nf_forn" value="${esc(n.fornecedor || "")}" placeholder="Nome do fornecedor"></label>
+    ${combo("nf_forn", "Fornecedor <span class=\"muted\" style=\"font-weight:400\">(vale para os itens novos desta nota)</span>", n.fornecedor || "", opcoesDe("fornecedor"))}
     ${n.duplicada ? `<div class="note crit">Parece que esta nota já foi lançada: há movimentações com "NF ${esc(n.numero)}" deste fornecedor. Confira antes de importar de novo.</div>` : ""}
     ${n.origem === "PDF" ? `<div class="note warn">Leitura de PDF: confira código, quantidade, lote e validade de cada produto. Se algo vier errado, prefira o XML da nota.</div>` : ""}
     <div class="note info">Confira cada produto. Itens encontrados no estoque recebem um lote novo (ou somam no lote de mesmo número e validade). Itens não encontrados são criados com o código interno sugerido (mínimo padrão: 15). Desmarque o que não quiser lançar.</div>
     <div class="nfls">${n.linhas.map(card).join("")}</div>
-    <datalist id="nf_cods">${codigosExistentes()}</datalist><datalist id="nf_cats">${D.cats.map(c => `<option value="${esc(c)}">`).join("")}</datalist><datalist id="nf_locs">${D.locais.map(c => `<option value="${esc(c)}">`).join("")}</datalist>
     <div class="err" id="nf_err" role="alert"></div></div>
     <div class="m-f"><span class="muted" style="margin-right:auto;align-self:center">${inc.length} de ${n.linhas.length} produtos selecionados</span><button class="btn" data-act="fechar">Cancelar</button><button class="btn pri" data-act="nfImportar" ${inc.length ? "" : "disabled"}>${ic("check",16,2.2)}Lançar entrada de ${inc.length}</button></div></div>`);
   if(sc) $("#modal .modal").scrollTop = sc;
@@ -1510,7 +1516,7 @@ function renderNF(manterScroll){
 function nfCampo(t){
   const k = Number(t.dataset.nf), campo = t.dataset.nfk, l = NF.linhas[k]; if(!l) return false;
   const v = t.type === "checkbox" ? t.checked : t.value;
-  if(campo.startsWith("novo.")) l.novo[campo.slice(5)] = v; else l[campo] = v;
+  if(campo.startsWith("novo.")) l.novo[campo.slice(5)] = ["codigo","categoria","local","unidade"].includes(campo.slice(5)) ? String(v).toUpperCase() : v; else l[campo] = v;
   if(campo === "item_id"){ l.auto = false; return true; }
   if(campo === "incluir") return true;
   if(campo === "fator"){ const f = Number(v) || 1; l.qtdFinal = Math.round(l.qtd * f * 1000) / 1000; l.custo = l.custoNF != null ? Math.round(l.custoNF / f * 100000) / 100000 : l.custo;
@@ -1518,7 +1524,7 @@ function nfCampo(t){
   return false;
 }
 async function nfImportar(btn){
-  const n = NF; n.fornecedor = $("#nf_forn").value.trim();
+  const n = NF; n.fornecedor = $("#nf_forn").value.trim().toUpperCase();
   const inc = n.linhas.filter(l => l.incluir); const erros = [];
   inc.forEach((l, i) => { const nome = l.desc.slice(0, 30);
     if(l.item_id === "novo" && (!String(l.novo.nome).trim() || !String(l.novo.categoria).trim())) erros.push(`${nome}: informe nome e categoria do item novo.`);
@@ -2279,8 +2285,12 @@ document.addEventListener("input", e => {
   if(t.id === "pa_lote" && PR && PR.novo){ PR.novo.lote_id = t.value; return; }
   if(t.id === "pr_paciente_cpf" && PR){ const d = t.value.replace(/\D/g, "").slice(0, 11); t.value = d.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2"); PR.paciente_cpf = t.value; return; }
   if(PR && /^pr_(nome|codigo_procedimento|medicos|anestesistas|data|hora_inicio|hora_fim|observacoes|paciente_nome|paciente_convenio|paciente_carteirinha)$/.test(t.id)){ PR[t.id.slice(3)] = t.value; if(PR.etapa === "edit") autoSalvarProc(); return; }
-  if(t.dataset.combo){ const inp = $("#" + t.dataset.combo); if(t.value === "__novo"){ inp.style.display = ""; inp.value = ""; inp.focus(); } else { inp.style.display = "none"; inp.value = t.value; } if(t.dataset.combo === "e_categoria" && !$("#e_codigo").value.trim()) infoCodigo(); return; }
+  if(t.dataset.combo){ const inp = $("#" + t.dataset.combo); if(t.value === "__novo"){ inp.style.display = ""; inp.value = ""; inp.focus(); } else { inp.style.display = "none"; inp.value = t.value; } if(t.dataset.combo === "e_categoria" && !$("#e_codigo").value.trim()) infoCodigo(); if(t.dataset.combo === "nf_forn" && NF) NF.fornecedor = inp.value; return; }
+  if(t.id === "nf_forn" && NF){ NF.fornecedor = t.value; return; }
   if(t.id === "e_codigo"){ infoCodigo(); return; }
+  if(t.dataset.nfsel !== undefined && NF){ const inp = t.parentElement.querySelector(`input[data-nf="${t.dataset.nfsel}"][data-nfk="${t.dataset.nfk}"]`); if(!inp) return;
+    if(t.value === "__novo"){ inp.style.display = ""; inp.value = ""; inp.focus(); } else { inp.style.display = "none"; inp.value = t.value; }
+    if(nfCampo(inp)) renderNF(true); return; }
   if(t.dataset.nf !== undefined && NF){ if(nfCampo(t)) renderNF(true); return; }
   if(t.dataset.f){ S.f[t.dataset.f] = t.value; const el = $("#lista"); if(el && PARTS[S.rota]) el.innerHTML = PARTS[S.rota](); return; }
   if(t.id === "m_busca" && M){ M.busca = t.value; $("#m_plist").innerHTML = resBusca("m", t.value); return; }
